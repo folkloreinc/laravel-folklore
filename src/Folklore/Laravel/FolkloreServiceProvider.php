@@ -22,7 +22,6 @@ class FolkloreServiceProvider extends ServiceProvider {
 		
 		// Config file path
 		$configPath = __DIR__ . '/../../resources/config/folklore.php';
-		$publicPath = __DIR__ . '/../../resources/public/';
 		$assetsPath = __DIR__ . '/../../resources/assets/';
 		$viewsPath = __DIR__ . '/../../resources/views/';
 
@@ -40,7 +39,6 @@ class FolkloreServiceProvider extends ServiceProvider {
 	    ], 'views');
 		
 		$this->publishes([
-			$publicPath => public_path(),
 			$assetsPath => base_path('resources/assets'),
 		], 'public');
 
