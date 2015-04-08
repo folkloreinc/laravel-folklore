@@ -20,29 +20,34 @@ class FolkloreServiceProvider extends ServiceProvider {
 	public function boot()
 	{
 		
-		// Config file path
-		$configPath = __DIR__ . '/../../resources/config/folklore.php';
-		$assetsPath = __DIR__ . '/../../resources/assets/';
-		$viewsPath = __DIR__ . '/../../resources/views/';
+		$this->bootPublishes();
+	}
+	
+	public function bootPublishes()
+	{
+		// Paths
+		$srcPath =  __DIR__ . '/../..';
+		$configPath = $srcPath.'/resources/config/folklore.php';
+		$assetsPath = $srcPath.'/resources/assets';
+		$viewsPath = $srcPath.'/resources/views';
 
 		// Merge files
 		$this->mergeConfigFrom($configPath, 'folklore');
 		$this->loadViewsFrom($viewsPath, 'folklore');
 
-		// Publish
+		// Publishes
 		$this->publishes([
 			$configPath => config_path('folklore.php')
-		], 'config');
+		], 'folklore.config');
 		
 		$this->publishes([
 	        $viewsPath => base_path('resources/views/vendor/folklore'),
-	    ], 'views');
+	    ], 'folklore.views');
 		
+		//Assets
 		$this->publishes([
-			$assetsPath => base_path('resources/assets'),
-		], 'public');
-
-		$app = $this->app;
+			$assetsPath => base_path('resources/assets')
+		], 'folklore.assets');
 	}
 
 	/**
@@ -54,9 +59,9 @@ class FolkloreServiceProvider extends ServiceProvider {
 	{
 		$this->registerFolklore();
 		$this->registerAsset();
+		$this->registerDebugBar();
 		$this->registerLocale();
 		$this->registerConsoleCommands();
-		$this->registerComposers();
 	}
 	
 	public function registerFolklore()
@@ -80,17 +85,21 @@ class FolkloreServiceProvider extends ServiceProvider {
 		$loader = AliasLoader::getInstance();
     	$loader->alias('Asset', 'Orchestra\Support\Facades\Asset');
     	$loader->alias('HTML', 'Orchestra\Support\Facades\HTML');
+    	$loader->alias('Form', 'Orchestra\Support\Facades\Form');
+	}
+	
+	public function registerDebugBar()
+	{
+		$this->app->register('Barryvdh\Debugbar\ServiceProvider');
+		
+		$loader = AliasLoader::getInstance();
+    	$loader->alias('Debugbar', 'Barryvdh\Debugbar\Facade');
 	}
 	
 	public function registerConsoleCommands()
 	{
 		$this->commands('Folklore\Laravel\Console\Commands\FolkloreInstallCommand');
-	}
-	
-	public function registerComposers()
-	{
-		$view = $this->app['view'];
-		$view->composer('folklore::layouts.main', 'Folklore\Laravel\View\Composers\LayoutComposer');
+		$this->commands('Folklore\Laravel\Console\Commands\FolkloreUpdateCommand');
 	}
 
 	/**

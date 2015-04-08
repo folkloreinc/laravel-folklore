@@ -21,27 +21,18 @@ class LocaleServiceProvider extends ServiceProvider {
 	 */
 	public function boot()
 	{
-		$this->initPublishes();
-		
-		$this->app['events']->subscribe('Folklore\Laravel\Events\LocaleEventHandler');
+		$this->bootPublishes();
 	}
 	
-	protected function initPublishes()
+	protected function bootPublishes()
 	{
 		$configPath = __DIR__ . '/../../resources/config/locale.php';
-		$translationsPath = __DIR__ . '/../../resources/translations';
 		
 		$this->mergeConfigFrom($configPath, 'locale');
 		
-		$this->loadTranslationsFrom($translationsPath, 'folklore');
-		
 		$this->publishes([
 			$configPath => config_path('locale.php')
-		], 'config');
-		
-		$this->publishes([
-			$translationsPath => base_path('resources/lang/packages')
-		], 'translations');
+		], 'folklore.locale.config');
 	}
 
 	/**
@@ -52,12 +43,18 @@ class LocaleServiceProvider extends ServiceProvider {
 	public function register()
 	{
 		$this->registerMiddlewares();
+		$this->registerEventHandlers();
 	}
 	
 	public function registerMiddlewares()
 	{
 		$http = $this->app['Illuminate\Contracts\Http\Kernel'];
 		$http->pushMiddleware('Folklore\Laravel\Http\Middleware\Locale');
+	}
+	
+	public function registerEventHandlers()
+	{
+		$this->app['events']->subscribe('Folklore\Laravel\Events\LocaleEventHandler');
 	}
 
 	/**

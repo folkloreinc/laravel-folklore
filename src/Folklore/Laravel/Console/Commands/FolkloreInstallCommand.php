@@ -25,19 +25,21 @@ class FolkloreInstallCommand extends Command {
 	 *
 	 * @return mixed
 	 */
-	public function handle()
+	public function fire()
 	{
-		
 		$this->info('Publishing main files...');
 		$this->call('vendor:publish', [
-			'--provider' => 'Folklore\Laravel\FolkloreServiceProvider',
-			'--force' => true
+			'--provider' => 'Folklore\Laravel\FolkloreServiceProvider'
 		]);
 		
 		$this->info('Publishing locale files...');
 		$this->call('vendor:publish', [
-			'--provider' => 'Folklore\Laravel\LocaleServiceProvider',
-			'--force' => true
+			'--provider' => 'Folklore\Laravel\LocaleServiceProvider'
+		]);
+		
+		$this->info('Publishing debug bar files...');
+		$this->call('vendor:publish', [
+			'--provider' => 'Barryvdh\Debugbar\ServiceProvider'
 		]);
 	}
 
