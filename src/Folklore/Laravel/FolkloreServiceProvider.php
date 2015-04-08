@@ -28,7 +28,6 @@ class FolkloreServiceProvider extends ServiceProvider {
 		// Paths
 		$srcPath =  __DIR__ . '/../..';
 		$configPath = $srcPath.'/resources/config/folklore.php';
-		$assetsPath = $srcPath.'/resources/assets';
 		$viewsPath = $srcPath.'/resources/views';
 
 		// Merge files
@@ -43,11 +42,6 @@ class FolkloreServiceProvider extends ServiceProvider {
 		$this->publishes([
 	        $viewsPath => base_path('resources/views/vendor/folklore'),
 	    ], 'folklore.views');
-		
-		//Assets
-		$this->publishes([
-			$assetsPath => base_path('resources/assets')
-		], 'folklore.assets');
 	}
 
 	/**
