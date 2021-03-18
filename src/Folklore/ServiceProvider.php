@@ -13,7 +13,6 @@ class ServiceProvider extends BaseServiceProvider
      */
     public function register()
     {
-
     }
 
     /**
@@ -23,6 +22,20 @@ class ServiceProvider extends BaseServiceProvider
      */
     public function boot()
     {
+        if (!$this->app->runningInConsole()) {
+            return;
+        }
 
+        $this->commands([Console\InstallAuthCommand::class]);
+    }
+
+    /**
+     * Get the services provided by the provider.
+     *
+     * @return array
+     */
+    public function provides()
+    {
+        return [Console\InstallAuthCommand::class];
     }
 }
