@@ -48,10 +48,7 @@
         "laravel": {
             "providers": [
                 "Folklore\\ServiceProvider"
-            ],
-            "aliases": {
-                "Folklore": "Folklore\\Facade"
-            }
+            ]
         }
     },
     "minimum-stability": "dev",
