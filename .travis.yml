@@ -1,14 +1,25 @@
 language: php
 
+cache:
+  directories:
+    - $HOME/.composer/cache/files
+
 php:
-  - 5.4
-  - 5.5
+    - 7.4
+    - 8.0
+
+install:
+  - curl -s http://getcomposer.org/installer | php
+  - php composer.phar install --dev --no-interaction
 
 before_script:
-  - curl -s http://getcomposer.org/installer | php
-  - php composer.phar install --dev
+  - mkdir -p coverage
 
-script: phpunit
+script:
+  - php vendor/bin/phpunit
+
+after_success:
+  - travis_retry php vendor/bin/php-coveralls
 
 notifications:
-  email: false
+    email: false

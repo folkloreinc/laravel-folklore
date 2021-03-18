@@ -1,0 +1,17 @@
+{
+    "name": "laravel-folklore",
+    "private": true,
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/folkloreinc/laravel-folklore.git"
+    },
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/folkloreinc/laravel-folklore/issues"
+    },
+    "homepage": "https://github.com/folkloreinc/laravel-folklore#readme",
+    "devDependencies": {
+        "@prettier/plugin-php": "^0.16.1",
+        "prettier": "^2.2.1"
+    }
+}
