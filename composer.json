@@ -1,5 +1,5 @@
 {
-    "name": "folklore/laravel",
+    "name": "folklore/laravel-folklore",
     "description": "Laravel 5 package used by Folklore to build applications",
     "keywords": ["laravel","folklore"],
     "homepage": "http://github.com/Folkloreatelier/laravel-folklore",
