@@ -11,7 +11,7 @@
     },
     "homepage": "https://github.com/folkloreinc/laravel-folklore#readme",
     "devDependencies": {
-        "@prettier/plugin-php": "^0.16.1",
+        "@prettier/plugin-php": "^0.18.3",
         "prettier": "^2.2.1"
     }
 }
