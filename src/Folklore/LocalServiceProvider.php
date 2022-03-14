@@ -4,6 +4,7 @@ namespace Folklore;
 
 use Illuminate\Support\ServiceProvider;
 use Folklore\Console\AssetsViewCommand;
+use Folklore\Console\InstalllCommand;
 use Folklore\Http\Middleware\LocalMiddleware;
 
 class LocalServiceProvider extends ServiceProvider
@@ -38,6 +39,7 @@ class LocalServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 AssetsViewCommand::class,
+                InstalllCommand::class,
             ]);
         }
     }
