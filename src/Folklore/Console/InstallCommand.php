@@ -74,7 +74,7 @@ class InstallCommand extends Command
             $folder = dirname($destination);
             if (!$this->files->exists($folder)) {
                 $this->line('<comment>Creating:</comment> Folder ' . $folder);
-                $this->files->mkdir($folder, 0755, true);
+                $this->files->makeDirectory($folder, 0755, true);
             }
 
             $exists = $this->files->exists($destination);
@@ -88,7 +88,7 @@ class InstallCommand extends Command
 
             if ($exists) {
                 $this->line('<comment>Deleting:</comment> ' . $destination);
-                $this->files->unlink($destination);
+                $this->files->delete($destination);
             }
 
             $this->files->copy($stub, $destination);
