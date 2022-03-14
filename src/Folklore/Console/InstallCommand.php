@@ -111,8 +111,8 @@ class InstallCommand extends Command
         }
 
         $this->line('---');
-        $this->line('Service providers to add <comment>config/app.php</comment> :');
-        $this->line(json_encode(\App\Providers\ResourcesServiceProvider::class).',');
-        $this->line(json_encode(\App\Providers\ViewServiceProvider::class).',');
+        $this->line('<info>Add service providers to</info> <comment>config/app.php</comment> :'.PHP_EOL);
+        $this->line('\App\Providers\ResourcesServiceProvider::class,');
+        $this->line('\App\Providers\ViewServiceProvider::class,');
     }
 }
