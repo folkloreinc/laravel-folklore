@@ -63,14 +63,25 @@ class InstallCommand extends Command
 
         $files = [
             $stubsPath . '/AppComposer.php' => app_path('View/Composers/AppComposer.php'),
+            $stubsPath . '/MetaComposer.php' => app_path('View/Composers/MetaComposer.php'),
+
+            $stubsPath . '/ResourcesServiceProvider.php' => app_path('Providers/ResourcesServiceProvider.php'),
+            $stubsPath . '/ViewServiceProvider.php' => app_path('Providers/ViewServiceProvider.php'),
+
             $stubsPath . '/UserContract.php' => app_path('Contracts/Resources/User.php'),
             $stubsPath . '/UsersContract.php' => app_path('Contracts/Repositories/Users.php'),
             $stubsPath . '/UserResource.php' => app_path('Resources/User.php'),
             $stubsPath . '/UserModel.php' => app_path('Models/User.php'),
             $stubsPath . '/UsersRepository.php' => app_path('Repositories/Users.php'),
+
+            $stubsPath . '/Controller.php' => app_path('Http/Controllers/Controller.php'),
+            $stubsPath . '/HomeController.php' => app_path('Http/Controllers/HomeController.php'),
+
+            $stubsPath . '/views' => resource_path('views'),
         ];
 
         foreach ($files as $stub => $destination) {
+            $isFolder = $this->files->isDirectory($stub);
             $folder = dirname($destination);
             if (!$this->files->exists($folder)) {
                 $this->line('<comment>Creating:</comment> Folder ' . $folder);
@@ -79,20 +90,29 @@ class InstallCommand extends Command
 
             $exists = $this->files->exists($destination);
             // prettier-ignore
-            if ($exists && !$force &&
+            if (!$isFolder && $exists && !$force &&
                 !$this->confirm('Would you like to overwrite "' . $destination . '" ?')
             ) {
                 $this->line('<comment>Skipping:</comment> '.$destination);
                 continue;
             }
 
-            if ($exists) {
+            if ($exists && !$isFolder) {
                 $this->line('<comment>Deleting:</comment> ' . $destination);
                 $this->files->delete($destination);
             }
 
-            $this->files->copy($stub, $destination);
+            if ($isFolder) {
+                $this->files->copyDirectory($stub, $destination);
+            } else {
+                $this->files->copy($stub, $destination);
+            }
             $this->line('<info>Copied:</info> ' . $destination);
         }
+
+        $this->line('---');
+        $this->line('Service providers to add <comment>config/app.php</comment> :');
+        $this->line(json_encode(\App\Providers\ResourcesServiceProvider::class).',');
+        $this->line(json_encode(\App\Providers\ViewServiceProvider::class).',');
     }
 }
