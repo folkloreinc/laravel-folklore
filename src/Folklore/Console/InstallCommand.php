@@ -67,7 +67,7 @@ class InstallCommand extends Command
             $stubsPath . '/UsersContract.php' => app_path('Contracts/Repositories/Users.php'),
             $stubsPath . '/UserResource.php' => app_path('Resources/User.php'),
             $stubsPath . '/UserModel.php' => app_path('Models/User.php'),
-            $stubsPath . '/UsersRepositories.php' => app_path('Repositories/Users.php'),
+            $stubsPath . '/UsersRepository.php' => app_path('Repositories/Users.php'),
         ];
 
         foreach ($files as $stub => $destination) {
