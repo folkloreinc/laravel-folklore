@@ -59,10 +59,14 @@ class AssetsViewCommand extends Command
     public function handle()
     {
         $assetManifest = $this->option('manifest-path') ?? public_path('asset-manifest.json');
-        $headStubPath = __DIR__ . '/stubs/head.blade.php';
-        $bodyStubPath = __DIR__ . '/stubs/body.blade.php';
+        $stubsPath = __DIR__ . '/../../stubs';
+        $headStubPath = $stubsPath . '/assets-head.blade.php';
+        $bodyStubPath = $stubsPath . '/assets-body.blade.php';
 
-        $outputPath = rtrim(resource_path('views/' . ltrim($this->option('output_path'), '/')), '/');
+        $outputPath = rtrim(
+            resource_path('views/' . ltrim($this->option('output_path'), '/')),
+            '/'
+        );
         $manifest = json_decode($this->files->get($assetManifest), true);
 
         $head = $this->view->file($headStubPath, $manifest)->render();
