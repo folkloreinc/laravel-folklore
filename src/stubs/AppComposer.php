@@ -2,11 +2,11 @@
 
 namespace App\View\Composers;
 
-use App\Folklore\Composers\Concerns\ComposesIntl;
-use App\Folklore\Composers\Concerns\ComposesRoutes;
-use App\Http\Resources\UserResource;
+use Folklore\Composers\Concerns\ComposesIntl;
+use Folklore\Composers\Concerns\ComposesRoutes;
 use Illuminate\View\View;
 use Illuminate\Http\Request;
+use App\Http\Resources\UserResource;
 
 class AppComposer
 {

@@ -77,6 +77,8 @@ class InstallCommand extends Command
             $stubsPath . '/Controller.php' => app_path('Http/Controllers/Controller.php'),
             $stubsPath . '/HomeController.php' => app_path('Http/Controllers/HomeController.php'),
 
+            $stubsPath . '/UserJsonResource.php' => app_path('Http/Resources/UserResource.php'),
+
             $stubsPath . '/views' => resource_path('views'),
 
             $stubsPath . '/routes.php' => base_path('routes/web.php'),
