@@ -78,6 +78,8 @@ class InstallCommand extends Command
             $stubsPath . '/HomeController.php' => app_path('Http/Controllers/HomeController.php'),
 
             $stubsPath . '/views' => resource_path('views'),
+
+            $stubsPath . '/routes.php' => base_path('routes/web.php'),
         ];
 
         foreach ($files as $stub => $destination) {
