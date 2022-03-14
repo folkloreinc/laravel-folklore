@@ -110,7 +110,7 @@ class InstallCommand extends Command
             $this->line('<info>Copied:</info> ' . $destination);
         }
 
-        $this->line('---');
+        $this->line(PHP_EOL.'---'.PHP_EOL);
         $this->line('<info>Add service providers to</info> <comment>config/app.php</comment> :'.PHP_EOL);
         $this->line('\App\Providers\ResourcesServiceProvider::class,');
         $this->line('\App\Providers\ViewServiceProvider::class,');
