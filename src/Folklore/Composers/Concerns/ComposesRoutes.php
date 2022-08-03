@@ -61,16 +61,6 @@ trait ComposesRoutes
         $parameters = $route->parameterNames();
 
         preg_match_all('/\{(.*?)\}/', $route->getDomain() . $route->uri(), $matches);
-        $optionalParameters = array_map(
-            function ($m) {
-                return trim($m, '?');
-            },
-            array_values(
-                array_filter($matches[1], function ($m) {
-                    return preg_match('/\?$/', $m) === 1;
-                })
-            )
-        );
 
         $params = [];
         foreach ($parameters as $parameter) {
@@ -80,6 +70,16 @@ trait ComposesRoutes
         $path = resolve(UrlGenerator::class)->route($name, $params, false);
 
         if (!$withoutParametersPatterns) {
+            $optionalParameters = array_map(
+                function ($m) {
+                    return trim($m, '?');
+                },
+                array_values(
+                    array_filter($matches[1], function ($m) {
+                        return preg_match('/\?$/', $m) === 1;
+                    })
+                )
+            );
             foreach ($parameters as $parameter) {
                 if (in_array($parameter, $optionalParameters)) {
                     $path = preg_replace('/(' . preg_quote(':' . $parameter) . ')\b/i', '$1?', $path);
