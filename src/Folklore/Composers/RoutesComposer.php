@@ -22,6 +22,9 @@ abstract class RoutesComposer
             ->merge($this->getRoutesNamesWithLocales($this->routesLocalized))
             ->unique()
             ->values();
-        $view->routes = $this->composeRoutesByNames($names, $locale);
+        $view->routes = $this->composeRoutesByNames($names, [
+            'namespaceToRemove' => $locale,
+            'withoutParametersPatterns' => $this->withoutParametersPatterns,
+        ]);
     }
 }
