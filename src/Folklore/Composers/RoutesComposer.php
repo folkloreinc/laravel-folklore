@@ -13,6 +13,8 @@ abstract class RoutesComposer
 
     protected $routesLocalized = [];
 
+    protected $withoutParametersPatterns = false;
+
     public function compose(View $view)
     {
         $locale = app()->getLocale();
