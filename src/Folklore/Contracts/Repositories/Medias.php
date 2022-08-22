@@ -2,6 +2,6 @@
 
 namespace Folklore\Contracts\Repositories;
 
-interface Members extends Resources
+interface Medias extends Resources
 {
 }

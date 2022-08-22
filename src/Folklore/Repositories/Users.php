@@ -4,18 +4,49 @@ namespace Folklore\Repositories;
 
 use Folklore\Contracts\Repositories\Users as UsersContract;
 use Folklore\Contracts\Resources\Resourcable;
+use Folklore\Contracts\Resources\Resource;
 use Folklore\Contracts\Resources\User as UserContract;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Auth\EloquentUserProvider;
+use Illuminate\Database\Eloquent\Model;
+use Folklore\Models\User as UserModel;
 
-abstract class Users extends Resources implements UsersContract
+class Users extends Resources implements UsersContract
 {
     protected $userProvider;
 
     public function __construct(Hasher $hasher)
     {
         $this->userProvider = new EloquentUserProvider($hasher, get_class($this->newModel()));
+    }
+
+    protected function newModel(): Model
+    {
+        return new UserModel();
+    }
+
+    public function findById(string $id): ?UserContract
+    {
+        return parent::findById($id);
+    }
+
+    public function findByEmail(string $email): ?UserContract
+    {
+        $model = $this->newQuery()
+            ->where('email', 'LIKE', $email)
+            ->first();
+        return $model instanceof Resourcable ? $model->toResource() : $model;
+    }
+
+    public function create(array $data): UserContract
+    {
+        return parent::create($data);
+    }
+
+    public function update(string $id, array $data): ?UserContract
+    {
+        return parent::update($id, $data);
     }
 
     /**

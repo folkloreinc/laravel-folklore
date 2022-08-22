@@ -21,7 +21,10 @@
     ],
     "require": {
         "php": "^7.4|^8.0|^8.0.2",
-        "laravel/framework": "^8.0|^9.0"
+        "laravel/framework": "^8.0|^9.0",
+        "folklore/laravel-panneau": "v1.2.x-dev",
+        "folklore/laravel-mediatheque": "v1.1.x-dev",
+        "folklore/laravel-image": "v1.x-dev"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",
