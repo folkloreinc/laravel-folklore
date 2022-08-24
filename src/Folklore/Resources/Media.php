@@ -8,7 +8,7 @@ use Folklore\Contracts\Resources\Image as ImageContract;
 use Folklore\Contracts\Resources\MediaFile as MediaFileContract;
 use Folklore\Contracts\Resources\MediaMetadata as MediaMetadataContract;
 use Folklore\Models\Media as MediaModel;
-use App\Contracts\Resources\Resourcable;
+use Folklore\Contracts\Resources\Resourcable;
 
 class Media implements MediaContract
 {

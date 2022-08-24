@@ -2,10 +2,8 @@
 
 namespace Folklore\Resources;
 
-use Illuminate\Support\Collection;
 use Folklore\Contracts\Resources\MediaMetadata as MediaMetadataContract;
 use Folklore\Models\Media as MediaModel;
-use App\Contracts\User as UserContract;
 
 class MediaMetadata implements MediaMetadataContract
 {

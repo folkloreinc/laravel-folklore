@@ -4,7 +4,6 @@ namespace Folklore;
 
 use Illuminate\Support\ServiceProvider;
 use Folklore\Console\AssetsViewCommand;
-use Folklore\Console\InstallCommand;
 use Folklore\Http\Middleware\LocalMiddleware;
 
 class LocalServiceProvider extends ServiceProvider
@@ -36,11 +35,15 @@ class LocalServiceProvider extends ServiceProvider
             LocalMiddleware::class
         );
 
+        $this->publishes(
+            [
+                __DIR__ . '/migrations/' => database_path('migrations'),
+            ],
+            'migrations'
+        );
+
         if ($this->app->runningInConsole()) {
-            $this->commands([
-                AssetsViewCommand::class,
-                InstallCommand::class,
-            ]);
+            $this->commands([AssetsViewCommand::class]);
         }
     }
 }

@@ -2,7 +2,6 @@
 
 namespace Folklore\Contracts\Resources;
 
-use App\Contracts\Resources\Resource;
 use Panneau\Contracts\ResourceItem;
 
 interface MediaFile extends ResourceItem, Resource

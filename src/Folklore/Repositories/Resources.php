@@ -14,6 +14,10 @@ abstract class Resources implements ResourcesContract
 {
     protected $globalQuery = [];
 
+    protected $jsonAttributeName = 'data';
+
+    protected $jsonAttributeFillable = null;
+
     abstract protected function newModel(): Model;
 
     protected function newQuery()
@@ -126,6 +130,7 @@ abstract class Resources implements ResourcesContract
     protected function saveData($model, array $data)
     {
         $this->fillModel($model, $data);
+        $this->fillModelJsonAttributes($model, $data);
         $model->save();
         $this->syncRelations($model, $data);
     }
@@ -133,6 +138,27 @@ abstract class Resources implements ResourcesContract
     protected function fillModel($model, array $data)
     {
         $model->fill($data);
+    }
+
+    protected function fillModelJsonAttributes($model, array $data)
+    {
+        $jsonAttributeFillable = $this->getJsonAttributeFillable();
+        if (is_null($jsonAttributeFillable)) {
+            return;
+        }
+
+        $jsonAttributeName = $this->getJsonAttributeName();
+        $currentAttributeValue = $model->{$jsonAttributeName};
+        $newAttributeValue = collect($jsonAttributeFillable)->reduce(function ($newValue, $path, $field) use ($data) {
+            if (is_numeric($field)) {
+                $field = $path;
+            }
+            if (isset($data[$field])) {
+                data_set($newValue, $path, $data[$field]);
+            }
+            return $newValue;
+        }, $currentAttributeValue);
+        $model->{$jsonAttributeName} = $newAttributeValue;
     }
 
     protected function syncRelations($model, array $data)
@@ -169,5 +195,15 @@ abstract class Resources implements ResourcesContract
         }
 
         return $query;
+    }
+
+    protected function getJsonAttributeName()
+    {
+        return $this->jsonAttributeName;
+    }
+
+    protected function getJsonAttributeFillable()
+    {
+        return $this->jsonAttributeFillable;
     }
 }
