@@ -69,7 +69,7 @@ class ServiceProvider extends BaseServiceProvider
         );
 
         $this->app[\Illuminate\Contracts\Http\Kernel::class]->pushMiddleware(
-            LocalMiddleware::class
+            \Folklore\Http\Middleware\LocalMiddleware::class
         );
 
         if ($this->app->runningInConsole()) {
