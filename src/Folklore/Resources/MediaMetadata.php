@@ -37,7 +37,7 @@ class MediaMetadata implements MediaMetadataContract
 
     public function description(): ?string
     {
-        $metadata = $this->getMetadatas()->get('descriptions');
+        $metadata = $this->getMetadatas()->get('description');
         return !is_null($metadata) ? $metadata->getValue() : null;
     }
 

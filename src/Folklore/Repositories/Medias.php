@@ -3,7 +3,7 @@
 namespace Folklore\Repositories;
 
 use Symfony\Component\HttpFoundation\File\File;
-use Folklore\Models\Media as MediaModel;
+use Folklore\Mediatheque\Contracts\Models\Media as MediaModelContract;
 use Illuminate\Support\Str;
 use Folklore\Contracts\Repositories\Medias as MediasRepositoryContract;
 use Folklore\Contracts\Resources\Media as MediaContract;
@@ -21,9 +21,9 @@ class MediasRepository extends Resources implements MediasRepositoryContract
         $this->typeFactory = $typeFactory;
     }
 
-    protected function newModel(): MediaModel
+    protected function newModel(): MediaModelContract
     {
-        return new MediaModel();
+        return resolve(MediaModelContract::class);
     }
 
     protected function newQuery()

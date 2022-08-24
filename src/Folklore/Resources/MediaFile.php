@@ -25,8 +25,23 @@ class MediaFile implements MediaFileContract
         return $this->model->handle;
     }
 
+    public function name(): ?string
+    {
+        return $this->model->name;
+    }
+
     public function url(): string
     {
         return $this->model->getUrl();
+    }
+
+    public function mime(): ?string
+    {
+        return $this->model->mime;
+    }
+
+    public function size(): ?int
+    {
+        return $this->model->size;
     }
 }

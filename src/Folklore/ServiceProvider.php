@@ -14,6 +14,8 @@ class ServiceProvider extends BaseServiceProvider
     public function register()
     {
         $this->registerRepositories();
+
+        $this->registerMediatheque();
     }
 
     protected function registerRepositories()
@@ -35,6 +37,19 @@ class ServiceProvider extends BaseServiceProvider
         $this->app->bind(
             \Folklore\Contracts\Repositories\Organisations::class,
             \Folklore\Repositories\Organisations::class
+        );
+    }
+
+    protected function registerMediatheque()
+    {
+        $this->app->bind(
+            \Folklore\Mediatheque\Contracts\Models\Media::class,
+            \Folklore\Models\Media::class
+        );
+
+        $this->app->bind(
+            \Folklore\Mediatheque\Contracts\Models\File::class,
+            \Folklore\Models\MediaFile::class
         );
     }
 
