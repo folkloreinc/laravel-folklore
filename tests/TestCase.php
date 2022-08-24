@@ -22,7 +22,6 @@ class TestCase extends BaseTestCase
             'Folklore\Mediatheque\ServiceProvider',
             'Folklore\Locale\LocaleServiceProvider',
             'Folklore\ServiceProvider',
-            'Folklore\LocalServiceProvider',
         ];
     }
 
