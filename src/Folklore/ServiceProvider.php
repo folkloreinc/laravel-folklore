@@ -73,7 +73,7 @@ class ServiceProvider extends BaseServiceProvider
         );
 
         if ($this->app->runningInConsole()) {
-            $this->commands([AssetsViewCommand::class]);
+            $this->commands([\Folklore\Console\AssetsViewCommand::class]);
         }
     }
 }
