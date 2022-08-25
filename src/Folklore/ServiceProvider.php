@@ -67,6 +67,12 @@ class ServiceProvider extends BaseServiceProvider
             );
         });
 
+        // Routing
+        \Illuminate\Routing\UrlGenerator::macro(
+            'routeForReactRouter',
+            $this->app->make(\Folklore\Routing\UrlGeneratorMixin::class)->routeForReactRouter()
+        );
+
         // Boot local environment
         if ($this->app->environment('local')) {
             $this->bootLocal();
