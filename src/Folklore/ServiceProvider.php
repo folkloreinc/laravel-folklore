@@ -34,6 +34,12 @@ class ServiceProvider extends BaseServiceProvider
             \Folklore\Contracts\Repositories\Pages::class,
             \Folklore\Repositories\Pages::class
         );
+
+        $this->app->bind(
+            \Folklore\Contracts\Repositories\Blocks::class,
+            \Folklore\Repositories\Blocks::class
+        );
+
         $this->app->bind(
             \Folklore\Contracts\Repositories\Organisations::class,
             \Folklore\Repositories\Organisations::class
