@@ -12,7 +12,7 @@ use Folklore\Contracts\Resources\Resourcable;
 use GuzzleHttp\Client as HttpClient;
 use Exception;
 
-class MediasRepository extends Resources implements MediasRepositoryContract
+class Medias extends Resources implements MediasRepositoryContract
 {
     protected $typeFactory;
 
