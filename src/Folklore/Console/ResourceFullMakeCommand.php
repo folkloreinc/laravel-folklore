@@ -41,8 +41,8 @@ class ResourceFullMakeCommand extends Command
     public function handle()
     {
         $name = $this->argument('name');
-        $model = $this->argument('model') ?? '\\App\\Models\\'.$name;
-        $repository = $this->argument('repository') ?? Str::plural($name);
+        $model = $this->option('model') ?? '\\App\\Models\\'.$name;
+        $repository = $this->option('repository') ?? Str::plural($name);
 
         $this->call('make:resource-contract', [
             'name' => $name
