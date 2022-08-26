@@ -2,11 +2,10 @@
 
 namespace {{ namespace }};
 
-use Folklore\Repositories\Resources;
 use {{ namespacedModel }} as {{ modelAlias }};
-use {{ namespacedContract }} as {{ contractAlias }};
+use {{ namespacedResource }} as {{ resourceAlias }};
 
-class {{ class }} implements {{ contractAlias }}
+class {{ class }} implements {{ resourceAlias }}
 {
     protected $model;
 
