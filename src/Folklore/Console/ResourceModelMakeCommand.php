@@ -54,8 +54,7 @@ class ResourceModelMakeCommand extends GeneratorCommand
 
         $model = $this->option('model');
         $stub = $model ? $this->replaceModel($stub, $model) : $stub;
-
-        $full = $this->replaceResource($stub, $name);
+        $stub = $this->replaceResource($stub, $name);
 
         return $stub;
     }
