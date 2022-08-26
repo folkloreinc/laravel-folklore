@@ -149,7 +149,12 @@ abstract class Resources implements ResourcesContract
 
         $jsonAttributeName = $this->getJsonAttributeName();
         $currentAttributeValue = $model->{$jsonAttributeName};
-        $newAttributeValue = collect($jsonAttributeFillable)->reduce(function ($newValue, $path, $field) use ($data) {
+        $fillable = $model->getFillable();
+        $newAttributeValue = collect(
+            sizeof($jsonAttributeFillable) === 0
+                ? array_diff(array_keys($data), $fillable)
+                : $jsonAttributeFillable
+        )->reduce(function ($newValue, $path, $field) use ($data) {
             if (is_numeric($field)) {
                 $field = $path;
             }
