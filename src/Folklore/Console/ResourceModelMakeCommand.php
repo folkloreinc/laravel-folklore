@@ -55,8 +55,34 @@ class ResourceModelMakeCommand extends GeneratorCommand
         $model = $this->option('model');
         $stub = $model ? $this->replaceModel($stub, $model) : $stub;
         $stub = $this->replaceResource($stub, $name);
+        $stub = $this->replaceContract($stub, $name);
 
         return $stub;
+    }
+
+    /**
+     * Replace the contract for the given stub.
+     *
+     * @param  string  $stub
+     * @param  string  $model
+     * @return string
+     */
+    protected function replaceContract($stub, $name)
+    {
+        $contractClass = $this->qualifyContract($name, 'Resources');
+
+        $replace = [
+            'DummyFullContractClass' => $contractClass,
+            '{{ namespacedContract }}' => $contractClass,
+            '{{namespacedContract}}' => $contractClass,
+            'DummyContractClass' => class_basename($contractClass),
+            '{{ contract }}' => class_basename($contractClass),
+            '{{contract}}' => class_basename($contractClass),
+            '{{ contractAlias }}' => class_basename($contractClass) . 'Contract',
+            '{{contractAlias}}' => class_basename($contractClass) . 'Contract',
+        ];
+
+        return str_replace(array_keys($replace), array_values($replace), $stub);
     }
 
     /**
