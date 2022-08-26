@@ -1,0 +1,36 @@
+<?php
+
+namespace {{ namespace }};
+
+use Folklore\Repositories\Resources;
+use {{ namespacedModel }} as {{ modelAlias }};
+use {{ namespacedContract }} as {{ contractAlias }};
+use {{ namespacedResource }} as {{ resourceAlias }};
+
+class {{ class }} extends Resources implements {{ contractAlias }}
+{
+    protected function newModel(): {{ modelAlias }}
+    {
+        return new {{ modelAlias }}();
+    }
+
+    protected function newQuery()
+    {
+        return parent::newQuery();
+    }
+
+    public function findById(string $id): ?{{ resourceAlias }}
+    {
+        return parent::findById($id);
+    }
+
+    public function create($data): {{ resourceAlias }}
+    {
+        return parent::create($data);
+    }
+
+    public function update(string $id, $data): ?{{ resourceAlias }}
+    {
+        return parent::update($id, $data);
+    }
+}

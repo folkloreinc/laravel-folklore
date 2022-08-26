@@ -1,0 +1,19 @@
+<?php
+
+namespace {{ namespace }};
+
+use Folklore\Repositories\Resources;
+use {{ namespacedModel }} as {{ modelAlias }};
+
+class {{ class }} extends Resources
+{
+    protected function newModel(): {{ modelAlias }}
+    {
+        return new {{ modelAlias }}();
+    }
+
+    protected function newQuery()
+    {
+        return parent::newQuery();
+    }
+}

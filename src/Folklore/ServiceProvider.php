@@ -105,7 +105,14 @@ class ServiceProvider extends BaseServiceProvider
         );
 
         if ($this->app->runningInConsole()) {
-            $this->commands([\Folklore\Console\AssetsViewCommand::class]);
+            $this->commands([
+                \Folklore\Console\AssetsViewCommand::class,
+                \Folklore\Console\ResourceFullMakeCommand::class,
+                \Folklore\Console\RepositoryContractMakeCommand::class,
+                \Folklore\Console\RepositoryMakeCommand::class,
+                \Folklore\Console\ResourceContractMakeCommand::class,
+                \Folklore\Console\ResourceModelMakeCommand::class,
+            ]);
         }
     }
 }

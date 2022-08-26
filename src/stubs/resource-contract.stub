@@ -1,0 +1,9 @@
+<?php
+
+namespace {{ namespace }};
+
+use Folklore\Contracts\Resources\Resource;
+
+interface {{ class }} extends Resource
+{
+}

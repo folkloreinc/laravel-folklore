@@ -1,0 +1,15 @@
+<?php
+
+namespace {{ namespace }};
+
+use Folklore\Contracts\Repositories\Resources;
+use {{ namespacedResource }} as {{ resourceAlias }};
+
+interface {{ class }} extends Resources
+{
+    public function findById(string $id): ?{{ resourceAlias }};
+
+    public function create($data): {{ resourceAlias }};
+
+    public function update(string $id, $data): ?{{ resourceAlias }};
+}

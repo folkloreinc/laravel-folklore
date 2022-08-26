@@ -1,0 +1,22 @@
+<?php
+
+namespace {{ namespace }};
+
+use Folklore\Repositories\Resources;
+use {{ namespacedModel }} as {{ modelAlias }};
+use {{ namespacedContract }} as {{ contractAlias }};
+
+class {{ class }} implements {{ contractAlias }}
+{
+    protected $model;
+
+    public function __construct({{ modelAlias }} $model)
+    {
+        $this->model = $model;
+    }
+
+    public function id(): string
+    {
+        return $this->model->id;
+    }
+}
