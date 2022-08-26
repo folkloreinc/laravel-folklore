@@ -79,6 +79,11 @@ class ServiceProvider extends BaseServiceProvider
             $this->app->make(\Folklore\Routing\UrlGeneratorMixin::class)->routeForReactRouter()
         );
 
+        // Console
+        if ($this->app->runningInConsole()) {
+            $this->commands([\Folklore\Console\UsersCreateCommand::class]);
+        }
+
         // Boot local environment
         if ($this->app->environment('local')) {
             $this->bootLocal();
