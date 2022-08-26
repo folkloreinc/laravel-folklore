@@ -14,9 +14,9 @@ interface Resources
 
     public function has(array $params = []): bool;
 
-    public function create(array $data): Resource;
+    public function create($data): Resource;
 
-    public function update(string $id, array $data): ?Resource;
+    public function update(string $id, $data): ?Resource;
 
     public function destroy(string $id): bool;
 

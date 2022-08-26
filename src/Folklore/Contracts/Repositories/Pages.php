@@ -13,7 +13,7 @@ interface Pages extends Repository, Resources
 
     public function findBySlug(string $slug, string $locale = null): ?PageResource;
 
-    public function create(array $data): PageResource;
+    public function create($data): PageResource;
 
-    public function update(string $id, array $data): ?PageResource;
+    public function update(string $id, $data): ?PageResource;
 }

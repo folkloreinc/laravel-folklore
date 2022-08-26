@@ -55,7 +55,7 @@ class Medias extends Resources implements MediasRepositoryContract
         return parent::create($data);
     }
 
-    public function createFromFile(File $file, array $data = []): MediaContract
+    public function createFromFile(File $file, $data = []): MediaContract
     {
         $type = $this->typeFactory->typeFromPath($file->getRealPath());
         $model = $type->newModel();
@@ -66,7 +66,7 @@ class Medias extends Resources implements MediasRepositoryContract
         return $model instanceof Resourcable ? $model->toResource() : $model;
     }
 
-    public function createFromPath(string $path, array $data = []): ?MediaContract
+    public function createFromPath(string $path, $data = []): ?MediaContract
     {
         $name = $this->getNameFromPath($path);
         if (filter_var($path, FILTER_VALIDATE_URL)) {

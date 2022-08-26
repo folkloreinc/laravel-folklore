@@ -12,9 +12,9 @@ interface Organisations extends Resources
 
     public function findBySlug(string $slug): ?Organisation;
 
-    public function create(array $data): Organisation;
+    public function create($data): Organisation;
 
-    public function update(string $id, array $data): ?Organisation;
+    public function update(string $id, $data): ?Organisation;
 
-    public function addMemberFromUser(string $id, User $user, array $data): ?OrganisationMember;
+    public function addMemberFromUser(string $id, User $user, $data): ?OrganisationMember;
 }

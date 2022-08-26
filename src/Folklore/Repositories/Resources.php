@@ -93,14 +93,14 @@ abstract class Resources implements ResourcesContract
         return $models;
     }
 
-    public function create(array $data): Resource
+    public function create($data): Resource
     {
         $model = $this->newModel();
         $this->saveData($model, $data);
         return $model instanceof Resourcable ? $model->toResource() : $model;
     }
 
-    public function update(string $id, array $data): ?Resource
+    public function update(string $id, $data): ?Resource
     {
         $model = $this->findModelById($id);
         if (is_null($model)) {
@@ -127,7 +127,7 @@ abstract class Resources implements ResourcesContract
             ->first();
     }
 
-    protected function saveData($model, array $data)
+    protected function saveData($model, $data)
     {
         $this->fillModel($model, $data);
         $this->fillModelJsonAttributes($model, $data);
@@ -135,12 +135,12 @@ abstract class Resources implements ResourcesContract
         $this->syncRelations($model, $data);
     }
 
-    protected function fillModel($model, array $data)
+    protected function fillModel($model, $data)
     {
         $model->fill($data);
     }
 
-    protected function fillModelJsonAttributes($model, array $data)
+    protected function fillModelJsonAttributes($model, $data)
     {
         $jsonAttributeFillable = $this->getJsonAttributeFillable();
         if (is_null($jsonAttributeFillable)) {
@@ -161,7 +161,7 @@ abstract class Resources implements ResourcesContract
         $model->{$jsonAttributeName} = $newAttributeValue;
     }
 
-    protected function syncRelations($model, array $data)
+    protected function syncRelations($model, $data)
     {
         if ($model instanceof HasJsonDataRelations) {
             JsonDataCast::syncRelations($model);

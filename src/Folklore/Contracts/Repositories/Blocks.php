@@ -11,7 +11,7 @@ interface Blocks extends Repository, Resources
 
     public function findByHandle(string $handle): ?BlockResource;
 
-    public function create(array $data): BlockResource;
+    public function create($data): BlockResource;
 
-    public function update(string $id, array $data): ?BlockResource;
+    public function update(string $id, $data): ?BlockResource;
 }

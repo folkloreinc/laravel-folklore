@@ -39,12 +39,12 @@ class Users extends Resources implements UsersContract
         return $model instanceof Resourcable ? $model->toResource() : $model;
     }
 
-    public function create(array $data): UserContract
+    public function create($data): UserContract
     {
         return parent::create($data);
     }
 
-    public function update(string $id, array $data): ?UserContract
+    public function update(string $id, $data): ?UserContract
     {
         return parent::update($id, $data);
     }

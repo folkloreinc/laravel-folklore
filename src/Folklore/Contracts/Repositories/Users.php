@@ -11,7 +11,7 @@ interface Users extends Resources, UserProvider
 
     public function findByEmail(string $email): ?User;
 
-    public function create(array $data): User;
+    public function create($data): User;
 
-    public function update(string $id, array $data): ?User;
+    public function update(string $id, $data): ?User;
 }

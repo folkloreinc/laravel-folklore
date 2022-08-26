@@ -36,12 +36,12 @@ class Organisations extends Resources implements OrganisationsContract
         return $model instanceof Resourcable ? $model->toResource() : $model;
     }
 
-    public function create(array $data): OrganisationContract
+    public function create($data): OrganisationContract
     {
         return parent::create($data);
     }
 
-    public function update(string $id, array $data): ?OrganisationContract
+    public function update(string $id, $data): ?OrganisationContract
     {
         return parent::update($id, $data);
     }
@@ -49,7 +49,7 @@ class Organisations extends Resources implements OrganisationsContract
     public function addMemberFromUser(
         string $id,
         UserContract $user,
-        array $data
+        $data
     ): ?OrganisationMemberContract {
         $model = $this->findModelById($id);
         if (is_null($model)) {
