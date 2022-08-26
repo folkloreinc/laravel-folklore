@@ -50,9 +50,7 @@ class ResourceContractMakeCommand extends GeneratorCommand
     protected function buildClass($name)
     {
         $stub = parent::buildClass($name);
-
-        $full = $this->option('full');
-        $stub = $full ? $this->replaceResource($stub, Str::singular($name)) : $stub;
+        $stub = $this->replaceResource($stub, $name);
 
         return $stub;
     }
