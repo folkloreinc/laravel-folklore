@@ -2,10 +2,9 @@
 
 namespace Folklore\Contracts\Repositories;
 
-use Panneau\Contracts\Repository;
 use Folklore\Contracts\Resources\Page as PageResource;
 
-interface Pages extends Repository, Resources
+interface Pages extends Resources
 {
     public function findById(string $id): ?PageResource;
 

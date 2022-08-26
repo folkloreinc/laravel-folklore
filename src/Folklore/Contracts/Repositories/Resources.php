@@ -2,9 +2,10 @@
 
 namespace Folklore\Contracts\Repositories;
 
+use Panneau\Contracts\Repository;
 use Folklore\Contracts\Resources\Resource;
 
-interface Resources
+interface Resources extends Repository
 {
     public function findById(string $id): ?Resource;
 

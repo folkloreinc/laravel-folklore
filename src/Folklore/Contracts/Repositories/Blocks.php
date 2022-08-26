@@ -2,10 +2,9 @@
 
 namespace Folklore\Contracts\Repositories;
 
-use Panneau\Contracts\Repository;
 use Folklore\Contracts\Resources\Block as BlockResource;
 
-interface Blocks extends Repository, Resources
+interface Blocks extends Resources
 {
     public function findById(string $id): ?BlockResource;
 
