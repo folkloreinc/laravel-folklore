@@ -105,7 +105,7 @@ class RepositoryContractMakeCommand extends GeneratorCommand
             [
                 'resource',
                 'r',
-                InputOption::VALUE_OPTIONAL,
+                InputOption::VALUE_REQUIRED,
                 'The resource that the repository applies to.',
             ],
             ['full', 'f', InputOption::VALUE_NONE, 'Add repository contract and resource contract'],
