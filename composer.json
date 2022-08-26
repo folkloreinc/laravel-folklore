@@ -25,7 +25,8 @@
         "folklore/laravel-panneau": "v1.2.x-dev",
         "folklore/laravel-mediatheque": "v1.1.x-dev",
         "folklore/laravel-image": "v1.x-dev",
-        "folklore/laravel-locale": "^8.0"
+        "folklore/laravel-locale": "^8.0",
+        "cviebrock/eloquent-sluggable": "^9.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",
@@ -33,8 +34,7 @@
         "orchestra/testbench": "5.*|6.*|7.*",
         "mockery/mockery": "^1.3.1",
         "phpunit/phpunit": "^8.5.8|^9.3.3|^9.5.10",
-        "php-coveralls/php-coveralls": "^2.4",
-        "cviebrock/eloquent-sluggable": "^9.0"
+        "php-coveralls/php-coveralls": "^2.4"
     },
     "autoload": {
         "psr-0": {
