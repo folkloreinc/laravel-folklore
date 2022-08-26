@@ -30,9 +30,9 @@ class User implements UserContract
         return $this->model->email;
     }
 
-    public function password(): ?string
+    public function role(): ?string
     {
-        return $this->model->password;
+        return $this->model->role;
     }
 
     /**

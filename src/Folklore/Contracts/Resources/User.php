@@ -12,4 +12,6 @@ interface User extends Resource, Authenticatable, Authorizable, CanResetPassword
     public function name(): ?string;
 
     public function email(): ?string;
+
+    public function role(): ?string;
 }
