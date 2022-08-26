@@ -91,7 +91,7 @@ class RepositoryContractMakeCommand extends GeneratorCommand
      */
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace . '\Repositories';
+        return $rootNamespace . '\Contracts\Repositories';
     }
 
     /**
