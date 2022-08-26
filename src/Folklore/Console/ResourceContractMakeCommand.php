@@ -39,7 +39,7 @@ class ResourceContractMakeCommand extends GeneratorCommand
      *
      * @var string
      */
-    protected $type = 'RepositoryContract';
+    protected $type = 'ResourceContract';
 
     /**
      * Build the class with the given name.

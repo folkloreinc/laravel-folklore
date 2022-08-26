@@ -7,7 +7,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputOption;
 use Illuminate\Support\Str;
 
-#[AsCommand(name: 'make:repository')]
+#[AsCommand(name: 'make:resource-model')]
 class ResourceModelMakeCommand extends GeneratorCommand
 {
     /**
