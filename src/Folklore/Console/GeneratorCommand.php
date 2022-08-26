@@ -3,11 +3,10 @@
 namespace Folklore\Console;
 
 use Illuminate\Console\GeneratorCommand as BaseGeneratorCommand;
-use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Input\InputOption;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
-class GeneratorCommand extends BaseGeneratorCommand
+abstract class GeneratorCommand extends BaseGeneratorCommand
 {
     /**
      * Replace the model for the given stub.
