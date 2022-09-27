@@ -57,7 +57,7 @@ trait ComposesRoutes
         if (empty($name)) {
             return null;
         }
-        $patterns = resolve(Router::class)->getPatterns();
+        $patterns = array_merge(resolve(Router::class)->getPatterns(), $route->wheres ?? []);
         $parameters = $route->parameterNames();
 
         preg_match_all('/\{(.*?)\}/', $route->getDomain() . $route->uri(), $matches);
