@@ -4,6 +4,7 @@ namespace Folklore;
 
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 use Laravel\Fortify\Fortify;
+use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Http\Request;
 
 class ServiceProvider extends BaseServiceProvider
@@ -97,7 +98,7 @@ class ServiceProvider extends BaseServiceProvider
         });
 
         Fortify::authenticateUsing(function (Request $request) {
-            $provider = $this->app['auth']->guard()->getProvider();
+            $provider = $this->app[StatefulGuard::class]->getProvider();
             $user = $provider->retrieveByCredentials([
                 Fortify::username() => $request->{Fortify::username()},
             ]);
