@@ -3,6 +3,8 @@
 namespace Folklore;
 
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
+use Laravel\Fortify\Fortify;
+use Illuminate\Http\Request;
 
 class ServiceProvider extends BaseServiceProvider
 {
@@ -66,18 +68,13 @@ class ServiceProvider extends BaseServiceProvider
      */
     public function boot()
     {
-        // Auth
-        $this->app['auth']->provider('repository', function ($app, $config) {
-            return $this->app->make(
-                $config['repository'] ?? \Folklore\Contracts\Repositories\Users::class
-            );
-        });
-
         // Routing
         \Illuminate\Routing\UrlGenerator::macro(
             'routeForReactRouter',
             $this->app->make(\Folklore\Routing\UrlGeneratorMixin::class)->routeForReactRouter()
         );
+
+        $this->bootAuth();
 
         // Console
         if ($this->app->runningInConsole()) {
@@ -88,6 +85,30 @@ class ServiceProvider extends BaseServiceProvider
         if ($this->app->environment('local')) {
             $this->bootLocal();
         }
+    }
+
+    public function bootAuth()
+    {
+        // Auth
+        $this->app['auth']->provider('repository', function ($app, $config) {
+            return $this->app->make(
+                $config['repository'] ?? \Folklore\Contracts\Repositories\Users::class
+            );
+        });
+
+        Fortify::authenticateUsing(function (Request $request) {
+            $provider = $this->app['auth']->guard()->getProvider();
+            $user = $provider->retrieveByCredentials([
+                Fortify::username() => $request->{Fortify::username()},
+            ]);
+
+            if (
+                !$user ||
+                !$provider->validateCredentials($user, ['password' => $request->password])
+            ) {
+                return $user;
+            }
+        });
     }
 
     public function bootLocal()
