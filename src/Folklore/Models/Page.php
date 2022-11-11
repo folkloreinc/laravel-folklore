@@ -11,10 +11,11 @@ use Folklore\Resources\Page as PageResource;
 use Folklore\Models\Concerns\SluggableWithFallback;
 use Folklore\Eloquent\JsonDataCast;
 use Folklore\Contracts\Eloquent\HasJsonDataRelations;
+use Folklore\Support\Concerns\HasTypedResource;
 
 class Page extends Model implements Resourcable, HasJsonDataRelations
 {
-    use Sluggable, SluggableWithFallback, HasMedias;
+    use Sluggable, SluggableWithFallback, HasMedias, HasTypedResource;
 
     protected $fillable = ['handle', 'type', 'parent_id', 'data', 'published'];
 
@@ -22,7 +23,9 @@ class Page extends Model implements Resourcable, HasJsonDataRelations
         'data' => JsonDataCast::class,
     ];
 
-    protected $typeResources = [];
+    protected $typedResources = [
+        'default' => PageResource::class,
+    ];
 
     public function getJsonDataRelations($key, $value, $attributes = [])
     {
@@ -52,11 +55,7 @@ class Page extends Model implements Resourcable, HasJsonDataRelations
      */
     public function toResource(): PageContract
     {
-        if (isset($this->typeResources[$this->type])) {
-            $resource = $this->typeResources[$this->type];
-            return new $resource($this);
-        }
-        return new PageResource($this);
+        return $this->toTypedResource();
     }
 
     /**

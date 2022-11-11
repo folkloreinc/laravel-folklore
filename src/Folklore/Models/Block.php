@@ -9,10 +9,11 @@ use Folklore\Contracts\Resources\Resourcable;
 use Folklore\Resources\Block as BlockResource;
 use Folklore\Eloquent\JsonDataCast;
 use Folklore\Contracts\Eloquent\HasJsonDataRelations;
+use Folklore\Support\Concerns\HasTypedResource;
 
 class Block extends Model implements Resourcable, HasJsonDataRelations
 {
-    use HasMedias;
+    use HasMedias, HasTypedResource;
 
     protected $table = 'blocks';
 
@@ -22,7 +23,9 @@ class Block extends Model implements Resourcable, HasJsonDataRelations
         'data' => JsonDataCast::class,
     ];
 
-    protected $typeResources = [];
+    protected $typedResources = [
+        'default' => BlockResource::class,
+    ];
 
     public function getJsonDataRelations($key, $value, $attributes = [])
     {
@@ -44,10 +47,6 @@ class Block extends Model implements Resourcable, HasJsonDataRelations
 
     public function toResource(): BlockContract
     {
-        if (isset($this->typeResources[$this->type])) {
-            $resource = $this->typeResources[$this->type];
-            return new $resource($this);
-        }
-        return new BlockResource($this);
+        return $this->toTypedResource();
     }
 }
