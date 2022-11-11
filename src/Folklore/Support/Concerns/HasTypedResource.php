@@ -10,10 +10,10 @@ trait HasTypedResource
 
     // protected $typedResourceColumn = 'type';
 
-    public function toTypedResource(): Resource
+    public function toTypedResource(): ?Resource
     {
         $column = isset($this->typedResourceColumn) ? $this->typedResourceColumn : 'type';
         $resource = data_get($this->typedResources, $this->{$column}, 'default');
-        return new $resource($this);
+        return isset($resource) ? new $resource($this) : null;
     }
 }

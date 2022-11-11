@@ -23,9 +23,7 @@ class Block extends Model implements Resourcable, HasJsonDataRelations
         'data' => JsonDataCast::class,
     ];
 
-    protected $typedResources = [
-        'default' => BlockResource::class,
-    ];
+    protected $typedResources = [];
 
     public function getJsonDataRelations($key, $value, $attributes = [])
     {
@@ -47,6 +45,6 @@ class Block extends Model implements Resourcable, HasJsonDataRelations
 
     public function toResource(): BlockContract
     {
-        return $this->toTypedResource();
+        return $this->toTypedResource() ?? new BlockResource($this);
     }
 }

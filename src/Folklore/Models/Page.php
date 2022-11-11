@@ -23,9 +23,7 @@ class Page extends Model implements Resourcable, HasJsonDataRelations
         'data' => JsonDataCast::class,
     ];
 
-    protected $typedResources = [
-        'default' => PageResource::class,
-    ];
+    protected $typedResources = [];
 
     public function getJsonDataRelations($key, $value, $attributes = [])
     {
@@ -55,7 +53,7 @@ class Page extends Model implements Resourcable, HasJsonDataRelations
      */
     public function toResource(): PageContract
     {
-        return $this->toTypedResource();
+        return $this->toTypedResource() ?? new PageResource($this);
     }
 
     /**
