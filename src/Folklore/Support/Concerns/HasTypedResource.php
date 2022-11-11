@@ -7,6 +7,7 @@ use Folklore\Contracts\Resources\Resource;
 trait HasTypedResource
 {
     protected $typedResources = [];
+
     protected $typedResourceColumn = 'type';
 
     public function toTypedResource(): Resource
