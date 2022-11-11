@@ -6,13 +6,14 @@ use Folklore\Contracts\Resources\Resource;
 
 trait HasTypedResource
 {
-    protected $typedResources = [];
+    // protected $typedResources = [];
 
-    protected $typedResourceColumn = 'type';
+    // protected $typedResourceColumn = 'type';
 
     public function toTypedResource(): Resource
     {
-        $resource = data_get($this->typedResources, $this->{$this->typedResourceColumn}, 'default');
+        $column = isset($this->typedResourceColumn) ? $this->typedResourceColumn : 'type';
+        $resource = data_get($this->typedResources, $this->{$column}, 'default');
         return new $resource($this);
     }
 }
