@@ -33,7 +33,7 @@ abstract class Resources implements ResourcesContract
 
     public function get(array $params = [], ?int $page = null, ?int $count = null)
     {
-        $query = $this->buildQueryFromParams($this->newQuery(), $this->getQueryParams($params));
+        $query = $this->newQueryFromParams($params);
 
         if (!is_null($page)) {
             $models =
@@ -171,6 +171,11 @@ abstract class Resources implements ResourcesContract
         if ($model instanceof HasJsonDataRelations) {
             JsonDataCast::syncRelations($model);
         }
+    }
+
+    protected function newQueryFromParams($params)
+    {
+        return $this->buildQueryFromParams($this->newQuery(), $this->getQueryParams($params));
     }
 
     protected function getDefaultParams(): array
