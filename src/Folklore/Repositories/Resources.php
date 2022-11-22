@@ -33,7 +33,7 @@ abstract class Resources implements ResourcesContract
 
     public function get(array $params = [], ?int $page = null, ?int $count = null)
     {
-        $query = $this->newQueryFromParams($params);
+        $query = $this->newQueryWithParams($params);
 
         if (!is_null($page)) {
             $models =
@@ -173,7 +173,7 @@ abstract class Resources implements ResourcesContract
         }
     }
 
-    protected function newQueryFromParams($params)
+    protected function newQueryWithParams($params = [])
     {
         return $this->buildQueryFromParams($this->newQuery(), $this->getQueryParams($params));
     }

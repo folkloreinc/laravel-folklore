@@ -28,7 +28,7 @@ class Pages extends Resources implements PagesRepositoryContract
 
     public function findByHandle(string $handle): ?PageContract
     {
-        $model = $this->newQuery()
+        $model = $this->newQueryWithParams()
             ->where('handle', $handle)
             ->first();
         return $model instanceof Resourcable ? $model->toResource() : $model;
@@ -40,7 +40,7 @@ class Pages extends Resources implements PagesRepositoryContract
             $locale = app()->getLocale();
         }
 
-        $model = $this->newQuery()
+        $model = $this->newQueryWithParams()
             ->where('slug_'.$locale, $slug)
             ->first();
         return $model instanceof Resourcable ? $model->toResource() : $model;

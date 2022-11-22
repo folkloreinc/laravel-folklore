@@ -38,7 +38,7 @@ class Medias extends Resources implements MediasRepositoryContract
 
     public function findByName(string $name): ?MediaContract
     {
-        $model = $this->newQuery()
+        $model = $this->newQueryWithParams()
             ->where('name', $name)
             ->first();
         return $model instanceof Resourcable ? $model->toResource() : $model;

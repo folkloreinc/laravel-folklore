@@ -30,7 +30,7 @@ class Organisations extends Resources implements OrganisationsContract
 
     public function findBySlug(string $slug): ?OrganisationContract
     {
-        $model = $this->newQuery()
+        $model = $this->newQueryWithParams()
             ->where('slug', 'LIKE', $slug)
             ->first();
         return $model instanceof Resourcable ? $model->toResource() : $model;

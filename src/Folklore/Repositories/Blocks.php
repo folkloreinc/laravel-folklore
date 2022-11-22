@@ -28,7 +28,7 @@ class Blocks extends Resources implements BlocksRepositoryContract
 
     public function findByHandle(string $handle): ?BlockContract
     {
-        $model = $this->newQuery()
+        $model = $this->newQueryWithParams()
             ->where('handle', $handle)
             ->first();
         return $model instanceof Resourcable ? $model->toResource() : $model;
