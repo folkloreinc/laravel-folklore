@@ -9,20 +9,20 @@ use Folklore\Resources\Media as MediaResource;
 use Folklore\Resources\Image as ImageResource;
 use Folklore\Resources\Video as VideoResource;
 use Folklore\Resources\Audio as AudioResource;
+use Folklore\Support\Concerns\HasTypedResource;
 
 class Media extends BaseMedia implements Resourcable
 {
+    use HasTypedResource;
+
+    protected $typedResources = [
+        'image' => ImageResource::class,
+        'video' => VideoResource::class,
+        'audio' => AudioResource::class,
+    ];
+
     public function toResource(): MediaContract
     {
-        if ($this->type === 'image') {
-            return new ImageResource($this);
-        }
-        if ($this->type === 'video') {
-            return new VideoResource($this);
-        }
-        if ($this->type === 'audio') {
-            return new AudioResource($this);
-        }
-        return new MediaResource($this);
+        return $this->toTypedResource() ?? new MediaResource($this);
     }
 }
