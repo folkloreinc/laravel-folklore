@@ -59,12 +59,12 @@ class Page implements PageContract
 
     public function title(string $locale): string
     {
-        return data_get($this->data, 'title', $locale) ?? '';
+        return data_get($this->data, 'title.' . $locale) ?? '';
     }
 
     public function description(string $locale): ?string
     {
-        return data_get($this->data, 'description', $locale);
+        return data_get($this->data, 'description.' . $locale);
     }
 
     public function url(string $locale, bool $absolute = false): string
