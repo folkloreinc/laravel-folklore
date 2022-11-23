@@ -12,6 +12,8 @@ class MediaResource extends JsonResource
 
     protected $withMetadata = true;
 
+    protected $withImageSizes = true;
+
     /**
      * Transform the resource into an array.
      *
@@ -29,9 +31,12 @@ class MediaResource extends JsonResource
             'metadata' => $this->when($this->withMetadata, function () {
                 return new MediaMetadataResource($this->metadata());
             }),
-            'sizes' => $this->when($this->resource instanceof Image, function () {
-                return ImageSizeResource::collection($this->sizes());
-            }),
+            'sizes' => $this->when(
+                $this->withSizes && $this->resource instanceof Image,
+                function () {
+                    return ImageSizeResource::collection($this->sizes());
+                }
+            ),
             'files' => $this->when($this->withFiles, function () {
                 return MediaFileResource::collection($this->files());
             }),
@@ -59,6 +64,18 @@ class MediaResource extends JsonResource
     public function withFiles()
     {
         $this->withFiles = true;
+        return $this;
+    }
+
+    public function withoutImageSizes()
+    {
+        $this->withImageSizes = false;
+        return $this;
+    }
+
+    public function withImageSizes()
+    {
+        $this->withImageSizes = true;
         return $this;
     }
 }
