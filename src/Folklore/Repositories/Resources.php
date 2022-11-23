@@ -18,6 +18,8 @@ abstract class Resources implements ResourcesContract
 
     protected $jsonAttributeFillable = null;
 
+    protected $jsonAttributeExclude = null;
+
     abstract protected function newModel(): Model;
 
     protected function newQuery()
@@ -148,11 +150,12 @@ abstract class Resources implements ResourcesContract
         }
 
         $jsonAttributeName = $this->getJsonAttributeName();
+        $jsonAttributeExclude = $this->getJsonAttributeExclude() ?? [];
         $currentAttributeValue = $model->{$jsonAttributeName};
         $fillable = $model->getFillable();
         $newAttributeValue = collect(
             $jsonAttributeFillable === '*'
-                ? array_diff(array_keys($data), $fillable)
+                ? array_diff(array_keys($data), $fillable, $jsonAttributeExclude)
                 : $jsonAttributeFillable
         )->reduce(function ($newValue, $path, $field) use ($data) {
             if (is_numeric($field)) {
@@ -215,5 +218,10 @@ abstract class Resources implements ResourcesContract
     protected function getJsonAttributeFillable()
     {
         return $this->jsonAttributeFillable;
+    }
+
+    protected function getJsonAttributeExclude()
+    {
+        return $this->jsonAttributeExclude;
     }
 }
