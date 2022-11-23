@@ -2,12 +2,14 @@
 
 namespace Folklore\Resources;
 
+use Folklore\Contracts\Resources\HasModel;
 use Folklore\Contracts\Resources\Organisation as OrganisationContract;
 use Folklore\Models\Organisation as OrganisationModel;
 use Folklore\Contracts\Resources\Resourcable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
-class Organisation implements OrganisationContract
+class Organisation implements OrganisationContract, HasModel
 {
     protected $model;
 
@@ -53,5 +55,10 @@ class Organisation implements OrganisationContract
             });
         }
         return $this->invitations;
+    }
+
+    public function getModel(): Model
+    {
+        return $this->model;
     }
 }

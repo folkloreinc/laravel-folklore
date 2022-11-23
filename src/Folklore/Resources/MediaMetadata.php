@@ -2,10 +2,12 @@
 
 namespace Folklore\Resources;
 
+use Folklore\Contracts\Resources\HasModel;
 use Folklore\Contracts\Resources\MediaMetadata as MediaMetadataContract;
 use Folklore\Models\Media as MediaModel;
+use Illuminate\Database\Eloquent\Model;
 
-class MediaMetadata implements MediaMetadataContract
+class MediaMetadata implements MediaMetadataContract, HasModel
 {
     protected $model;
 
@@ -55,5 +57,10 @@ class MediaMetadata implements MediaMetadataContract
             $this->metadatas = $this->model->getMetadatas();
         }
         return $this->metadatas;
+    }
+
+    public function getModel(): Model
+    {
+        return $this->model;
     }
 }

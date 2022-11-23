@@ -3,8 +3,10 @@
 namespace Folklore\Resources;
 
 use Folklore\Contracts\Resources\Block as BlockContract;
+use Folklore\Contracts\Resources\HasModel;
+use Illuminate\Database\Eloquent\Model;
 
-class Block implements BlockContract
+class Block implements BlockContract, HasModel
 {
     protected $model;
 
@@ -29,5 +31,10 @@ class Block implements BlockContract
     public function data(): ?array
     {
         return $this->model->data;
+    }
+
+    public function getModel(): Model
+    {
+        return $this->model;
     }
 }

@@ -2,14 +2,16 @@
 
 namespace Folklore\Resources;
 
+use Folklore\Contracts\Resources\HasModel;
 use Illuminate\Support\Collection;
 use Folklore\Contracts\Resources\Page as PageContract;
 use Folklore\Contracts\Resources\PageMetadata as PageMetadataContract;
 use Folklore\Contracts\Resources\Image as ImageContract;
 use Folklore\Contracts\Resources\Resourcable;
 use Folklore\Models\Page as PageModel;
+use Illuminate\Database\Eloquent\Model;
 
-class Page implements PageContract
+class Page implements PageContract, HasModel
 {
     protected $model;
 
@@ -134,5 +136,10 @@ class Page implements PageContract
             $this->blocks = collect(data_get($this->data, 'blocks', []));
         }
         return $this->blocks;
+    }
+
+    public function getModel(): Model
+    {
+        return $this->model;
     }
 }

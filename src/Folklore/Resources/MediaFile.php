@@ -2,11 +2,13 @@
 
 namespace  Folklore\Resources;
 
+use Folklore\Contracts\Resources\HasModel;
 use Illuminate\Support\Collection;
 use Folklore\Contracts\Resources\MediaFile as MediaFileContract;
 use Folklore\Models\MediaFile as MediaFileModel;
+use Illuminate\Database\Eloquent\Model;
 
-class MediaFile implements MediaFileContract
+class MediaFile implements MediaFileContract, HasModel
 {
     protected $model;
 
@@ -43,5 +45,10 @@ class MediaFile implements MediaFileContract
     public function size(): ?int
     {
         return $this->model->size;
+    }
+
+    public function getModel(): Model
+    {
+        return $this->model;
     }
 }

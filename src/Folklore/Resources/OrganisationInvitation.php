@@ -8,8 +8,10 @@ use Folklore\Contracts\Resources\User as UserContract;
 use Folklore\Models\OrganisationInvitation as OrganisationInvitationModel;
 use Folklore\Contracts\Resources\Resourcable;
 use Carbon\Carbon;
+use Folklore\Contracts\Resources\HasModel;
+use Illuminate\Database\Eloquent\Model;
 
-class OrganisationInvitation implements OrganisationInvitationContract
+class OrganisationInvitation implements OrganisationInvitationContract, HasModel
 {
     protected $model;
 
@@ -62,5 +64,10 @@ class OrganisationInvitation implements OrganisationInvitationContract
             $this->organisation = $model instanceof Resourcable ? $model->toResource() : $model;
         }
         return $this->organisation;
+    }
+
+    public function getModel(): Model
+    {
+        return $this->model;
     }
 }

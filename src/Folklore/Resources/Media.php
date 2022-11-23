@@ -2,6 +2,7 @@
 
 namespace Folklore\Resources;
 
+use Folklore\Contracts\Resources\HasModel;
 use Illuminate\Support\Collection;
 use Folklore\Contracts\Resources\Media as MediaContract;
 use Folklore\Contracts\Resources\Image as ImageContract;
@@ -9,8 +10,9 @@ use Folklore\Contracts\Resources\MediaFile as MediaFileContract;
 use Folklore\Contracts\Resources\MediaMetadata as MediaMetadataContract;
 use Folklore\Models\Media as MediaModel;
 use Folklore\Contracts\Resources\Resourcable;
+use Illuminate\Database\Eloquent\Model;
 
-class Media implements MediaContract
+class Media implements MediaContract, HasModel
 {
     protected $model;
 
@@ -85,5 +87,10 @@ class Media implements MediaContract
         return $this->files()->first(function ($file) {
             return $file->handle() === 'original';
         });
+    }
+
+    public function getModel(): Model
+    {
+        return $this->model;
     }
 }

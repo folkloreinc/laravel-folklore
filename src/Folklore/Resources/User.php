@@ -2,11 +2,13 @@
 
 namespace Folklore\Resources;
 
+use Folklore\Contracts\Resources\HasModel;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Folklore\Contracts\Resources\User as UserContract;
+use Illuminate\Database\Eloquent\Model;
 
-class User implements UserContract
+class User implements UserContract, HasModel
 {
     protected $model;
 
@@ -33,6 +35,11 @@ class User implements UserContract
     public function role(): ?string
     {
         return $this->model->role;
+    }
+
+    public function getModel(): Model
+    {
+        return $this->model;
     }
 
     /**

@@ -2,13 +2,15 @@
 
 namespace Folklore\Resources;
 
+use Folklore\Contracts\Resources\HasModel;
 use Folklore\Contracts\Resources\OrganisationMember as OrganisationMemberContract;
 use Folklore\Contracts\Resources\Organisation as OrganisationContract;
 use Folklore\Contracts\Resources\User as UserContract;
 use Folklore\Models\OrganisationMember as OrganisationMemberModel;
 use Folklore\Contracts\Resources\Resourcable;
+use Illuminate\Database\Eloquent\Model;
 
-class OrganisationMember implements OrganisationMemberContract
+class OrganisationMember implements OrganisationMemberContract, HasModel
 {
     protected $model;
 
@@ -48,5 +50,10 @@ class OrganisationMember implements OrganisationMemberContract
             $this->user = $model instanceof Resourcable ? $model->toResource() : $model;
         }
         return $this->user;
+    }
+
+    public function getModel(): Model
+    {
+        return $this->model;
     }
 }

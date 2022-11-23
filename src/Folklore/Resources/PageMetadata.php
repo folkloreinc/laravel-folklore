@@ -2,10 +2,12 @@
 
 namespace Folklore\Resources;
 
+use Folklore\Contracts\Resources\HasModel;
 use Folklore\Contracts\Resources\PageMetadata as PageMetadataContract;
 use Folklore\Contracts\Resources\Pageable as PageableContract;
+use Illuminate\Database\Eloquent\Model;
 
-class PageMetadata implements PageMetadataContract
+class PageMetadata implements PageMetadataContract, HasModel
 {
     protected $page;
 
@@ -36,10 +38,21 @@ class PageMetadata implements PageMetadataContract
 
     public function title(string $locale): ?string
     {
-        return data_get($this->data, 'title', $locale)
+        return data_get($this->data, 'title.'.$locale);
     }
 
-    public function description(string $locale): ?string;
+    public function description(string $locale): ?string
+    {
+        return data_get($this->data, 'description.'.$locale);
+    }
 
-    public function image(string $locale): ?Image;
+    public function image(string $locale): ?Image
+    {
+        return null;
+    }
+
+    public function getModel(): Model
+    {
+        return $this->model;
+    }
 }
