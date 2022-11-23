@@ -9,7 +9,7 @@ use Folklore\Contracts\Resources\Resourcable;
 
 class Pages extends Resources implements PagesRepositoryContract
 {
-    protected $jsonAttributeFillable = [];
+    protected $jsonAttributeFillable = '*';
 
     protected function newModel(): PageModel
     {

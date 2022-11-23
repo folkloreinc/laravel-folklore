@@ -9,7 +9,7 @@ use Folklore\Contracts\Resources\Resourcable;
 
 class Blocks extends Resources implements BlocksRepositoryContract
 {
-    protected $jsonAttributeFillable = [];
+    protected $jsonAttributeFillable = '*';
 
     protected function newModel(): BlockModel
     {

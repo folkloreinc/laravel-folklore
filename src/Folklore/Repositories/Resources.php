@@ -151,7 +151,7 @@ abstract class Resources implements ResourcesContract
         $currentAttributeValue = $model->{$jsonAttributeName};
         $fillable = $model->getFillable();
         $newAttributeValue = collect(
-            sizeof($jsonAttributeFillable) === 0
+            $jsonAttributeFillable === '*'
                 ? array_diff(array_keys($data), $fillable)
                 : $jsonAttributeFillable
         )->reduce(function ($newValue, $path, $field) use ($data) {
