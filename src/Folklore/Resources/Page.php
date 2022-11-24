@@ -133,7 +133,9 @@ class Page implements PageContract, HasModel
     public function blocks(): Collection
     {
         if (!isset($this->blocks)) {
-            $this->blocks = collect(data_get($this->data, 'blocks', []));
+            $this->blocks = collect(data_get($this->data, 'blocks', []))->map(function ($block) {
+                return $block instanceof Resourcable ? $block->toResource() : $block;
+            });
         }
         return $this->blocks;
     }
