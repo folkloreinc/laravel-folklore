@@ -32,7 +32,7 @@ class MediaResource extends JsonResource
                 return new MediaMetadataResource($this->metadata());
             }),
             'sizes' => $this->when(
-                $this->withSizes && $this->resource instanceof Image,
+                $this->withImageSizes && $this->resource instanceof Image,
                 function () {
                     return ImageSizeResource::collection($this->sizes());
                 }
