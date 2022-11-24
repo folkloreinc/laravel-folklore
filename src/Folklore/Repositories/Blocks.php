@@ -43,4 +43,19 @@ class Blocks extends Resources implements BlocksRepositoryContract
     {
         return parent::update($id, $data);
     }
+
+    protected function saveData($model, $data)
+    {
+        if (isset($data['blocks'])) {
+            $data['blocks'] = collect($data['blocks'])
+                ->map(function ($item) {
+                    return isset($item['id'])
+                        ? $this->update($item['id'], $item)
+                        : $this->create($item);
+                })
+                ->toArray();
+        }
+
+        parent::saveData($model, $data);
+    }
 }

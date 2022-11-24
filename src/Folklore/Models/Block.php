@@ -28,8 +28,8 @@ class Block extends Model implements Resourcable, HasJsonDataRelations
     public function getJsonDataRelations($key, $value, $attributes = [])
     {
         return [
-            'medias' => ['image'],
-            'blocks' => ['blocks.*'],
+            'image' => 'medias',
+            'blocks.*' => 'blocks',
         ];
     }
 

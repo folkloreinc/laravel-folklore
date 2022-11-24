@@ -29,7 +29,8 @@ class Page extends Model implements Resourcable, HasJsonDataRelations
     {
         return [
             'parent' => 'parent',
-            'data.image' => 'medias',
+            'image' => 'medias',
+            'blocks.*' => 'blocks',
         ];
     }
 
