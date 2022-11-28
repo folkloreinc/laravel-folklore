@@ -36,27 +36,7 @@ abstract class Resources implements ResourcesContract
     public function get(array $params = [], ?int $page = null, ?int $count = null)
     {
         $query = $this->newQueryWithParams($params);
-
-        if (!is_null($page)) {
-            $models =
-                $query instanceof ScoutBuilder
-                    ? $query->paginate($count, 'page', $page)
-                    : $query->paginate($count, ['*'], 'page', $page);
-        } else {
-            if (!is_null($count)) {
-                $query->take($count);
-            }
-            $models = $query->get();
-        }
-
-        $collection = $models->map(function ($model) {
-            return $model instanceof Resourcable ? $model->toResource() : $model;
-        });
-        if (is_null($page)) {
-            return $collection;
-        }
-        $models->setCollection($collection);
-        return $models;
+        return $this->getFromQuery($query, $page, $count);
     }
 
     public function count(array $params = []): int
