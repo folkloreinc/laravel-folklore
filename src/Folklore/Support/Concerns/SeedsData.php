@@ -1,6 +1,6 @@
 <?php
 
-namespace Folklore\Support\Concenrs;
+namespace Folklore\Support\Concerns;
 
 use Folklore\Support\Data;
 
