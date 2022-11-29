@@ -5,10 +5,11 @@ namespace Folklore\Support\Concerns;
 use Folklore\Contracts\Resources\HasModel;
 use Folklore\Contracts\Resources\Resource;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
 
 trait SyncRelations
 {
-    protected function saveItemsToRelation($relation, $items)
+    protected function saveItemsToRelation(HasOneOrMany $relation, $items)
     {
         $related = $relation->getRelated();
         $items = collect($items)->map(function ($item) use ($related) {
