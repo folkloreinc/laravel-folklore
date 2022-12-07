@@ -5,6 +5,7 @@ namespace Folklore\Repositories;
 use Symfony\Component\HttpFoundation\File\File;
 use Folklore\Mediatheque\Contracts\Models\Media as MediaModelContract;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Model;
 use Folklore\Contracts\Repositories\Medias as MediasRepositoryContract;
 use Folklore\Contracts\Resources\Media as MediaContract;
 use Folklore\Mediatheque\Contracts\Type\Factory as TypeFactory;
@@ -21,7 +22,7 @@ class Medias extends Resources implements MediasRepositoryContract
         $this->typeFactory = $typeFactory;
     }
 
-    protected function newModel(): MediaModelContract
+    protected function newModel(): Model
     {
         return resolve(MediaModelContract::class);
     }
@@ -61,8 +62,8 @@ class Medias extends Resources implements MediasRepositoryContract
         $model = $type->newModel();
         $model->setOriginalFile($file);
         $this->fillModel($model, $data);
-        $model->save();// @TODO
-        $model->load('files');// @TODO
+        $model->save(); // @TODO
+        $model->load('files'); // @TODO
         return $model instanceof Resourcable ? $model->toResource() : $model;
     }
 
