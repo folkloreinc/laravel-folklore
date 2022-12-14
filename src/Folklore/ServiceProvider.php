@@ -84,7 +84,10 @@ class ServiceProvider extends BaseServiceProvider
 
         // Console
         if ($this->app->runningInConsole()) {
-            $this->commands([\Folklore\Console\UsersCreateCommand::class]);
+            $this->commands([
+                \Folklore\Console\UsersCreateCommand::class,
+                \Folklore\Console\DaemonRestartCommand::class
+            ]);
         }
 
         // Boot local environment
