@@ -6,6 +6,9 @@ use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 use Laravel\Fortify\Fortify;
 use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Http\Request;
+use PubNub\PubNub;
+use PubNub\PNConfiguration;
+use Folklore\Broadcasters\PubNubBroadcaster;
 
 class ServiceProvider extends BaseServiceProvider
 {
@@ -77,9 +80,14 @@ class ServiceProvider extends BaseServiceProvider
 
         $this->bootAuth();
 
+        $this->bootBroadcasters();
+
         // Console
         if ($this->app->runningInConsole()) {
-            $this->commands([\Folklore\Console\UsersCreateCommand::class]);
+            $this->commands([
+                \Folklore\Console\UsersCreateCommand::class,
+                \Folklore\Console\DaemonRestartCommand::class
+            ]);
         }
 
         // Boot local environment
@@ -110,6 +118,38 @@ class ServiceProvider extends BaseServiceProvider
                 return $user;
             }
         });
+    }
+
+    public function bootBroadcasters()
+    {
+        $this->app
+            ->make(\Illuminate\Broadcasting\BroadcastManager::class)
+            ->extend('pubnub', function ($app, $config) {
+                $conf = new PNConfiguration();
+                $conf->setSubscribeKey(
+                    data_get(
+                        $config,
+                        'subscribe_key',
+                        $this->app['config']->get('services.pubnub.subscribe_key')
+                    )
+                );
+                $conf->setPublishKey(
+                    data_get(
+                        $config,
+                        'publish_key',
+                        $this->app['config']->get('services.pubnub.publish_key')
+                    )
+                );
+                $pubnub = new PubNub($conf);
+                return new PubNubBroadcaster(
+                    $pubnub,
+                    data_get(
+                        $config,
+                        'namespace',
+                        $this->app['config']->get('services.pubnub.namespace')
+                    )
+                );
+            });
     }
 
     public function bootLocal()
