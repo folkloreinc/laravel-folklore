@@ -51,7 +51,7 @@ class Page implements PageContract, HasModel
 
     public function published(): bool
     {
-        return $this->model->published;
+        return $this->model->published ?? false;
     }
 
     public function slug(string $locale): ?string
