@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use PubNub\PubNub;
 use PubNub\PNConfiguration;
 use Folklore\Broadcasters\PubNubBroadcaster;
+use Ramsey\Uuid\Uuid;
 
 class ServiceProvider extends BaseServiceProvider
 {
@@ -126,6 +127,7 @@ class ServiceProvider extends BaseServiceProvider
             ->make(\Illuminate\Broadcasting\BroadcastManager::class)
             ->extend('pubnub', function ($app, $config) {
                 $conf = new PNConfiguration();
+                $conf->setUuid(Uuid::uuid4()->toString());
                 $conf->setSubscribeKey(
                     data_get(
                         $config,
