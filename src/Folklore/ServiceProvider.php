@@ -87,7 +87,7 @@ class ServiceProvider extends BaseServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 \Folklore\Console\UsersCreateCommand::class,
-                \Folklore\Console\DaemonRestartCommand::class
+                \Folklore\Console\DaemonRestartCommand::class,
             ]);
         }
 
@@ -113,8 +113,8 @@ class ServiceProvider extends BaseServiceProvider
             ]);
 
             if (
-                !$user ||
-                !$provider->validateCredentials($user, ['password' => $request->password])
+                $user &&
+                $provider->validateCredentials($user, ['password' => $request->password])
             ) {
                 return $user;
             }
