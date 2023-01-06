@@ -77,5 +77,9 @@ class Pages extends Resources implements PagesRepositoryContract
         }
 
         parent::saveData($model, $data);
+
+        if (isset($data['blocks'])) {
+            $model->load('blocks');
+        }
     }
 }
