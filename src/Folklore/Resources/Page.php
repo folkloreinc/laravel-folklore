@@ -17,6 +17,8 @@ class Page implements PageContract, HasModel
 
     protected $data;
 
+    protected $image;
+
     protected $metadata;
 
     protected $blocks;
@@ -100,7 +102,12 @@ class Page implements PageContract, HasModel
 
     public function image(): ?ImageContract
     {
-        return data_get($this->data, 'image');
+        if (!isset($this->image)) {
+            $model = data_get($this->data, 'image');
+            $this->image = $model instanceof Resourcable ? $model->toResource() : $model;
+        }
+
+        return $this->image;
     }
 
     public function metadata(): PageMetadataContract
