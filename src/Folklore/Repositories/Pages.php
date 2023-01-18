@@ -74,7 +74,7 @@ class Pages extends Resources implements PagesRepositoryContract
                         $id = $model
                             ->blocks()
                             ->where('handle', $item['handle'])
-                            ->value('id');
+                            ->value('blocks.id');
                     }
                     return !empty($id)
                         ? $this->blocks->update($id, $item)

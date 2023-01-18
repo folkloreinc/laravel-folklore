@@ -54,7 +54,7 @@ class Blocks extends Resources implements BlocksRepositoryContract
                         $id = $model
                             ->blocks()
                             ->where('handle', $item['handle'])
-                            ->value('id');
+                            ->value('blocks.id');
                     }
                     return !empty($id) ? $this->update($id, $item) : $this->create($item);
                 })
