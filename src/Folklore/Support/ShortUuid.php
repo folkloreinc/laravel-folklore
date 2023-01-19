@@ -1,6 +1,6 @@
 <?php
 
-namespace Folklore\ShortUuid;
+namespace Folklore\Support;
 
 use Brick\Math\BigInteger;
 use Brick\Math\RoundingMode;
