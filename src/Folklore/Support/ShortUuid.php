@@ -2,6 +2,7 @@
 
 namespace Folklore\Support;
 
+
 use Brick\Math\BigInteger;
 use Brick\Math\RoundingMode;
 use Brick\Math\Exception\MathException;
