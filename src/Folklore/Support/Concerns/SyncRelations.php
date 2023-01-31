@@ -20,7 +20,7 @@ trait SyncRelations
                 return $item->id();
             }
             if (is_array($item)) {
-                return $related->newInstance($item);
+                return $related->newInstance($item, isset($item['id']));
             }
             return $item;
         });
@@ -42,6 +42,16 @@ trait SyncRelations
                         ->get()
                     : []
             );
-        $relation->saveMany($models);
+        return $relation->saveMany($models);
+    }
+
+    protected function syncItemsToRelation(HasOneOrMany $relation, $items)
+    {
+        $models = $this->saveItemsToRelation($relation, $items);
+        $ids = collect($models)->map(function ($model) {
+            return $model->id;
+        });
+        $relation->whereNotIn('id', $ids)->delete();
+        return $models;
     }
 }
