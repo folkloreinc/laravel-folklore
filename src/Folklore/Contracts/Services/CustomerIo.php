@@ -1,11 +1,16 @@
 <?php
 
-namespace Folklore\Contracts\Services\CustomerIo;
+namespace Folklore\Contracts\Services;
 
 use Illuminate\Support\Collection;
 use Folklore\Contracts\Resources\User;
+use Folklore\Contracts\Services\CustomerIo\Customer;
+use Folklore\Contracts\Services\CustomerIo\Delivery;
+use Folklore\Contracts\Services\CustomerIo\Newsletter;
+use Folklore\Contracts\Services\CustomerIo\NewsletterContent;
+use Folklore\Contracts\Services\CustomerIo\TransactionalMessage;
 
-interface Service
+interface CustomerIo
 {
     public function findCustomerById(string $id): ?Customer;
 

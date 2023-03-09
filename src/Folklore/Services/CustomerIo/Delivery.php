@@ -7,11 +7,13 @@ use Folklore\Contracts\Services\CustomerIo\Delivery as DeliveryContract;
 use Folklore\Contracts\Services\CustomerIo\Newsletter as NewsletterContract;
 use Folklore\Contracts\Services\CustomerIo\NewsletterContent as NewsletterContentContract;
 use Folklore\Contracts\Services\CustomerIo\TransactionalMessage as TransactionalMessageContract;
-use Folklore\Contracts\Services\CustomerIo\Service;
+use Folklore\Contracts\Services\CustomerIo;
 
 class Delivery implements DeliveryContract
 {
     protected $data;
+
+    protected $service;
 
     protected $newsletter;
 
@@ -21,9 +23,10 @@ class Delivery implements DeliveryContract
 
     protected $identifiers;
 
-    public function __construct($data)
+    public function __construct($data, CustomerIo $service)
     {
         $this->data = $data;
+        $this->service = $service;
     }
 
     public function id(): string
@@ -71,7 +74,7 @@ class Delivery implements DeliveryContract
     {
         $id = data_get($this->data, 'transactional_message_id');
         if (!empty($id) && !isset($this->transactional)) {
-            $this->transactional = resolve(Service::class)->findTransactionMessageById($id);
+            $this->transactional = $this->service->findTransactionMessageById($id);
         }
         return $this->transactional;
     }
@@ -80,7 +83,7 @@ class Delivery implements DeliveryContract
     {
         $id = data_get($this->data, 'newsletter_id');
         if (!empty($id) && !isset($this->newsletter)) {
-            $this->newsletter = resolve(Service::class)->findNewsletterById($id);
+            $this->newsletter = $this->service->findNewsletterById($id);
         }
         return $this->newsletter;
     }
@@ -90,7 +93,7 @@ class Delivery implements DeliveryContract
         $newsletterId = data_get($this->data, 'newsletter_id');
         $contentId = data_get($this->data, 'content_id');
         if (!empty($newsletterId) && !empty($contentId) && !isset($this->content)) {
-            $this->content = resolve(Service::class)->findNewsletterContentById(
+            $this->content = $this->service->findNewsletterContentById(
                 $newsletterId,
                 $contentId
             );

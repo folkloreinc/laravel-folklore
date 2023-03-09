@@ -3,7 +3,7 @@
 namespace Folklore\Services\CustomerIo;
 
 use Folklore\Support\Concerns\MakesRequests;
-use Folklore\Contracts\Services\CustomerIo\Service as CustomerIo;
+use Folklore\Contracts\Services\CustomerIo;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -92,7 +92,7 @@ class Client implements CustomerIo
             'GET'
         );
         $data = data_get($response, 'message');
-        return isset($data) ? new Delivery($data) : null;
+        return isset($data) ? new Delivery($data, $this) : null;
     }
 
     public function findNewsletterById(string $id): ?NewsletterContract
@@ -102,7 +102,7 @@ class Client implements CustomerIo
             'GET'
         );
         $data = data_get($response, 'newsletter');
-        return isset($data) ? new Newsletter($data) : null;
+        return isset($data) ? new Newsletter($data, $this) : null;
     }
 
     public function findNewsletterContentById(

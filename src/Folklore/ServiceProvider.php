@@ -92,7 +92,7 @@ class ServiceProvider extends BaseServiceProvider
 
         $this->app->alias(
             'services.customerio',
-            \Folklore\Contracts\Services\CustomerIo\Service::class
+            \Folklore\Contracts\Services\CustomerIo::class
         );
     }
 

@@ -4,17 +4,20 @@ namespace Folklore\Services\CustomerIo;
 
 use Folklore\Contracts\Services\CustomerIo\NewsletterContent as NewsletterContentContract;
 use Folklore\Contracts\Services\CustomerIo\Newsletter as NewsletterContract;
-use Folklore\Contracts\Services\CustomerIo\Service;
+use Folklore\Contracts\Services\CustomerIo;
 
 class Newsletter implements NewsletterContract
 {
     protected $data;
 
+    protected $service;
+
     protected $content;
 
-    public function __construct($data)
+    public function __construct($data, CustomerIo $service)
     {
         $this->data = $data;
+        $this->service = $service;
     }
 
     public function id(): string
@@ -43,7 +46,7 @@ class Newsletter implements NewsletterContract
     public function content(): NewsletterContentContract
     {
         if (!isset($this->content)) {
-            $this->content = resolve(Service::class)->findNewsletterContentById(
+            $this->content = $this->service->findNewsletterContentById(
                 $this->id(),
                 data_get($this->data, 'content_ids.0')
             );

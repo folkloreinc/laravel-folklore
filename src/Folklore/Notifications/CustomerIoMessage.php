@@ -3,7 +3,7 @@
 namespace Folklore\Notifications;
 
 use Folklore\Contracts\Resources\User;
-use Folklore\Contracts\Services\CustomerIo\Service as CustomerIo;
+use Folklore\Contracts\Services\CustomerIo;
 use Illuminate\Contracts\Support\Arrayable;
 
 class CustomerIoMessage implements Arrayable

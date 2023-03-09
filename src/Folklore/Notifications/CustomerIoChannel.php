@@ -2,7 +2,7 @@
 
 namespace Folklore\Notifications;
 
-use Folklore\Contracts\Services\CustomerIo\Service as CustomerIo;
+use Folklore\Contracts\Services\CustomerIo;
 use Illuminate\Notifications\Notification;
 
 class CustomerIoChannel
