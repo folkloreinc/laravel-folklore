@@ -171,6 +171,66 @@ class Client implements CustomerIo
         return !is_null($response);
     }
 
+    public function subscribeToTopic(string $email, $topic): bool
+    {
+        $customer = $this->findCustomerByEmail($email);
+        $userData = [
+            'email' => $email,
+            'cio_subscription_preferences' => [
+                'topics' => array_merge(
+                    isset($customer)
+                        ? $customer
+                            ->subscriptionPreferences()
+                            ->mapWithKeys(function ($preference) {
+                                return [
+                                    $preference->topic() => $preference->subscribed(),
+                                ];
+                            })
+                            ->toArray()
+                        : [],
+                    [
+                        $topic => true,
+                    ]
+                ),
+            ],
+        ];
+        $identifier = $email;
+        if (isset($customer)) {
+            $identifier = 'cio_' . $customer->id();
+        }
+        return $this->updateCustomer($identifier, $userData);
+    }
+
+    public function unsubscribeToTopic(string $email, $topic): bool
+    {
+        $customer = $this->findCustomerByEmail($email);
+        $userData = [
+            'email' => $email,
+            'cio_subscription_preferences' => [
+                'topics' => array_merge(
+                    isset($customer)
+                        ? $customer
+                            ->subscriptionPreferences()
+                            ->mapWithKeys(function ($preference) {
+                                return [
+                                    $preference->topic() => $preference->subscribed(),
+                                ];
+                            })
+                            ->toArray()
+                        : [],
+                    [
+                        $topic => false,
+                    ]
+                ),
+            ],
+        ];
+        $identifier = $email;
+        if (isset($customer)) {
+            $identifier = 'cio_' . $customer->id();
+        }
+        return $this->updateCustomer($identifier, $userData);
+    }
+
     public function getCustomerDataFromUser(User $user, ?CustomerContract $customer = null): array
     {
         $data = [
