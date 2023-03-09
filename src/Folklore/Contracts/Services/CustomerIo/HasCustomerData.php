@@ -6,5 +6,5 @@ use Illuminate\Support\Collection;
 
 interface HasCustomerData
 {
-    public function toCustomerData(?Customer $existing = null): ?array;
+    public function getCustomerData(array $data, ?Customer $existing = null): ?array;
 }

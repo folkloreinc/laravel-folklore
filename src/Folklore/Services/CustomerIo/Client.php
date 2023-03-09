@@ -173,9 +173,6 @@ class Client implements CustomerIo
 
     public function getCustomerDataFromUser(User $user, ?CustomerContract $customer = null): array
     {
-        if ($user instanceof HasCustomerData) {
-            return $user->toCustomerData($customer);
-        }
         $data = [
             'id' => $user->id(),
             'email' => $user->email(),
@@ -213,6 +210,9 @@ class Client implements CustomerIo
                         : []
                 ),
             ];
+        }
+        if ($user instanceof HasCustomerData) {
+            return $user->getCustomerData($data, $customer);
         }
         return $data;
     }
