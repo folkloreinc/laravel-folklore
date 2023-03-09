@@ -76,21 +76,19 @@ trait MakesRequests
         );
         $postKey = $contentType === 'application/json' ? 'json' : 'form_params';
 
-        $response = $this->makeRequest(
-            $url,
-            $method,
-            array_merge(
-                [
-                    $postKey => $method == 'POST' || $method == 'PUT' ? $params : null,
-                    'query' => $method === 'GET' ? $params : null,
-                    'headers' => $headers,
-                ],
-                $options
-            )
-        );
-
         try {
-            $response = $this->getRequestClient()->request($method, $url, $opts);
+            $response = $this->getRequestClient()->request(
+                $method,
+                $url,
+                array_merge(
+                    [
+                        $postKey => $method == 'POST' || $method == 'PUT' ? $params : null,
+                        'query' => $method === 'GET' ? $params : null,
+                        'headers' => $headers,
+                    ],
+                    $options
+                )
+            );
             return $response;
         } catch (ClientException $e) {
             Log::error($e);
