@@ -141,7 +141,10 @@ abstract class Resources implements ResourcesContract
             if (is_numeric($field)) {
                 $field = $path;
             }
-            if (isset($data[$field])) {
+            $fieldValue = data_get($data, $field);
+            if (isset($fieldValue) && $path === '*') {
+                $newValue = array_merge($newValue ?? [], $data[$field]);
+            } elseif (isset($fieldValue)) {
                 data_set($newValue, $path, $data[$field]);
             }
             return $newValue;
@@ -182,6 +185,8 @@ abstract class Resources implements ResourcesContract
         if (isset($params['order'])) {
             if (is_array($params['order'])) {
                 $query->orderBy($params['order'][0], $params['order'][1]);
+            } elseif (isset($params['order_direction']) && !empty($params['order_direction'])) {
+                $query->orderBy($params['order'], $params['order_direction']);
             } else {
                 $query->orderBy($params['order'], 'ASC');
             }

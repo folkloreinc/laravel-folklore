@@ -9,10 +9,13 @@ use Illuminate\Http\Request;
 use PubNub\PubNub;
 use PubNub\PNConfiguration;
 use Folklore\Broadcasters\PubNubBroadcaster;
+use Folklore\Support\Concerns\RegistersBindings;
 use Ramsey\Uuid\Uuid;
 
 class ServiceProvider extends BaseServiceProvider
 {
+    use RegistersBindings;
+
     /**
      * Register any application services.
      *
@@ -23,6 +26,10 @@ class ServiceProvider extends BaseServiceProvider
         $this->registerRepositories();
 
         $this->registerMediatheque();
+
+        if ($this->app['config']->get('services.customerio') !== null) {
+            $this->registerCustomerIo();
+        }
     }
 
     protected function registerRepositories()
@@ -67,6 +74,29 @@ class ServiceProvider extends BaseServiceProvider
     }
 
     /**
+     * Register CustomerIo
+     *
+     * @return void
+     */
+    protected function registerCustomerIo()
+    {
+        $this->registerBindingsFromConfig(\Folklore\Services\CustomerIo\Client::class, [
+            '$key' => 'services.customerio.key',
+            '$siteId' => 'services.customerio.site_id',
+            '$trackingKey' => 'services.customerio.tracking_key',
+        ]);
+
+        $this->app->singleton('services.customerio', function () {
+            return $this->app->make(\Folklore\Services\CustomerIo\Client::class);
+        });
+
+        $this->app->alias(
+            'services.customerio',
+            \Folklore\Contracts\Services\CustomerIo::class
+        );
+    }
+
+    /**
      * Bootstrap any application services.
      *
      * @return void
@@ -81,7 +111,7 @@ class ServiceProvider extends BaseServiceProvider
 
         $this->bootAuth();
 
-        $this->bootBroadcasters();
+        $this->bootPubNubBroadcaster();
 
         // Console
         if ($this->app->runningInConsole()) {
@@ -121,7 +151,7 @@ class ServiceProvider extends BaseServiceProvider
         });
     }
 
-    public function bootBroadcasters()
+    public function bootPubNubBroadcaster()
     {
         $this->app
             ->make(\Illuminate\Broadcasting\BroadcastManager::class)
