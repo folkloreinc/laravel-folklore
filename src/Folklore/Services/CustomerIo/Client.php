@@ -245,7 +245,7 @@ class Client implements CustomerIo
         if ($user instanceof HasLocalePreference) {
             $data['locale'] = $user->preferredLocale();
         }
-        if (isset($customer) && $user instanceof HasSubscriptionPreferences) {
+        if ($user instanceof HasSubscriptionPreferences) {
             $data['cio_subscription_preferences'] = [
                 'topics' => array_merge(
                     isset($customer)
