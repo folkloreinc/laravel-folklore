@@ -283,6 +283,9 @@ class Client implements CustomerIo
         if (isset($customer)) {
             $identifier = 'cio_' . $customer->id();
         }
+        if (empty($identifier)) {
+            $identifier = $user->id();
+        }
         return $identifier;
     }
 
