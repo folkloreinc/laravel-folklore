@@ -13,7 +13,7 @@ class UsersCreateCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'users:create {email?} {--name=} {--password=} {--role=admin}';
+    protected $signature = 'users:create {email?} {--name=} {--password=} {--role=admin} {--withoutRole}';
 
     /**
      * The console command description.
@@ -32,7 +32,6 @@ class UsersCreateCommand extends Command
     public function __construct(Users $users)
     {
         parent::__construct();
-
         $this->users = $users;
     }
 
@@ -47,6 +46,7 @@ class UsersCreateCommand extends Command
         $name = $this->option('name');
         $role = $this->option('role');
         $password = $this->option('password');
+        $withoutRole = $this->option('withoutRole');
 
         if (empty($email)) {
             $email = $this->ask('Enter the email address');
@@ -64,12 +64,17 @@ class UsersCreateCommand extends Command
             exit('Please fill all the required fields.');
         }
 
-        $user = $this->users->create([
+        $data = [
             'name' => $name,
             'email' => $email,
-            'role' => $role,
             'password' => Hash::make($password),
-        ]);
+        ];
+
+        if (!$withoutRole) {
+            $data = array_merge($data, ['role' => $role]);
+        }
+
+        $user = $this->users->create($data);
 
         $user->markEmailAsVerified();
 
