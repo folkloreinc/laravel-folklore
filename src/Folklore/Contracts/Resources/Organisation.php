@@ -10,7 +10,7 @@ interface Organisation extends Resource
 
     public function slug(): string;
 
-    public function members(): ?Collection;
+    public function users(): ?Collection;
 
     public function invitations(): ?Collection;
 }

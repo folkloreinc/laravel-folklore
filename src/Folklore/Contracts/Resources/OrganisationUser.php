@@ -2,10 +2,9 @@
 
 namespace Folklore\Contracts\Resources;
 
-use Carbon\Carbon;
 use Folklore\Contracts\Resources\Resource;
 
-interface OrganisationMember extends Resource
+interface OrganisationUser extends Resource
 {
     public function organisation(): Organisation;
 

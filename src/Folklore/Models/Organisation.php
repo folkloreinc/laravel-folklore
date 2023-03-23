@@ -16,9 +16,9 @@ class Organisation extends Model implements Resourcable
      */
     protected $fillable = ['name', 'slug'];
 
-    public function members()
+    public function users()
     {
-        return $this->hasMany(OrganisationMember::class);
+        return $this->hasMany(OrganisationUsers::class);
     }
 
     public function invitations()
