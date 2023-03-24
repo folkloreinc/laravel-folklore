@@ -56,8 +56,8 @@ abstract class Resources implements ResourcesContract
         if (!is_null($page)) {
             $models =
                 $query instanceof ScoutBuilder
-                    ? $query->paginate($count, 'page', $page)
-                    : $query->paginate($count, ['*'], 'page', $page);
+                ? $query->paginate($count, 'page', $page)
+                : $query->paginate($count, ['*'], 'page', $page);
         } else {
             if (!is_null($count)) {
                 $query->take($count);
@@ -184,7 +184,18 @@ abstract class Resources implements ResourcesContract
     {
         if (isset($params['order'])) {
             if (is_array($params['order'])) {
-                $query->orderBy($params['order'][0], $params['order'][1]);
+                $order = $params['order'];
+                if (isset($order[0]) && !empty($order[0]) && is_string($order[0])) {
+                    if (isset($order[1]) && !empty($order[1])) {
+                        $query->orderBy($order[0], $order[1]);
+                    } else {
+                        $query->orderBy($order[0], 'ASC');
+                    }
+                } elseif (is_array($order[0])) {
+                    foreach ($order as $subOrder) {
+                        $query->orderBy($subOrder[0], $subOrder[1]);
+                    }
+                }
             } elseif (isset($params['order_direction']) && !empty($params['order_direction'])) {
                 $query->orderBy($params['order'], $params['order_direction']);
             } else {
