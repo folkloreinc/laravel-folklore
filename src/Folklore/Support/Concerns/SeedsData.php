@@ -8,7 +8,7 @@ trait SeedsData
 {
     public function loadJson($path)
     {
-        return json_decode(file_get_contents($path), true);
+        return file_exists($path) ? json_decode(file_get_contents($path), true) : null;
     }
 
     public function loadCsv($path)
