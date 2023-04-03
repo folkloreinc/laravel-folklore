@@ -2,6 +2,7 @@
 
 namespace Folklore\Contracts\Services;
 
+use Folklore\Contracts\Resources\Contact;
 use Illuminate\Support\Collection;
 use Folklore\Contracts\Resources\User;
 use Folklore\Contracts\Services\CustomerIo\Customer;
@@ -19,6 +20,8 @@ interface CustomerIo
     public function findCustomerByPhone(string $phone): ?Customer;
 
     public function findCustomerFromUser(User $user): ?Customer;
+
+    public function findCustomerFromContact(Contact $user): ?Customer;
 
     public function findDeliveryById(string $id): ?Delivery;
 
@@ -39,6 +42,12 @@ interface CustomerIo
 
     public function createOrUpdateCustomerFromUser(
         User $user,
+        $extraData = [],
+        bool $updateOnly = false
+    ): bool;
+
+    public function createOrUpdateCustomerFromContact(
+        Contact $user,
         $extraData = [],
         bool $updateOnly = false
     ): bool;

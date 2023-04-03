@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Arr;
 use Folklore\Contracts\Resources\User;
 use Folklore\Contracts\Resources\Contact;
+use Folklore\Contracts\Resources\Resource;
 use Folklore\Contracts\Services\CustomerIo\Customer as CustomerContract;
 use Folklore\Contracts\Services\CustomerIo\Delivery as DeliveryContract;
 use Folklore\Contracts\Services\CustomerIo\Newsletter as NewsletterContract;
@@ -40,6 +41,17 @@ class Client implements CustomerIo
     {
         $email = $user->email();
         $phone = $user instanceof Contact ? $user->phone() : null;
+        $customer = !empty($email) ? $this->findCustomerByEmail($email) : null;
+        if (is_null($customer) && !empty($phone)) {
+            $customer = $this->findCustomerByPhone($phone);
+        }
+        return $customer;
+    }
+
+    public function findCustomerFromContact(Contact $contact): ?CustomerContract
+    {
+        $email = $contact->email();
+        $phone = $contact->phone();
         $customer = !empty($email) ? $this->findCustomerByEmail($email) : null;
         if (is_null($customer) && !empty($phone)) {
             $customer = $this->findCustomerByPhone($phone);
@@ -145,8 +157,30 @@ class Client implements CustomerIo
         bool $updateOnly = false
     ): bool {
         $customer = $this->findCustomerFromUser($user);
-        $userData = $this->getCustomerDataFromUser($user, $customer);
+        $userData = $this->getCustomerDataFromResource($user, $customer);
         $identifier = $this->getIdentifierFromUser($user, $customer);
+        return $this->updateCustomer(
+            $identifier,
+            array_merge(
+                $userData,
+                $extraData,
+                $updateOnly
+                    ? [
+                        '_update' => true,
+                    ]
+                    : []
+            )
+        );
+    }
+
+    public function createOrUpdateCustomerFromContact(
+        Contact $contact,
+        $extraData = [],
+        bool $updateOnly = false
+    ): bool {
+        $customer = $this->findCustomerFromContact($contact);
+        $userData = $this->getCustomerDataFromResource($contact, $customer);
+        $identifier = $this->getIdentifierFromContact($contact, $customer);
         return $this->updateCustomer(
             $identifier,
             array_merge(
@@ -231,21 +265,26 @@ class Client implements CustomerIo
         return $this->updateCustomer($identifier, $userData);
     }
 
-    public function getCustomerDataFromUser(User $user, ?CustomerContract $customer = null): array
-    {
+    public function getCustomerDataFromResource(
+        $resource,
+        ?CustomerContract $customer = null
+    ): array {
         $data = [
-            'id' => $user->id(),
-            'email' => $user->email(),
+            'id' => $resource instanceof Resource ? $resource->id() : null,
+            'email' =>
+                $resource instanceof User || $resource instanceof Contact
+                    ? $resource->email()
+                    : null,
         ];
-        if ($user instanceof Contact) {
-            $data['firstname'] = $user->firstName();
-            $data['lastname'] = $user->lastName();
-            $data['phone'] = $user->phone();
+        if ($resource instanceof Contact) {
+            $data['firstname'] = $resource->firstName();
+            $data['lastname'] = $resource->lastName();
+            $data['phone'] = $resource->phone();
         }
-        if ($user instanceof HasLocalePreference) {
-            $data['locale'] = $user->preferredLocale();
+        if ($resource instanceof HasLocalePreference) {
+            $data['locale'] = $resource->preferredLocale();
         }
-        if ($user instanceof HasSubscriptionPreferences) {
+        if ($resource instanceof HasSubscriptionPreferences) {
             $data['cio_subscription_preferences'] = [
                 'topics' => array_merge(
                     isset($customer)
@@ -258,8 +297,8 @@ class Client implements CustomerIo
                             })
                             ->toArray()
                         : [],
-                    $user instanceof HasSubscriptionPreferences
-                        ? $user
+                    $resource instanceof HasSubscriptionPreferences
+                        ? $resource
                             ->subscriptionPreferences()
                             ->mapWithKeys(function ($preference) {
                                 return [
@@ -271,8 +310,8 @@ class Client implements CustomerIo
                 ),
             ];
         }
-        if ($user instanceof HasCustomerData) {
-            return $user->getCustomerData($data, $customer);
+        if ($resource instanceof HasCustomerData) {
+            return $resource->getCustomerData($data, $customer);
         }
         return $data;
     }
@@ -285,6 +324,20 @@ class Client implements CustomerIo
         }
         if (empty($identifier)) {
             $identifier = $user->id();
+        }
+        return $identifier;
+    }
+
+    protected function getIdentifierFromContact(
+        Contact $contact,
+        ?CustomerContract $customer = null
+    ) {
+        $identifier = $contact->email();
+        if (isset($customer)) {
+            $identifier = 'cio_' . $customer->id();
+        }
+        if (empty($identifier) && $contact instanceof Resource) {
+            $identifier = $contact->id();
         }
         return $identifier;
     }
