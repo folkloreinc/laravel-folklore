@@ -192,16 +192,16 @@ class Client implements CustomerIo
         );
     }
 
-    public function createOrUpdateCustomerFromContact(
-        Contact $contact,
+    public function createOrUpdateCustomerFromResource(
+        $resource,
         $extraData = [],
         bool $updateOnly = false
     ): bool {
-        $customer = $this->findCustomerFromContact($contact);
-        $userData = $this->getCustomerDataFromResource($contact, $customer);
+        $customer = $this->findCustomerFromResource($resource);
+        $userData = $this->getCustomerDataFromResource($resource, $customer);
         $identifier = isset($customer)
             ? 'cio_' . $customer->id()
-            : $this->getIdentifierFromResource($contact);
+            : $this->getIdentifierFromResource($resource);
         return $this->updateCustomer(
             $identifier,
             array_merge(

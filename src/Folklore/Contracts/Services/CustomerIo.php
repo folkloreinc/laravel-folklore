@@ -46,8 +46,8 @@ interface CustomerIo
         bool $updateOnly = false
     ): bool;
 
-    public function createOrUpdateCustomerFromContact(
-        Contact $user,
+    public function createOrUpdateCustomerFromResource(
+        $resource,
         $extraData = [],
         bool $updateOnly = false
     ): bool;
