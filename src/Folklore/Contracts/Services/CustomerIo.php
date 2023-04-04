@@ -19,9 +19,7 @@ interface CustomerIo
 
     public function findCustomerByPhone(string $phone): ?Customer;
 
-    public function findCustomerFromUser(User $user): ?Customer;
-
-    public function findCustomerFromResource($resource): ?Customer;
+    public function findCustomerFromUser($user): ?Customer;
 
     public function findDeliveryById(string $id): ?Delivery;
 
@@ -41,13 +39,7 @@ interface CustomerIo
     public function sendEmail($message, string $to);
 
     public function createOrUpdateCustomerFromUser(
-        User $user,
-        $extraData = [],
-        bool $updateOnly = false
-    ): bool;
-
-    public function createOrUpdateCustomerFromResource(
-        $resource,
+        $user,
         $extraData = [],
         bool $updateOnly = false
     ): bool;
@@ -58,9 +50,9 @@ interface CustomerIo
 
     public function updateCustomer(string $identifier, $data = []): bool;
 
-    public function trackUserPageview(User $user, string $url, $data): bool;
+    public function trackUserPageview($user, string $url, $data): bool;
 
-    public function trackUserEvent(User $user, string $name, $data): bool;
+    public function trackUserEvent($user, string $name, $data): bool;
 
     public function trackAnonymousPageview(string $anonymousId, string $url, $data): bool;
 

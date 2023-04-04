@@ -38,21 +38,16 @@ class Client implements CustomerIo
         $this->trackingKey = $trackingKey;
     }
 
-    public function findCustomerFromUser(User $user): ?CustomerContract
-    {
-        return $this->findCustomerFromResource($user);
-    }
-
-    public function findCustomerFromResource($resource): ?CustomerContract
+    public function findCustomerFromUser($user): ?CustomerContract
     {
         $email =
-            $resource instanceof User || $resource instanceof Contact ? $resource->email() : null;
+            $user instanceof User || $user instanceof Contact ? $user->email() : null;
         $customer = !empty($email) ? $this->findCustomerByEmail($email) : null;
         if (isset($customer)) {
             return $customer;
         }
 
-        $identifier = $resource instanceof HasIdentifier ? $resource->customerIoIdentifier() : null;
+        $identifier = $user instanceof HasIdentifier ? $user->customerIoIdentifier() : null;
         if (!empty($identifier) && filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
             $customer = $this->findCustomerById($identifier, 'email');
         } elseif (!empty($identifier) && preg_match('/^cio_(.*)$/', $identifier, $matches) === 1) {
@@ -64,7 +59,7 @@ class Client implements CustomerIo
             return $customer;
         }
 
-        $phone = $resource instanceof Contact ? $resource->phone() : null;
+        $phone = $user instanceof Contact ? $user->phone() : null;
         $customer = !empty($phone) ? $this->findCustomerByPhone($phone) : null;
         if (isset($customer)) {
             return $customer;
@@ -169,7 +164,7 @@ class Client implements CustomerIo
     }
 
     public function createOrUpdateCustomerFromUser(
-        User $user,
+        $user,
         $extraData = [],
         bool $updateOnly = false
     ): bool {
@@ -178,30 +173,6 @@ class Client implements CustomerIo
         $identifier = isset($customer)
             ? 'cio_' . $customer->id()
             : $this->getIdentifierFromResource($user);
-        return $this->updateCustomer(
-            $identifier,
-            array_merge(
-                $userData,
-                $extraData,
-                $updateOnly
-                    ? [
-                        '_update' => true,
-                    ]
-                    : []
-            )
-        );
-    }
-
-    public function createOrUpdateCustomerFromResource(
-        $resource,
-        $extraData = [],
-        bool $updateOnly = false
-    ): bool {
-        $customer = $this->findCustomerFromResource($resource);
-        $userData = $this->getCustomerDataFromResource($resource, $customer);
-        $identifier = isset($customer)
-            ? 'cio_' . $customer->id()
-            : $this->getIdentifierFromResource($resource);
         return $this->updateCustomer(
             $identifier,
             array_merge(
@@ -372,17 +343,15 @@ class Client implements CustomerIo
         return $response;
     }
 
-    public function trackUserPageview(User $user, string $url, $data): bool
+    public function trackUserPageview($user, string $url, $data): bool
     {
-        $email = $user->email();
-        $identifier = !empty($email) ? $email : $user->id();
+        $identifier = $this->getIdentifierFromResource($user);
         return $this->trackCustomerEventBase($identifier, 'page', $url, $data) !== null;
     }
 
-    public function trackUserEvent(User $user, string $name, $data): bool
+    public function trackUserEvent($user, string $name, $data): bool
     {
-        $email = $user->email();
-        $identifier = !empty($email) ? $email : $user->id();
+        $identifier = $this->getIdentifierFromResource($user);
         return $this->trackCustomerEventBase($identifier, 'event', $name, $data) !== null;
     }
 
