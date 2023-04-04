@@ -13,7 +13,7 @@ use Folklore\Contracts\Services\CustomerIo\TransactionalMessage;
 
 interface CustomerIo
 {
-    public function findCustomerById(string $id): ?Customer;
+    public function findCustomerById(string $id, string $type = 'cio_id'): ?Customer;
 
     public function findCustomerByEmail(string $email): ?Customer;
 
@@ -21,7 +21,7 @@ interface CustomerIo
 
     public function findCustomerFromUser(User $user): ?Customer;
 
-    public function findCustomerFromContact(Contact $user): ?Customer;
+    public function findCustomerFromResource($resource): ?Customer;
 
     public function findDeliveryById(string $id): ?Delivery;
 

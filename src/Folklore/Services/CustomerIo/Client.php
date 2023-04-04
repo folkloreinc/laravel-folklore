@@ -17,6 +17,7 @@ use Folklore\Contracts\Services\CustomerIo\Newsletter as NewsletterContract;
 use Folklore\Contracts\Services\CustomerIo\NewsletterContent as NewsletterContentContract;
 use Folklore\Contracts\Services\CustomerIo\TransactionalMessage as TransactionalMessageContract;
 use Folklore\Contracts\Services\CustomerIo\HasCustomerData;
+use Folklore\Contracts\Services\CustomerIo\HasIdentifier;
 use Folklore\Contracts\Services\CustomerIo\HasSubscriptionPreferences;
 use Illuminate\Contracts\Translation\HasLocalePreference;
 
@@ -39,31 +40,47 @@ class Client implements CustomerIo
 
     public function findCustomerFromUser(User $user): ?CustomerContract
     {
-        $email = $user->email();
-        $phone = $user instanceof Contact ? $user->phone() : null;
-        $customer = !empty($email) ? $this->findCustomerByEmail($email) : null;
-        if (is_null($customer) && !empty($phone)) {
-            $customer = $this->findCustomerByPhone($phone);
-        }
-        return $customer;
+        return $this->findCustomerFromResource($user);
     }
 
-    public function findCustomerFromContact(Contact $contact): ?CustomerContract
+    public function findCustomerFromResource($resource): ?CustomerContract
     {
-        $email = $contact->email();
-        $phone = $contact->phone();
+        $email =
+            $resource instanceof User || $resource instanceof Contact ? $resource->email() : null;
         $customer = !empty($email) ? $this->findCustomerByEmail($email) : null;
-        if (is_null($customer) && !empty($phone)) {
-            $customer = $this->findCustomerByPhone($phone);
+        if (isset($customer)) {
+            return $customer;
         }
-        return $customer;
+
+        $identifier = $resource instanceof HasIdentifier ? $resource->customerIoIdentifier() : null;
+        if (!empty($identifier) && filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+            $customer = $this->findCustomerById($identifier, 'email');
+        } elseif (!empty($identifier) && preg_match('/^cio_(.*)$/', $identifier, $matches) === 1) {
+            $customer = $this->findCustomerById($matches[1], 'cio_id');
+        } elseif (!empty($identifier)) {
+            $customer = $this->findCustomerById($matches[1], 'id');
+        }
+        if (isset($customer)) {
+            return $customer;
+        }
+
+        $phone = $resource instanceof Contact ? $resource->phone() : null;
+        $customer = !empty($phone) ? $this->findCustomerByPhone($phone) : null;
+        if (isset($customer)) {
+            return $customer;
+        }
+
+        return null;
     }
 
-    public function findCustomerById(string $id): ?CustomerContract
+    public function findCustomerById(string $id, string $type = 'cio_id'): ?CustomerContract
     {
         $response = $this->requestJson(
             sprintf('https://api.customer.io/v1/customers/%s/attributes', $id),
-            'GET'
+            'GET',
+            [
+                'id_type' => $type,
+            ]
         );
         $data = data_get($response, 'customer');
         return isset($data) ? new Customer($data) : null;
@@ -158,7 +175,9 @@ class Client implements CustomerIo
     ): bool {
         $customer = $this->findCustomerFromUser($user);
         $userData = $this->getCustomerDataFromResource($user, $customer);
-        $identifier = $this->getIdentifierFromUser($user, $customer);
+        $identifier = isset($customer)
+            ? 'cio_' . $customer->id()
+            : $this->getIdentifierFromResource($user);
         return $this->updateCustomer(
             $identifier,
             array_merge(
@@ -180,7 +199,9 @@ class Client implements CustomerIo
     ): bool {
         $customer = $this->findCustomerFromContact($contact);
         $userData = $this->getCustomerDataFromResource($contact, $customer);
-        $identifier = $this->getIdentifierFromContact($contact, $customer);
+        $identifier = isset($customer)
+            ? 'cio_' . $customer->id()
+            : $this->getIdentifierFromResource($contact);
         return $this->updateCustomer(
             $identifier,
             array_merge(
@@ -269,17 +290,24 @@ class Client implements CustomerIo
         $resource,
         ?CustomerContract $customer = null
     ): array {
-        $data = [
-            'id' => $resource instanceof Resource ? $resource->id() : null,
-            'email' =>
-                $resource instanceof User || $resource instanceof Contact
-                    ? $resource->email()
-                    : null,
-        ];
+        $data = [];
+        if ($resource instanceof Resource) {
+            $data['id'] = $resource->id();
+        }
+        if ($resource instanceof User) {
+            $data['name'] = $resource->name();
+            $data['email'] = $resource->email();
+        }
         if ($resource instanceof Contact) {
+            $data['name'] = $resource->name();
             $data['firstname'] = $resource->firstName();
             $data['lastname'] = $resource->lastName();
             $data['phone'] = $resource->phone();
+            $data['email'] = $resource->email();
+            $birthdate = $resource->birthdate();
+            if (isset($birthdate)) {
+                $data['birthdate'] = $birthdate->getTimestamp();
+            }
         }
         if ($resource instanceof HasLocalePreference) {
             $data['locale'] = $resource->preferredLocale();
@@ -316,28 +344,14 @@ class Client implements CustomerIo
         return $data;
     }
 
-    protected function getIdentifierFromUser(User $user, ?CustomerContract $customer = null)
+    protected function getIdentifierFromResource($resource)
     {
-        $identifier = $user->email();
-        if (isset($customer)) {
-            $identifier = 'cio_' . $customer->id();
+        $identifier = $resource instanceof HasIdentifier ? $resource->customerIoIdentifier() : null;
+        if (empty($identifier) && ($resource instanceof Contact || $resource instanceof User)) {
+            $identifier = $resource->email();
         }
-        if (empty($identifier)) {
-            $identifier = $user->id();
-        }
-        return $identifier;
-    }
-
-    protected function getIdentifierFromContact(
-        Contact $contact,
-        ?CustomerContract $customer = null
-    ) {
-        $identifier = $contact->email();
-        if (isset($customer)) {
-            $identifier = 'cio_' . $customer->id();
-        }
-        if (empty($identifier) && $contact instanceof Resource) {
-            $identifier = $contact->id();
+        if (empty($identifier) && $resource instanceof Resource) {
+            $identifier = $resource->id();
         }
         return $identifier;
     }
