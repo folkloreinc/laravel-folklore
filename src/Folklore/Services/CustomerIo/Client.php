@@ -53,7 +53,7 @@ class Client implements CustomerIo
         } elseif (!empty($identifier) && preg_match('/^cio_(.*)$/', $identifier, $matches) === 1) {
             $customer = $this->findCustomerById($matches[1], 'cio_id');
         } elseif (!empty($identifier)) {
-            $customer = $this->findCustomerById($matches[1], 'id');
+            $customer = $this->findCustomerById($identifier, 'id');
         }
         if (isset($customer)) {
             return $customer;
