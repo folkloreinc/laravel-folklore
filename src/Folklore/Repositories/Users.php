@@ -11,6 +11,7 @@ use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Auth\EloquentUserProvider;
 use Illuminate\Database\Eloquent\Model;
 use Folklore\Models\User as UserModel;
+use Illuminate\Support\Facades\Hash;
 
 class Users extends Resources implements UsersContract
 {
@@ -47,6 +48,15 @@ class Users extends Resources implements UsersContract
     public function update(string $id, $data): ?UserContract
     {
         return parent::update($id, $data);
+    }
+
+    protected function fillModel($model, $data)
+    {
+        parent::fillModel($model, $data);
+
+        if (isset($data['password']) && !empty($data['password'])) {
+            $model->password = Hash::make($data['password']);
+        }
     }
 
     /**
