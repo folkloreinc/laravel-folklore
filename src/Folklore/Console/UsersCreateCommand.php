@@ -4,7 +4,6 @@ namespace Folklore\Console;
 
 use Illuminate\Console\Command;
 use Folklore\Contracts\Repositories\Users;
-use Illuminate\Support\Facades\Hash;
 
 class UsersCreateCommand extends Command
 {
@@ -67,7 +66,7 @@ class UsersCreateCommand extends Command
         $data = [
             'name' => $name,
             'email' => $email,
-            'password' => Hash::make($password),
+            'password' => $password,
         ];
 
         if (!$withoutRole) {
