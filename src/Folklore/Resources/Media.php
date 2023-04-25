@@ -2,6 +2,7 @@
 
 namespace Folklore\Resources;
 
+use Carbon\Carbon;
 use Folklore\Contracts\Resources\HasModel;
 use Illuminate\Support\Collection;
 use Folklore\Contracts\Resources\Media as MediaContract;
@@ -92,5 +93,15 @@ class Media implements MediaContract, HasModel
     public function getModel(): Model
     {
         return $this->model;
+    }
+
+    public function createdAt(): ?Carbon
+    {
+        return $this->model->created_at;
+    }
+
+    public function updatedAt(): ?Carbon
+    {
+        return $this->model->updatedAt;
     }
 }
