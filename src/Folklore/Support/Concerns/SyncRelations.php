@@ -9,10 +9,10 @@ use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
 
 trait SyncRelations
 {
-    protected function saveItemsToRelation(HasOneOrMany $relation, $items)
+    protected function saveItemsToRelation(HasOneOrMany $relation, $items, $key = 'id')
     {
         $related = $relation->getRelated();
-        $items = collect($items)->map(function ($item) use ($related) {
+        $items = collect($items)->map(function ($item) use ($related, $key) {
             if ($item instanceof HasModel) {
                 return $item->getModel();
             }
@@ -20,11 +20,11 @@ trait SyncRelations
                 return $item->id();
             }
             if (is_array($item)) {
-                return $related->newInstance($item, isset($item['id']));
+                return $related->newInstance($item, isset($item[$key]));
             }
             return $item;
         });
-        $ids = $items
+        $keys = $items
             ->filter(function ($model) {
                 return is_string($model);
             })
@@ -35,23 +35,23 @@ trait SyncRelations
             })
             ->values()
             ->merge(
-                !$ids->isEmpty()
+                !$keys->isEmpty()
                     ? $related
                         ->newQuery()
-                        ->whereIn('id', $ids->toArray())
+                        ->whereIn($key, $keys->toArray())
                         ->get()
                     : []
             );
         return $relation->saveMany($models);
     }
 
-    protected function syncItemsToRelation(HasOneOrMany $relation, $items)
+    protected function syncItemsToRelation(HasOneOrMany $relation, $items, $key = 'id')
     {
-        $models = $this->saveItemsToRelation($relation, $items);
-        $ids = collect($models)->map(function ($model) {
-            return $model->id;
+        $models = $this->saveItemsToRelation($relation, $items, $key);
+        $keys = collect($models)->map(function ($model) use ($key) {
+            return $model->{$key};
         });
-        $relation->whereNotIn('id', $ids)->delete();
+        $relation->whereNotIn($key, $keys)->delete();
         return $models;
     }
 }
