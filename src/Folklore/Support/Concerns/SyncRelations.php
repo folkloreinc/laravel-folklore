@@ -20,7 +20,17 @@ trait SyncRelations
                 return $item->id();
             }
             if (is_array($item)) {
-                return $related->newInstance($item, isset($item[$key]));
+                $keyName = $related->getKeyName();
+                if ($keyName === $key || isset($item[$keyName])) {
+                    return $related->newInstance($item, isset($item[$keyName]));
+                }
+                $existing = isset($item[$key])
+                    ? $related
+                        ->newQuery()
+                        ->where($key, $item[$key])
+                        ->first()
+                    : null;
+                return isset($existing) ? $existing->fill($item) : $related->newInstance($item);
             }
             return $item;
         });
