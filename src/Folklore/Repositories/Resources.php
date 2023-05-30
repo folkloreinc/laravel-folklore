@@ -143,9 +143,10 @@ abstract class Resources implements ResourcesContract
             }
             $fieldValue = data_get($data, $field);
             if (isset($fieldValue) && $path === '*') {
-                $newValue = array_merge($newValue ?? [], $data[$field]);
-            } elseif (isset($fieldValue)) {
-                data_set($newValue, $path, $data[$field]);
+                $newValue = array_merge($newValue ?? [], $fieldValue ?? []);
+            } else {
+                $fieldValue = data_get($data, $field, data_get($newValue, $path));
+                data_set($newValue, $path, $fieldValue);
             }
             return $newValue;
         }, $currentAttributeValue);
