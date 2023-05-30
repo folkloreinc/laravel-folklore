@@ -156,7 +156,10 @@ abstract class Resources implements ResourcesContract
     protected function syncRelations($model, $data)
     {
         if ($model instanceof HasJsonDataRelations) {
-            JsonDataCast::syncRelations($model);
+            $ids = JsonDataCast::syncRelations($model);
+            if (!is_null($ids) && count($ids) > 0) {
+                $model->refresh();
+            }
         }
     }
 

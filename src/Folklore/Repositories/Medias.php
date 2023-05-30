@@ -117,4 +117,42 @@ class Medias extends Resources implements MediasRepositoryContract
             !empty($ext) ? preg_replace('/\.' . preg_quote($ext, '/') . '$/', '', $name) : $name
         );
     }
+
+    protected function buildQueryFromParams($query, $params)
+    {
+        $query = parent::buildQueryFromParams($query, $params);
+
+        if (isset($params['search']) && !empty($params['search'])) {
+            if (is_numeric($params['search'])) {
+                $query->where('id', $params['search']);
+            } else {
+                $search = explode(' ', $params['search']);
+                foreach ($search as $term) {
+                    $word = Str::slug($term);
+                    $query->where(function ($q) use ($word) {
+                        $q->where('name', 'LIKE', '%' . $word . '%');
+                    });
+                }
+            }
+        }
+
+        if (isset($params['type']) && !empty($params['type'])) {
+            $query->whereIn('type', (array) $params['type']);
+        }
+
+        if (isset($params['types']) && !empty($params['types'])) {
+            $query->whereIn('type', (array) $params['types']);
+        }
+
+        if (isset($params['exclude_type']) && !empty($params['exclude_type'])) {
+            $query->whereNotIn('type', (array) $params['exclude_type']);
+        }
+
+        // If empty order defaults to page order column
+        if (!isset($params['order']) || empty($params['order'])) {
+            $query->orderBy('created_at', 'DESC');
+        }
+
+        return $query;
+    }
 }
