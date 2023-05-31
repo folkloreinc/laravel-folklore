@@ -2,7 +2,9 @@
 
 namespace Folklore\Contracts\Resources;
 
-interface VideoMetadata extends MediaMetadata
+use Contenu\Contracts\Metadatas\Medias\VideoMetadata as MediasVideoMetadata;
+
+interface VideoMetadata extends MediaMetadata, MediasVideoMetadata
 {
     public function width(): int;
 

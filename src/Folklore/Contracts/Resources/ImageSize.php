@@ -2,10 +2,11 @@
 
 namespace Folklore\Contracts\Resources;
 
+use Contenu\Contracts\Medias\ImageSize as MediasImageSize;
 use Panneau\Contracts\ResourceItem;
 use Illuminate\Support\Collection;
 
-interface ImageSize
+interface ImageSize extends MediasImageSize
 {
     public function id(): string;
 

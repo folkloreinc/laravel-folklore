@@ -27,6 +27,11 @@ class ImageSize implements ImageSizeContract
         return $this->filter['id'];
     }
 
+    public function name(): string
+    {
+        return $this->id();
+    }
+
     public function url(): string
     {
         $image = $this->image;

@@ -2,7 +2,9 @@
 
 namespace Folklore\Contracts\Resources;
 
-interface Document extends Media
+use Contenu\Contracts\Medias\Document as MediasDocument;
+
+interface Document extends Media, MediasDocument
 {
     public function metadata(): DocumentMetadata;
 }

@@ -2,7 +2,9 @@
 
 namespace Folklore\Contracts\Resources;
 
-interface DocumentMetadata extends MediaMetadata
+use Contenu\Contracts\Metadatas\Medias\DocumentMetadata as MediasDocumentMetadata;
+
+interface DocumentMetadata extends MediaMetadata, MediasDocumentMetadata
 {
     public function pagesCount(): ?int;
 }

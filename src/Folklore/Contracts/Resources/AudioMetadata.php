@@ -2,7 +2,9 @@
 
 namespace Folklore\Contracts\Resources;
 
-interface AudioMetadata extends MediaMetadata
+use Contenu\Contracts\Metadatas\Medias\AudioMetadata as MediasAudioMetadata;
+
+interface AudioMetadata extends MediaMetadata, MediasAudioMetadata
 {
     public function duration(): float;
 }

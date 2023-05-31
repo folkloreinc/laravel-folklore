@@ -3,6 +3,7 @@
 namespace Folklore\Resources;
 
 use Carbon\Carbon;
+use Contenu\Contracts\Medias\Image;
 use Folklore\Contracts\Resources\HasModel;
 use Illuminate\Support\Collection;
 use Folklore\Contracts\Resources\Media as MediaContract;
@@ -73,6 +74,16 @@ class Media implements MediaContract, HasModel
             });
         }
         return $this->files;
+    }
+
+    public function thumbnail(): ?Image
+    {
+        return null;
+    }
+
+    public function sources(): iterable
+    {
+        return $this->files();
     }
 
     public function metadata(): MediaMetadataContract

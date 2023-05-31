@@ -7,6 +7,8 @@ use Folklore\Contracts\Resources\AudioMetadata as AudioMetadataContract;
 
 class Audio extends Media implements AudioContract
 {
+    protected $metadata;
+
     public function metadata(): AudioMetadataContract
     {
         if (!isset($this->metadata)) {

@@ -10,6 +10,8 @@ class Image extends Media implements ImageContract
 {
     protected $sizes;
 
+    protected $metadata;
+
     public function sizes(): Collection
     {
         if (!isset($this->sizes)) {

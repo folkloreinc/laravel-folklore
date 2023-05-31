@@ -2,7 +2,9 @@
 
 namespace Folklore\Contracts\Resources;
 
-interface MediaMetadata
+use Contenu\Contracts\Metadatas\Medias\MediaMetadata as MediasMediaMetadata;
+
+interface MediaMetadata extends MediasMediaMetadata
 {
     public function filename(): ?string;
 

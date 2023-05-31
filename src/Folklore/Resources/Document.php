@@ -8,6 +8,8 @@ use Illuminate\Support\Collection;
 
 class Document extends Media implements DocumentContract
 {
+    protected $metadata;
+
     public function metadata(): DocumentMetadataContract
     {
         if (!isset($this->metadata)) {

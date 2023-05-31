@@ -13,6 +13,8 @@ class MediaMetadata implements MediaMetadataContract, HasModel
 
     protected $file;
 
+    protected $originalFile;
+
     protected $metadatas;
 
     protected $tags;

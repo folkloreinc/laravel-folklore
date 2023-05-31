@@ -2,7 +2,9 @@
 
 namespace Folklore\Contracts\Resources;
 
-interface Audio extends Media
+use Contenu\Contracts\Medias\Audio as MediasAudio;
+
+interface Audio extends Media, MediasAudio
 {
     public function metadata(): AudioMetadata;
 }
