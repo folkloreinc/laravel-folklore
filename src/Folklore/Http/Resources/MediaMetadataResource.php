@@ -31,7 +31,7 @@ class MediaMetadataResource extends JsonResource
                 return $this->duration();
             }),
             'pagesCount' => $this->when($hasPagesCount, function () {
-                return $this->duration();
+                return $this->pagesCount();
             }),
             $this->mergeWhen($hasSize, function () {
                 return [
