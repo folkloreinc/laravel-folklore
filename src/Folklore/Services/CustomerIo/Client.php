@@ -197,6 +197,28 @@ class Client implements CustomerIo
         return !is_null($response);
     }
 
+    public function mergeUsers($user, $mergeUser): ?CustomerContract
+    {
+        $customer = $this->findCustomerFromUser($user);
+        $mergeCustomer = $this->findCustomerFromUser($mergeUser);
+        if (!isset($customer) || !isset($mergeCustomer)) {
+            return $customer;
+        }
+        $response = $this->requestJson(
+            'https://track.customer.io/api/v1/merge_customers',
+            'POST',
+            [
+                'primary' => [
+                    'cio_id' => $customer->id(),
+                ],
+                'secondary' => [
+                    'cio_id' => $mergeCustomer->id(),
+                ]
+            ]
+        );
+        return $this->findCustomerById($customer->id());
+    }
+
     public function subscribeToTopic(string $email, $topic): bool
     {
         $customer = $this->findCustomerByEmail($email);
