@@ -12,6 +12,7 @@ use Folklore\Mediatheque\Contracts\Type\Factory as TypeFactory;
 use Folklore\Contracts\Resources\Resourcable;
 use GuzzleHttp\Client as HttpClient;
 use Exception;
+use Illuminate\Support\Facades\Log;
 
 class Medias extends Resources implements MediasRepositoryContract
 {
@@ -102,7 +103,7 @@ class Medias extends Resources implements MediasRepositoryContract
             $client->request('GET', $url, ['sink' => $tempPath, 'verify' => false]);
             return $tempPath;
         } catch (Exception $e) {
-            dd($e);
+            Log::error($e);
             return null;
         }
     }
