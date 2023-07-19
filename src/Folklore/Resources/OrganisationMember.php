@@ -3,14 +3,14 @@
 namespace Folklore\Resources;
 
 use Folklore\Contracts\Resources\HasModel;
-use Folklore\Contracts\Resources\OrganisationUser as OrganisationUserContract;
+use Folklore\Contracts\Resources\OrganisationMember as OrganisationMemberContract;
 use Folklore\Contracts\Resources\Organisation as OrganisationContract;
 use Folklore\Contracts\Resources\User as UserContract;
-use Folklore\Models\OrganisationUser as OrganisationUserModel;
+use Folklore\Models\OrganisationMember as OrganisationMemberModel;
 use Folklore\Contracts\Resources\Resourcable;
 use Illuminate\Database\Eloquent\Model;
 
-class OrganisationUser implements OrganisationUserContract, HasModel
+class OrganisationMember implements OrganisationMemberContract, HasModel
 {
     protected $model;
 
@@ -18,7 +18,7 @@ class OrganisationUser implements OrganisationUserContract, HasModel
 
     protected $organisation;
 
-    public function __construct(OrganisationUserModel $model, OrganisationContract $organisation = null)
+    public function __construct(OrganisationMemberModel $model, OrganisationContract $organisation = null)
     {
         $this->model = $model;
         $this->organisation = $organisation;

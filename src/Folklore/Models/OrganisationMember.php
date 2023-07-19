@@ -4,10 +4,10 @@ namespace Folklore\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Folklore\Contracts\Resources\Resourcable;
-use Folklore\Contracts\Resources\OrganisationUser as OrganisationUserContract;
-use Folklore\Resources\OrganisationUser as OrganisationUserResource;
+use Folklore\Contracts\Resources\OrganisationMember as OrganisationMemberContract;
+use Folklore\Resources\OrganisationMember as OrganisationMemberResource;
 
-class OrganisationUser extends Model implements Resourcable
+class OrganisationMember extends Model implements Resourcable
 {
     /**
      * The attributes that are mass assignable.
@@ -26,8 +26,8 @@ class OrganisationUser extends Model implements Resourcable
         return $this->belongsTo(User::class);
     }
 
-    public function toResource(): OrganisationUserContract
+    public function toResource(): OrganisationMemberContract
     {
-        return new OrganisationUserResource($this);
+        return new OrganisationMemberResource($this);
     }
 }
