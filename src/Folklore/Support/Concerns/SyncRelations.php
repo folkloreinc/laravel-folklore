@@ -21,15 +21,17 @@ trait SyncRelations
             }
             if (is_array($item)) {
                 $keyName = $related->getKeyName();
+                $existing = isset($item[$key])
+                    ? $related
+                    ->newQuery()
+                    ->where($key, $item[$key])
+                    ->first()
+                    : null;
+                // Fix this
                 if ($keyName === $key || isset($item[$keyName])) {
                     return $related->newInstance($item, isset($item[$keyName]));
                 }
-                $existing = isset($item[$key])
-                    ? $related
-                        ->newQuery()
-                        ->where($key, $item[$key])
-                        ->first()
-                    : null;
+
                 return isset($existing) ? $existing->fill($item) : $related->newInstance($item);
             }
             return $item;
@@ -47,9 +49,9 @@ trait SyncRelations
             ->merge(
                 !$keys->isEmpty()
                     ? $related
-                        ->newQuery()
-                        ->whereIn($key, $keys->toArray())
-                        ->get()
+                    ->newQuery()
+                    ->whereIn($key, $keys->toArray())
+                    ->get()
                     : []
             );
         return $relation->saveMany($models);

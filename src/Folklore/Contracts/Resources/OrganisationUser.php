@@ -4,7 +4,7 @@ namespace Folklore\Contracts\Resources;
 
 use Folklore\Contracts\Resources\Resource;
 
-interface OrganisationMember extends Resource
+interface OrganisationUser extends Resource
 {
     public function organisation(): Organisation;
 
