@@ -50,6 +50,8 @@ interface CustomerIo
 
     public function updateCustomer(string $identifier, $data = []): bool;
 
+    public function mergeUsers($user, $mergeUser): ?Customer;
+
     public function trackUserPageview($user, string $url, $data): bool;
 
     public function trackUserEvent($user, string $name, $data): bool;
