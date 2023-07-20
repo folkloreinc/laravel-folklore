@@ -13,7 +13,7 @@ class Organisation implements OrganisationContract, HasModel
 {
     protected $model;
 
-    protected $users;
+    protected $members;
 
     protected $invitations;
 
@@ -37,14 +37,14 @@ class Organisation implements OrganisationContract, HasModel
         return $this->model->slug;
     }
 
-    public function users(): Collection
+    public function members(): Collection
     {
-        if (!isset($this->users)) {
-            $this->users = $this->model->users->map(function ($item) {
+        if (!isset($this->members)) {
+            $this->members = $this->model->members->map(function ($item) {
                 return $item instanceof Resourcable ? $item->toResource() : $item;
             });
         }
-        return $this->users;
+        return $this->members;
     }
 
     public function invitations(): Collection
