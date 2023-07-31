@@ -30,6 +30,10 @@ class ServiceProvider extends BaseServiceProvider
         if ($this->app['config']->get('services.customerio') !== null) {
             $this->registerCustomerIo();
         }
+
+        if ($this->app['config']->get('pubsubhubbub') !== null) {
+            $this->registerPubsubHubbub();
+        }
     }
 
     protected function registerRepositories()
@@ -90,10 +94,7 @@ class ServiceProvider extends BaseServiceProvider
             return $this->app->make(\Folklore\Services\CustomerIo\Client::class);
         });
 
-        $this->app->alias(
-            'services.customerio',
-            \Folklore\Contracts\Services\CustomerIo::class
-        );
+        $this->app->alias('services.customerio', \Folklore\Contracts\Services\CustomerIo::class);
     }
 
     protected function registerPubsubHubbub()
@@ -130,6 +131,13 @@ class ServiceProvider extends BaseServiceProvider
             $this->commands([
                 \Folklore\Console\UsersCreateCommand::class,
                 \Folklore\Console\DaemonRestartCommand::class,
+            ]);
+        }
+
+        if ($this->app['config']->get('pubsubhubbub') !== null && $this->app->runningInConsole()) {
+            $this->commands([
+                \Folklore\Console\PubSubHubbubSubscribe::class,
+                \Folklore\Console\PubSubHubbubUnsubscribe::class,
             ]);
         }
 
