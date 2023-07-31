@@ -7,7 +7,7 @@ use Illuminate\Support\Str;
 use Closure;
 use Folklore\Contracts\Services\PubSubHubbub\Client;
 use InvalidArgumentException;
-use Folklore\Contracts\services\PubSubHubbub\Factory;
+use Folklore\Contracts\Services\PubSubHubbub\Factory;
 
 class PubSubHubbubManager implements Factory
 {
