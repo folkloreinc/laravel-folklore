@@ -96,6 +96,18 @@ class ServiceProvider extends BaseServiceProvider
         );
     }
 
+    protected function registerPubsubHubbub()
+    {
+        $this->app->singleton('services.pubsubhubbub.manager', function ($app) {
+            return new \Folklore\Services\PubSubHubbub\PubSubHubbubManager($app);
+        });
+
+        $this->app->bind(
+            \Folklore\Contracts\Services\PubSubHubbub\Factory::class,
+            'services.pubsubhubbub.manager'
+        );
+    }
+
     /**
      * Bootstrap any application services.
      *
