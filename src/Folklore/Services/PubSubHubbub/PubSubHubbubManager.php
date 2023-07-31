@@ -5,6 +5,7 @@ namespace Folklore\Services\PubSubHubbub;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Str;
 use Closure;
+use Folklore\Contracts\Services\PubSubHubbub\Client;
 use InvalidArgumentException;
 use Folklore\Contracts\services\PubSubHubbub\Factory;
 
@@ -25,11 +26,11 @@ class PubSubHubbubManager implements Factory
     protected $customCreators = [];
 
     /**
-     * The array of created "parsers".
+     * The array of created "hubs".
      *
      * @var array
      */
-    protected $parsers = [];
+    protected $hubs = [];
 
     /**
      * Create a new manager instance.
@@ -74,7 +75,7 @@ class PubSubHubbubManager implements Factory
      *
      * @throws \InvalidArgumentException
      */
-    public function hub($hub = null)
+    public function hub($hub = null): Client
     {
         $hub = isset($hub) ? $hub : $this->getDefaultHub();
 
