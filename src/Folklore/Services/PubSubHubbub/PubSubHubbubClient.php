@@ -23,7 +23,7 @@ class PubSubHubbubClient implements PubSubHubbubClientContract
         $this->options = $opts;
     }
 
-    public function subscribe($callback, $topic): bool
+    public function subscribe($callback, $topic)
     {
         $response = $this->makeRequest(
             $this->hub,
@@ -36,14 +36,10 @@ class PubSubHubbubClient implements PubSubHubbubClientContract
             ])
         );
         $statusCode = isset($response) ? $response->getStatusCode() : null;
-        $success = $statusCode === 202 || $statusCode === 204;
-        if (!$success) {
-            Log::error('[PubSubHubbubClient ' . $this->hub . '] ' . (string)$response->getBody());
-        }
-        return $success;
+        return $statusCode === 202 || $statusCode === 204 ? true : (string) $response->getBody();
     }
 
-    public function unsubscribe($callback, $topic): bool
+    public function unsubscribe($callback, $topic)
     {
         $response = $this->makeRequest(
             $this->hub,
@@ -56,10 +52,6 @@ class PubSubHubbubClient implements PubSubHubbubClientContract
             ])
         );
         $statusCode = isset($response) ? $response->getStatusCode() : null;
-        $success = $statusCode === 202 || $statusCode === 204;
-        if (!$success) {
-            Log::error('[PubSubHubbubClient ' . $this->hub . '] ' . (string)$response->getBody());
-        }
-        return $success;
+        return $statusCode === 202 || $statusCode === 204 ? true : (string) $response->getBody();
     }
 }
