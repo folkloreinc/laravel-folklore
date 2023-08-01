@@ -47,7 +47,11 @@ class PubSubHubbubUnsubscribe extends Command
         $topic = $this->argument('topic');
         $callback = $this->argument('callback');
         $client = $this->manager->hub($hub);
-        $this->line('<comment>Unsubscribing:</comment> Topic ' . $topic . '...');
+        $callback =
+            filter_var($callback, FILTER_VALIDATE_URL) === false ? route($callback) : $callback;
+        $this->line(
+            '<comment>Unsubscribing:</comment> ' . $callback . ' to topic ' . $topic . '...'
+        );
         $response = $client->unsubscribe(
             filter_var($callback, FILTER_VALIDATE_URL) === false ? route($callback) : $callback,
             $topic

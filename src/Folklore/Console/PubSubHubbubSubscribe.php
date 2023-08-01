@@ -47,9 +47,10 @@ class PubSubHubbubSubscribe extends Command
         $topic = $this->argument('topic');
         $callback = $this->argument('callback');
         $client = $this->manager->hub($hub);
-        $this->line('<comment>Subscribing:</comment> Topic ' . $topic . '...');
+        $callback = filter_var($callback, FILTER_VALIDATE_URL) === false ? route($callback) : $callback;
+        $this->line('<comment>Subscribing:</comment> '.$callback.' to topic ' . $topic . '...');
         $response = $client->subscribe(
-            filter_var($callback, FILTER_VALIDATE_URL) === false ? route($callback) : $callback,
+            $callback,
             $topic
         );
         if ($response !== true) {
