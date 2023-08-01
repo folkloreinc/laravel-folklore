@@ -22,23 +22,35 @@ class PubSubHubbubClient implements PubSubHubbubClientContract
         $this->options = $opts;
     }
 
-    public function subscribe($callback, $topic)
+    public function subscribe($callback, $topic): bool
     {
-        return $this->makeRequest($this->hub, 'POST', [
-            'hub.mode' => 'subscribe',
-            'hub.secret' => $this->secret,
-            'hub.callback' => $callback,
-            'hub.topic' => $topic
-        ]);
+        $response = $this->makeRequest(
+            $this->hub,
+            'POST',
+            array_merge($this->options, [
+                'hub.mode' => 'subscribe',
+                'hub.secret' => $this->secret,
+                'hub.callback' => $callback,
+                'hub.topic' => $topic,
+            ])
+        );
+        $statusCode = isset($response) ? $response->getStatusCode() : null;
+        return $statusCode === 202 || $statusCode === 204;
     }
 
-    public function unsubscribe($callback, $topic)
+    public function unsubscribe($callback, $topic): bool
     {
-        return $this->makeRequest($this->hub, 'POST', [
-            'hub.mode' => 'unsubscribe',
-            'hub.secret' => $this->secret,
-            'hub.callback' => $callback,
-            'hub.topic' => $topic
-        ]);
+        $response = $this->makeRequest(
+            $this->hub,
+            'POST',
+            array_merge($this->options, [
+                'hub.mode' => 'unsubscribe',
+                'hub.secret' => $this->secret,
+                'hub.callback' => $callback,
+                'hub.topic' => $topic,
+            ])
+        );
+        $statusCode = isset($response) ? $response->getStatusCode() : null;
+        return $statusCode === 202 || $statusCode === 204;
     }
 }
