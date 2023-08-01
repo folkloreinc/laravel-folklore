@@ -3,7 +3,6 @@
 namespace Folklore\Services\PubSubHubbub;
 
 use GuzzleHttp\Client as HttpClient;
-use GuzzleHttp\Exception\ClientException;
 use Folklore\Contracts\Services\PubSubHubbub\Client as PubSubHubbubClientContract;
 use Folklore\Support\Concerns\MakesRequests;
 use Illuminate\Support\Facades\Log;
@@ -35,8 +34,14 @@ class PubSubHubbubClient implements PubSubHubbubClientContract
                 'hub.topic' => $topic,
             ])
         );
-        $statusCode = isset($response) ? $response->getStatusCode() : null;
-        return $statusCode === 202 || $statusCode === 204 ? true : (string) $response->getBody();
+        if (
+            isset($response) &&
+            $response->getStatusCode() == 202 &&
+            $response->getStatusCode() == 204
+        ) {
+            return true;
+        }
+        return isset($response) ? (string) $response->getBody() : false;
     }
 
     public function unsubscribe($callback, $topic)
@@ -51,7 +56,13 @@ class PubSubHubbubClient implements PubSubHubbubClientContract
                 'hub.topic' => $topic,
             ])
         );
-        $statusCode = isset($response) ? $response->getStatusCode() : null;
-        return $statusCode === 202 || $statusCode === 204 ? true : (string) $response->getBody();
+        if (
+            isset($response) &&
+            $response->getStatusCode() == 202 &&
+            $response->getStatusCode() == 204
+        ) {
+            return true;
+        }
+        return isset($response) ? (string) $response->getBody() : false;
     }
 }

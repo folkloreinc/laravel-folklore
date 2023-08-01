@@ -6,6 +6,7 @@ use Illuminate\Support\Arr;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Exception\ClientException;
 use Exception;
+use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\Log;
 
 trait MakesRequests
@@ -22,37 +23,78 @@ trait MakesRequests
                 ? [
                     'Content-type' => 'application/json',
                 ]
-                : []
+                : [],
+            data_get($opts, 'headers', [])
         );
 
-        $response = $this->makeRequest($url, $method, $params, [
-            'headers' => $headers,
-        ]);
+        $response = $this->makeRequest(
+            $url,
+            $method,
+            $params,
+            array_merge(Arr::except($opts, ['return_errors']), [
+                'headers' => $headers,
+            ])
+        );
+        $isSuccess =
+            !is_null($response) &&
+            $response->getStatusCode() >= 200 &&
+            $response->getStatusCode() < 300;
 
-        return !is_null($response) ? json_decode((string) $response->getBody(), true) : null;
+        $returnErrors = data_get($opts, 'return_errors', false);
+
+        return !is_null($response) && ($returnErrors || $isSuccess)
+            ? json_decode((string) $response->getBody(), true)
+            : null;
     }
 
     protected function requestWebpage(
         $url,
-        $userAgent = 'Mozilla/5.0 (Windows NT 6.0) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.97 Safari/537.11'
+        $userAgent = 'Mozilla/5.0 (Windows NT 6.0) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.97 Safari/537.11',
+        $opts = []
     ) {
+        $headers = array_merge(
+            [
+                'User-Agent' => $userAgent,
+            ],
+            data_get($opts, 'headers', [])
+        );
         $response = $this->makeRequest(
             $url,
             'GET',
             [],
-            [
-                'headers' => [
-                    'User-Agent' => $userAgent,
-                ],
-            ]
+            array_merge(Arr::except($opts, ['return_errors']), [
+                'headers' => $headers,
+            ])
         );
-        return !is_null($response) ? (string) $response->getBody() : null;
+        $isSuccess =
+            !is_null($response) &&
+            $response->getStatusCode() >= 200 &&
+            $response->getStatusCode() < 300;
+
+        $returnErrors = data_get($opts, 'return_errors', false);
+
+        return !is_null($response) && ($returnErrors || $isSuccess)
+            ? (string) $response->getBody()
+            : null;
     }
 
-    protected function requestData($url, $method = 'GET', $params = [])
+    protected function requestData($url, $method = 'GET', $params = [], $opts = [])
     {
-        $response = $this->makeRequest($url, $method, $params);
-        return !is_null($response) ? (string) $response->getBody() : null;
+        $response = $this->makeRequest(
+            $url,
+            $method,
+            $params,
+            Arr::except($opts, ['return_errors'])
+        );
+        $isSuccess =
+            !is_null($response) &&
+            $response->getStatusCode() >= 200 &&
+            $response->getStatusCode() < 300;
+
+        $returnErrors = data_get($opts, 'return_errors', false);
+        return !is_null($response) && ($returnErrors || $isSuccess)
+            ? (string) $response->getBody()
+            : null;
     }
 
     protected function makeRequest($url, $method, $params = [], $opts = [])
@@ -90,9 +132,8 @@ trait MakesRequests
                 )
             );
             return $response;
-        } catch (ClientException $e) {
-            Log::error($e);
-            return null;
+        } catch (RequestException $e) {
+            return $e->getResponse();
         } catch (Exception $e) {
             Log::error($e);
             return null;
