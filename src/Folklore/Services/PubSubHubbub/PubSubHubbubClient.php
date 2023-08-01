@@ -6,6 +6,7 @@ use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Exception\ClientException;
 use Folklore\Contracts\Services\PubSubHubbub\Client as PubSubHubbubClientContract;
 use Folklore\Support\Concerns\MakesRequests;
+use Illuminate\Support\Facades\Log;
 
 class PubSubHubbubClient implements PubSubHubbubClientContract
 {
@@ -35,7 +36,11 @@ class PubSubHubbubClient implements PubSubHubbubClientContract
             ])
         );
         $statusCode = isset($response) ? $response->getStatusCode() : null;
-        return $statusCode === 202 || $statusCode === 204;
+        $success = $statusCode === 202 || $statusCode === 204;
+        if (!$success) {
+            Log::error('[PubSubHubbubClient ' . $this->hub . '] ' . (string)$response->getBody());
+        }
+        return $success;
     }
 
     public function unsubscribe($callback, $topic): bool
@@ -51,6 +56,10 @@ class PubSubHubbubClient implements PubSubHubbubClientContract
             ])
         );
         $statusCode = isset($response) ? $response->getStatusCode() : null;
-        return $statusCode === 202 || $statusCode === 204;
+        $success = $statusCode === 202 || $statusCode === 204;
+        if (!$success) {
+            Log::error('[PubSubHubbubClient ' . $this->hub . '] ' . (string)$response->getBody());
+        }
+        return $success;
     }
 }
