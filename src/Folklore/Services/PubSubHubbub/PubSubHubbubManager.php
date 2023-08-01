@@ -8,6 +8,7 @@ use Closure;
 use Folklore\Contracts\Services\PubSubHubbub\Client;
 use InvalidArgumentException;
 use Folklore\Contracts\Services\PubSubHubbub\Factory;
+use Illuminate\Support\Arr;
 
 class PubSubHubbubManager implements Factory
 {
@@ -62,8 +63,8 @@ class PubSubHubbubManager implements Factory
     protected function createDefaultDriver($config)
     {
         $url = is_string($config) ? $config : $config['url'];
-        $secret = is_array($config) ? array_get($config, 'secret') : null;
-        $opts = is_array($config) ? array_except($config, ['url', 'secret']) : [];
+        $secret = is_array($config) ? data_get($config, 'secret') : null;
+        $opts = is_array($config) ? Arr::except($config, ['url', 'secret']) : [];
         return new PubSubHubbubClient($url, $secret, $opts);
     }
 
@@ -109,7 +110,7 @@ class PubSubHubbubManager implements Factory
     protected function createHub($parser)
     {
         $config = $this->getConfig($parser);
-        $driver = is_array($config) ? array_get($config, 'driver', null) : null;
+        $driver = is_array($config) ? data_get($config, 'driver', null) : null;
 
         // First, we will determine if a custom driver creator exists for the given driver and
         // if it does not we will check for a creator method for the driver. Custom creator
