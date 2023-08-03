@@ -195,7 +195,7 @@ abstract class Resources implements ResourcesContract
                     } else {
                         $query->orderBy($order[0], 'ASC');
                     }
-                } elseif (is_array($order[0])) {
+                } elseif (isset($order[0]) && !empty($order[0]) && is_array($order[0])) {
                     foreach ($order as $subOrder) {
                         $query->orderBy($subOrder[0], $subOrder[1]);
                     }
