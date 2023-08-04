@@ -71,10 +71,11 @@ class Medias extends Resources implements MediasRepositoryContract
     public function createFromPath(string $path, $data = []): ?MediaContract
     {
         $name = $this->getNameFromPath($path);
-        if (filter_var($path, FILTER_VALIDATE_URL)) {
+        $isUrl = filter_var($path, FILTER_VALIDATE_URL);
+        if ($isUrl) {
             $path = $this->downloadFile($path);
         }
-        return !empty($path)
+        $media = !empty($path)
             ? $this->createFromFile(
                 new File($path),
                 array_merge(
@@ -87,6 +88,12 @@ class Medias extends Resources implements MediasRepositoryContract
                 )
             )
             : null;
+
+        if ($isUrl && file_exists($path)) {
+            unlink($path);
+        }
+
+        return $media;
     }
 
     public function update(string $id, $data): ?MediaContract
