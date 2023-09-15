@@ -118,6 +118,10 @@ trait MakesRequests
         );
         $postKey = $contentType === 'application/json' ? 'json' : 'form_params';
 
+        $params = method_exists($this, 'getRequestParams')
+            ? $this->getRequestParams($url, $method, $params, $opts)
+            : $params;
+
         try {
             $response = $this->getRequestClient()->request(
                 $method,
