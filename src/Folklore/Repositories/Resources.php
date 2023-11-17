@@ -8,6 +8,8 @@ use Folklore\Contracts\Resources\Resourcable;
 use Illuminate\Database\Eloquent\Model;
 use Folklore\Contracts\Eloquent\HasJsonDataRelations;
 use Folklore\Eloquent\JsonDataCast;
+use Folklore\Support\OffsetPaginator;
+use Illuminate\Pagination\AbstractPaginator;
 use Laravel\Scout\Builder as ScoutBuilder;
 
 abstract class Resources implements ResourcesContract
@@ -36,7 +38,7 @@ abstract class Resources implements ResourcesContract
     public function get(array $params = [], ?int $page = null, ?int $count = null)
     {
         $query = $this->newQueryWithParams($params);
-        return $this->getFromQuery($query, $page, $count);
+        return $this->getFromQuery($query, $page, $count, $params);
     }
 
     public function count(array $params = []): int
@@ -51,13 +53,27 @@ abstract class Resources implements ResourcesContract
         return $query->exists();
     }
 
-    protected function getFromQuery($query, ?int $page = null, ?int $count = null)
+    protected function getFromQuery($query, ?int $page = null, ?int $count = null, array $params = [])
     {
-        if (!is_null($page)) {
+        if (
+            !is_null($page) &&
+            isset($params['offset_paginator']) &&
+            $params['offset_paginator'] === true
+        ) {
+            $query->skip($page);
+            if (!is_null($count)) {
+                $query->take($count);
+            }
+            $models = new OffsetPaginator(
+                $query->get(),
+                $query->toBase()->getCountForPagination(),
+                $page
+            );
+        } elseif (!is_null($page)) {
             $models =
                 $query instanceof ScoutBuilder
-                ? $query->paginate($count, 'page', $page)
-                : $query->paginate($count, ['*'], 'page', $page);
+                    ? $query->paginate($count, 'page', $page)
+                    : $query->paginate($count, ['*'], 'page', $page);
         } else {
             if (!is_null($count)) {
                 $query->take($count);
@@ -68,11 +84,12 @@ abstract class Resources implements ResourcesContract
         $collection = $models->map(function ($model) {
             return $model instanceof Resourcable ? $model->toResource() : $model;
         });
-        if (is_null($page)) {
-            return $collection;
+
+        if ($models instanceof AbstractPaginator) {
+            $models->setCollection($collection);
+            return $models;
         }
-        $models->setCollection($collection);
-        return $models;
+        return $collection;
     }
 
     public function create($data): Resource
@@ -186,6 +203,10 @@ abstract class Resources implements ResourcesContract
 
     protected function buildQueryFromParams($query, $params)
     {
+        if (isset($params['offset'])) {
+            $query->skip($params['offset']);
+        }
+
         if (isset($params['order'])) {
             if (is_array($params['order'])) {
                 $order = $params['order'];
