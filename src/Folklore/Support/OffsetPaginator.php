@@ -35,7 +35,6 @@ class OffsetPaginator extends AbstractPaginator
 
         $this->total = $total;
         $this->currentPage = $this->setCurrentOffset($currentOffset);
-        dd($currentOffset, $this->currentPage);
         $this->path = $this->path !== '/' ? rtrim($this->path, '/') : $this->path;
 
         $this->setItems($items);
