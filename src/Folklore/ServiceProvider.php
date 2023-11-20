@@ -10,6 +10,7 @@ use PubNub\PubNub;
 use PubNub\PNConfiguration;
 use Folklore\Broadcasters\PubNubBroadcaster;
 use Folklore\Support\Concerns\RegistersBindings;
+use Folklore\Support\OffsetPaginator;
 use Ramsey\Uuid\Uuid;
 
 class ServiceProvider extends BaseServiceProvider
@@ -116,11 +117,7 @@ class ServiceProvider extends BaseServiceProvider
      */
     public function boot()
     {
-        // Routing
-        \Illuminate\Routing\UrlGenerator::macro(
-            'routeForReactRouter',
-            $this->app->make(\Folklore\Routing\UrlGeneratorMixin::class)->routeForReactRouter()
-        );
+        $this->bootRequest();
 
         $this->bootAuth();
 
@@ -145,6 +142,26 @@ class ServiceProvider extends BaseServiceProvider
         if ($this->app->environment('local')) {
             $this->bootLocal();
         }
+    }
+
+    public function bootRequest()
+    {
+        // Routing
+        \Illuminate\Routing\UrlGenerator::macro(
+            'routeForReactRouter',
+            $this->app->make(\Folklore\Routing\UrlGeneratorMixin::class)->routeForReactRouter()
+        );
+
+        // Paginator resolver
+        OffsetPaginator::currentPageResolver(function ($paramName = 'offset') {
+            $offset = $this->app['request']->input($paramName);
+
+            if (filter_var($offset, FILTER_VALIDATE_INT) !== false && (int) $offset >= 0) {
+                return (int) $offset;
+            }
+
+            return 0;
+        });
     }
 
     public function bootAuth()

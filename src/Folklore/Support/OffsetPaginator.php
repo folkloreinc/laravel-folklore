@@ -34,10 +34,12 @@ class OffsetPaginator extends AbstractPaginator
         }
 
         $this->total = $total;
-        $this->currentPage = $this->setCurrentOffsset($currentOffset);
+        $this->currentPage = $this->setCurrentOffset($currentOffset);
+        dd($currentOffset, $this->currentPage);
         $this->path = $this->path !== '/' ? rtrim($this->path, '/') : $this->path;
 
         $this->setItems($items);
+
     }
 
     /**
@@ -46,9 +48,9 @@ class OffsetPaginator extends AbstractPaginator
      * @param  int  $currentPage
      * @return int
      */
-    protected function setCurrentOffsset($currentOffset)
+    protected function setCurrentOffset($currentOffset)
     {
-        $currentOffset = $currentOffset ?: static::resolveCurrentPage($this->pageName);
+        $currentOffset = $currentOffset ?: static::resolveCurrentPage($this->pageName, 0);
 
         return $this->isValidOffset($currentOffset) ? (int) $currentOffset : $this->total;
     }
