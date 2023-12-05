@@ -20,12 +20,14 @@ class PaginationResource extends JsonResource
             'next_offset' => $this->nextOffset(),
             'count' => $this->count(),
             'total' => $this->total(),
+            'is_last' => $this->total() === $this->nextOffset()
         ] : [
             'page' => $this->currentPage(),
             'last_page' => $this->lastPage(),
             'per_page' => $this->perPage(),
             'count' => $this->count(),
             'total' => $this->total(),
+            'is_last' => $this->currentPage() === $this->lastPage()
         ];
     }
 }
