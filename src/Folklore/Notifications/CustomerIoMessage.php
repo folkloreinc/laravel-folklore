@@ -35,6 +35,12 @@ class CustomerIoMessage implements Arrayable
         return new self(isset($message) ? $message->id() : null);
     }
 
+    public static function fromId($id)
+    {
+        $message = resolve(CustomerIo::class)->findTransactionalMessageById($id);
+        return new self(isset($message) ? $message->id() : null);
+    }
+
     public function subject(string $subject)
     {
         $this->subject = $subject;
