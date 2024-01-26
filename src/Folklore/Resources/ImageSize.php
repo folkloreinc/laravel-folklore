@@ -73,6 +73,26 @@ class ImageSize implements ImageSizeContract
         return data_get($this->dimension, 'height', 0);
     }
 
+    public function mime(): ?string
+    {
+        switch ($this->format) {
+            case 'gif':
+                return 'image/gif';
+                break;
+            case 'jpg':
+            case 'jpeg':
+                return 'image/jpeg';
+                break;
+            case 'png':
+                return 'image/png';
+            case 'webp':
+                return 'image/webp';
+                break;
+        }
+        $metadata = $this->image->metadata();
+        return !is_null($metadata) ? $metadata->mime() : null;
+    }
+
     protected function getDimension()
     {
         $metadata = $this->image->metadata();

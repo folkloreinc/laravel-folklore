@@ -14,4 +14,6 @@ interface ImageSize
     public function width(): int;
 
     public function height(): int;
+
+    public function mime(): ?string;
 }
