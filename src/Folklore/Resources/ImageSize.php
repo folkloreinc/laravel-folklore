@@ -5,6 +5,7 @@ namespace Folklore\Resources;
 use Folklore\Contracts\Resources\Image as ImageContract;
 use Folklore\Contracts\Resources\ImageSize as ImageSizeContract;
 use Folklore\Image\Facade as ImageFacade;
+use Illuminate\Support\Arr;
 
 class ImageSize implements ImageSizeContract
 {
@@ -12,14 +13,17 @@ class ImageSize implements ImageSizeContract
 
     protected $filter;
 
+    protected $format;
+
     protected $url;
 
     protected $dimension;
 
-    public function __construct(ImageContract $image, $filter)
+    public function __construct(ImageContract $image, $filter, $format = null)
     {
         $this->image = $image;
-        $this->filter = $filter;
+        $this->filter = Arr::except($filter, ['format']);
+        $this->format = $format ?? data_get($filter, 'format');
     }
 
     public function id(): string
@@ -29,17 +33,22 @@ class ImageSize implements ImageSizeContract
 
     public function url(): string
     {
-        $image = $this->image;
-        $imageUrl = $image->url();
-        $metadata = $image->metadata();
-        $mime = !is_null($metadata) ? $metadata->mime() : null;
-        $isSVG = $mime === 'image/svg';
         if (!isset($this->url)) {
+            $imageUrl = $this->image->url();
+            $metadata = $this->image->metadata();
+            $mime = !is_null($metadata) ? $metadata->mime() : null;
+            $isSVG = $mime === 'image/svg';
             $path = parse_url($imageUrl, PHP_URL_PATH);
-            $this->url =
-                $this->filter['id'] !== 'original' && !$isSVG
-                    ? rtrim(config('app.url'), '/') . ImageFacade::url($path, [$this->filter['id']])
-                    : $imageUrl;
+            $filters = [];
+            if ($this->filter['id'] !== 'original' && !$isSVG) {
+                $filters[] = $this->filter['id'];
+            }
+            if (isset($this->format) && !$isSVG) {
+                $filters['format'] = $this->format;
+            }
+            $this->url = sizeof($filters)
+                ? rtrim(config('app.url'), '/') . ImageFacade::url($path, $filters)
+                : $imageUrl;
         }
         return $this->url;
     }
