@@ -19,6 +19,7 @@ class ImageSizeResource extends JsonResource
             'url' => $this->url(),
             'width' => $this->width(),
             'height' => $this->height(),
+            'mime' => $this->mime(),
         ];
     }
 }
