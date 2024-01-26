@@ -43,7 +43,11 @@ class ImageSize implements ImageSizeContract
             if ($this->filter['id'] !== 'original' && !$isSVG) {
                 $filters[] = $this->filter['id'];
             }
-            if (isset($this->format) && !$isSVG) {
+            if (
+                isset($this->format) &&
+                !$isSVG &&
+                preg_match('/\.' . preg_quote($this->format, '/') . '$/', $imageUrl) === 0
+            ) {
                 $filters['format'] = $this->format;
             }
             $this->url = sizeof($filters)
