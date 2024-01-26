@@ -88,6 +88,9 @@ class ImageSize implements ImageSizeContract
             case 'webp':
                 return 'image/webp';
                 break;
+            case 'avif':
+                return 'image/avif';
+                break;
         }
         $metadata = $this->image->metadata();
         return !is_null($metadata) ? $metadata->mime() : null;
