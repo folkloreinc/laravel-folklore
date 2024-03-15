@@ -25,15 +25,23 @@ class PubNubBroadcaster extends Broadcaster
     protected $namespace;
 
     /**
+     * Config
+     *
+     * @var string
+     */
+    protected $config = [];
+
+    /**
      * Create a new broadcaster instance.
      *
      * @param  \Pusher  $pusher
      * @return void
      */
-    public function __construct(PubNub $pubnub, $namespace = null)
+    public function __construct(PubNub $pubnub, $namespace = null, $config = [])
     {
         $this->pubnub = $pubnub;
         $this->namespace = $namespace;
+        $this->config = $config;
     }
 
     /**
@@ -84,8 +92,18 @@ class PubNubBroadcaster extends Broadcaster
             'data' => $payload,
         ];
 
+        $checkPresence = data_get(
+            $payload,
+            'check_presence',
+            data_get($this->config, 'check_presence', false)
+        );
+        $presence = $checkPresence ? $this->getPresence($channels) : null;
         foreach ($channels as $channel) {
             $channel = $this->getChannelWithNamespace($channel);
+            $hasPresence = data_get($presence, $channel, true);
+            if (!$hasPresence) {
+                continue;
+            }
             try {
                 $result = $this->pubnub
                     ->publish()
@@ -97,6 +115,32 @@ class PubNubBroadcaster extends Broadcaster
                 Log::error($e);
             }
         }
+    }
+
+    protected function getPresence($channels)
+    {
+        try {
+            $result = $this->pubnub
+                ->hereNow()
+                ->channels(
+                    collect($channels)
+                        ->map(function ($channel) {
+                            return $this->getChannelWithNamespace($channel);
+                        })
+                        ->toArray()
+                )
+                ->sync();
+            return collect($result->getChannels())
+                ->mapWithKeys(function ($channel) {
+                    return [
+                        $channel->getChannelName() => $channel->getOccupancy() > 0,
+                    ];
+                })
+                ->toArray();
+        } catch (Exception $e) {
+            Log::error($e);
+        }
+        return null;
     }
 
     /**

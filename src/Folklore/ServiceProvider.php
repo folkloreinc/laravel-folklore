@@ -216,7 +216,8 @@ class ServiceProvider extends BaseServiceProvider
                         $config,
                         'namespace',
                         $this->app['config']->get('services.pubnub.namespace')
-                    )
+                    ),
+                    $config
                 );
             });
     }
