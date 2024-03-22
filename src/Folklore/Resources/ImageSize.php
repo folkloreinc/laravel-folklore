@@ -37,7 +37,7 @@ class ImageSize implements ImageSizeContract
             $imageUrl = $this->image->url();
             $metadata = $this->image->metadata();
             $mime = !is_null($metadata) ? $metadata->mime() : null;
-            $isSVG = $mime === 'image/svg' || $mime === 'image/svg-xml';
+            $isSVG = $mime === 'image/svg' || $mime === 'image/svg+xml';
             $path = parse_url($imageUrl, PHP_URL_PATH);
             $filters = [];
             if ($this->filter['id'] !== 'original' && !$isSVG) {
