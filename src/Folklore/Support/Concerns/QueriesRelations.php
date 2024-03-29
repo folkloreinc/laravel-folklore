@@ -3,6 +3,7 @@
 namespace Folklore\Support\Concerns;
 
 use Folklore\Contracts\Resources\Resource;
+use Folklore\Repositories\Resources;
 use Illuminate\Support\Collection;
 
 trait QueriesRelations
@@ -29,7 +30,7 @@ trait QueriesRelations
                 );
                 $ids = collect(is_array($item) || $item instanceof Collection ? $item : [$item])
                     ->map(function ($item) {
-                        return $item instanceof Resource ? $item->id() : $item;
+                        return Resources::getIdFromItem($item);
                     })
                     ->toArray();
                 if (sizeof($ids)) {

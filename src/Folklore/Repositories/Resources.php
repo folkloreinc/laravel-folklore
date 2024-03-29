@@ -53,8 +53,12 @@ abstract class Resources implements ResourcesContract
         return $query->exists();
     }
 
-    protected function getFromQuery($query, ?int $page = null, ?int $count = null, array $params = [])
-    {
+    protected function getFromQuery(
+        $query,
+        ?int $page = null,
+        ?int $count = null,
+        array $params = []
+    ) {
         if (
             !is_null($page) &&
             isset($params['offset_paginator']) &&
@@ -244,5 +248,19 @@ abstract class Resources implements ResourcesContract
     protected function getJsonAttributeExclude()
     {
         return $this->jsonAttributeExclude;
+    }
+
+    public static function getIdFromItem($item)
+    {
+        if (is_numeric($item) || is_string($item)) {
+            return $item;
+        } elseif (is_array($item)) {
+            return data_get($item, 'id');
+        } elseif ($item instanceof Model) {
+            return $item->getKey();
+        } elseif ($item instanceof Resource) {
+            return $item->id();
+        }
+        return null;
     }
 }
