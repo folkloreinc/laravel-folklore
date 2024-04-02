@@ -11,6 +11,7 @@ use Folklore\Eloquent\JsonDataCast;
 use Folklore\Support\OffsetPaginator;
 use Illuminate\Pagination\AbstractPaginator;
 use Laravel\Scout\Builder as ScoutBuilder;
+use Illuminate\Support\Str;
 
 abstract class Resources implements ResourcesContract
 {
@@ -21,6 +22,8 @@ abstract class Resources implements ResourcesContract
     protected $jsonAttributeFillable = null;
 
     protected $jsonAttributeExclude = null;
+
+    protected $queryParams = [];
 
     abstract protected function newModel(): Model;
 
@@ -211,6 +214,33 @@ abstract class Resources implements ResourcesContract
             $query->skip($params['offset']);
         }
 
+        $query = collect($this->queryParams ?? [])->reduce(function ($query, $column, $param) use (
+            $params
+        ) {
+            if (is_numeric($param)) {
+                $param = $column;
+            }
+            return collect([
+                $param,
+                'or_' . $param,
+                'exclude_' . $param,
+                'or_exclude_' . $param,
+            ])->reduce(function ($query, $paramName) use ($params, $column) {
+                $value = data_get($params, $paramName);
+                if (empty($value)) {
+                    return $query;
+                }
+                $values = collect(is_iterable($value) ? $value : [$value])->toArray();
+                $or = preg_match('/^or_/', $paramName) === 1;
+                $exclude = preg_match('/^(or_)?exclude_/', $paramName) === 1;
+                $methodName = Str::camel(
+                    ($or ? 'or-' : '') . 'where-' . ($exclude ? 'not-in' : 'in')
+                );
+                return $query->{$methodName}($column, $values);
+            }, $query);
+        },
+        $query);
+
         if (isset($params['order'])) {
             if (is_array($params['order'])) {
                 $order = $params['order'];
@@ -254,13 +284,25 @@ abstract class Resources implements ResourcesContract
     {
         if (is_numeric($item) || is_string($item)) {
             return $item;
-        } elseif (is_array($item)) {
-            return data_get($item, 'id');
+        } elseif (is_array($item) && isset($item['id'])) {
+            return $item['id'];
         } elseif ($item instanceof Model) {
             return $item->getKey();
         } elseif ($item instanceof Resource) {
             return $item->id();
         }
         return null;
+    }
+
+    public static function getIdsFromItems($items)
+    {
+        return collect(is_iterable($items) ? $items : [$items])
+            ->map(function ($item) {
+                return self::getIdFromItem($item);
+            })
+            ->filter(function ($item) {
+                return !empty($item);
+            })
+            ->toArray();
     }
 }
