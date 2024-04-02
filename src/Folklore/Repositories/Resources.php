@@ -23,7 +23,7 @@ abstract class Resources implements ResourcesContract
 
     protected $jsonAttributeExclude = null;
 
-    protected $queryParams = [];
+    protected $queryColumns = [];
 
     abstract protected function newModel(): Model;
 
@@ -214,7 +214,7 @@ abstract class Resources implements ResourcesContract
             $query->skip($params['offset']);
         }
 
-        $query = collect($this->queryParams ?? [])->reduce(function ($query, $column, $param) use (
+        $query = collect($this->queryColumns ?? [])->reduce(function ($query, $column, $param) use (
             $params
         ) {
             if (is_numeric($param)) {
