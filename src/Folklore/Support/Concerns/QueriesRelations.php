@@ -2,6 +2,7 @@
 
 namespace Folklore\Support\Concerns;
 
+use Closure;
 use Folklore\Repositories\Resources;
 use Illuminate\Support\Str;
 
@@ -60,11 +61,18 @@ trait QueriesRelations
                     $methodName = Str::camel(
                         ($or ? 'or-' : '') . 'where-' . ($exclude ? 'doesnt-have' : 'has')
                     );
-                    return $query->{$methodName}($relation, function ($query) use (
-                        $relation,
-                        $ids
+                    $relationName = is_array($relation) ? $relation[0] : $relation;
+                    $column = is_array($relation) ? $relation[1] : 'id';
+                    return $query->{$methodName}($relationName, function ($query) use (
+                        $relationName,
+                        $ids,
+                        $column
                     ) {
-                        $query->whereIn($relation . '.id', $ids);
+                        if ($column instanceof Closure) {
+                            $column($query, $ids, $relationName);
+                        } else {
+                            $query->whereIn($relationName . '.' . $column, $ids);
+                        }
                     });
                 }, $query);
             },
