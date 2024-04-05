@@ -68,10 +68,11 @@ trait QueriesRelations
                         $ids,
                         $column
                     ) {
+                        $table = $query->getModel()->getTable();
                         if ($column instanceof Closure) {
                             $column($query, $ids, $relationName);
                         } else {
-                            $query->whereIn($relationName . '.' . $column, $ids);
+                            $query->whereIn($table . '.' . $column, $ids);
                         }
                     });
                 }, $query);
