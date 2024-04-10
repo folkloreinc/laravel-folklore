@@ -15,6 +15,8 @@ class MediaMetadata implements MediaMetadataContract, HasModel
 
     protected $metadatas;
 
+    protected $originalFile;
+
     protected $tags;
 
     public function __construct(MediaModel $model)
