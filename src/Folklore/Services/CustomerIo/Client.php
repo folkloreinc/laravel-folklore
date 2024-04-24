@@ -40,8 +40,7 @@ class Client implements CustomerIo
 
     public function findCustomerFromUser($user): ?CustomerContract
     {
-        $email =
-            $user instanceof User || $user instanceof Contact ? $user->email() : null;
+        $email = $user instanceof User || $user instanceof Contact ? $user->email() : null;
         $customer = !empty($email) ? $this->findCustomerByEmail($email) : null;
         if (isset($customer)) {
             return $customer;
@@ -197,6 +196,39 @@ class Client implements CustomerIo
         return !is_null($response);
     }
 
+    public function deleteCustomer(string $identifier): bool
+    {
+        $response = $this->requestJson(
+            'https://track.customer.io/api/v1/customers/' . $identifier,
+            'DELETE'
+        );
+        return !is_null($response);
+    }
+
+    public function deleteCustomerFromUser($user): bool
+    {
+        $customer = $this->findCustomerFromUser($user);
+        $identifier = isset($customer)
+            ? 'cio_' . $customer->id()
+            : $this->getIdentifierFromResource($user);
+        return $this->deleteCustomer($identifier);
+    }
+
+    public function mergeCustomers(
+        CustomerContract $customer,
+        CustomerContract $mergeCustomer
+    ): ?CustomerContract {
+        $response = $this->requestJson('https://track.customer.io/api/v1/merge_customers', 'POST', [
+            'primary' => [
+                'cio_id' => $customer->id(),
+            ],
+            'secondary' => [
+                'cio_id' => $mergeCustomer->id(),
+            ],
+        ]);
+        return $this->findCustomerById($customer->id());
+    }
+
     public function mergeUsers($user, $mergeUser): ?CustomerContract
     {
         $customer = $this->findCustomerFromUser($user);
@@ -204,19 +236,7 @@ class Client implements CustomerIo
         if (!isset($customer) || !isset($mergeCustomer)) {
             return $customer;
         }
-        $response = $this->requestJson(
-            'https://track.customer.io/api/v1/merge_customers',
-            'POST',
-            [
-                'primary' => [
-                    'cio_id' => $customer->id(),
-                ],
-                'secondary' => [
-                    'cio_id' => $mergeCustomer->id(),
-                ]
-            ]
-        );
-        return $this->findCustomerById($customer->id());
+        return $this->mergeCustomers($customer, $mergeCustomer);
     }
 
     public function subscribeToTopic(string $email, $topic): bool

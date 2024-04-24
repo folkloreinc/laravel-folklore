@@ -4,6 +4,7 @@ namespace Folklore\Support\Concerns;
 
 use Folklore\Support\Data;
 use Closure;
+use Folklore\Mediatheque\Contracts\Models\Media;
 
 trait SeedsData
 {
@@ -53,5 +54,34 @@ trait SeedsData
             data_set($value, $path, $newValue);
             return $value;
         });
+    }
+
+    protected function getMediaFromPath($path)
+    {
+        $dir = explode('/', dirname($path));
+        $assetsIndex = array_search('assets', $dir);
+        $filename =
+            implode(
+                '/',
+                $assetsIndex !== false
+                    ? array_splice($dir, $assetsIndex - 1)
+                    : array_splice($dir, -2)
+            ) .
+            '/' .
+            basename($path);
+        $model = resolve(Media::class);
+        $media = $model
+            ->newQuery()
+            ->where('name', $filename)
+            ->first();
+        if (isset($media)) {
+            return $media;
+        }
+        $newMedia = media($path);
+        if (isset($newMedia)) {
+            $newMedia->name = $filename;
+            $newMedia->save();
+        }
+        return $newMedia;
     }
 }
