@@ -24,7 +24,8 @@ class MediaFile implements MediaFileContract, HasModel
 
     public function handle(): ?string
     {
-        return $this->model->handle;
+        return $this->model->handle ??
+            (isset($this->model->pivot) ? $this->model->pivot->handle : null);
     }
 
     public function name(): ?string
