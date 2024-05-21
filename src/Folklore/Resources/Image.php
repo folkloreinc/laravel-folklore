@@ -10,11 +10,13 @@ class Image extends Media implements ImageContract
 {
     protected $sizes;
 
+    protected $filters;
+
     public function sizes(): Collection
     {
         if (!isset($this->sizes)) {
             $this->sizes = collect(config('image.sizes'))->map(function ($filter) {
-                return new ImageSize($this, $filter);
+                return new ImageSize($this, array_merge($this->filters ?? [], $filter));
             });
         }
         return $this->sizes;
@@ -26,5 +28,11 @@ class Image extends Media implements ImageContract
             $this->metadata = new ImageMetadata($this->model);
         }
         return $this->metadata;
+    }
+
+    public function setFilters($filters): ImageContract
+    {
+        $this->filters = $filters;
+        return $this;
     }
 }
