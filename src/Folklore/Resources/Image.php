@@ -16,7 +16,7 @@ class Image extends Media implements ImageContract
     {
         if (!isset($this->sizes)) {
             $this->sizes = collect(config('image.sizes'))->map(function ($filter) {
-                return new ImageSize($this, array_merge($this->filters ?? [], $filter));
+                return new ImageSize($this, $filter, null, $this->filters);
             });
         }
         return $this->sizes;

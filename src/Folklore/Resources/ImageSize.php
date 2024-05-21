@@ -11,7 +11,9 @@ class ImageSize implements ImageSizeContract
 {
     protected $image;
 
-    protected $filter;
+    protected $size;
+
+    protected $filters;
 
     protected $format;
 
@@ -19,16 +21,17 @@ class ImageSize implements ImageSizeContract
 
     protected $dimension;
 
-    public function __construct(ImageContract $image, $filter, $format = null)
+    public function __construct(ImageContract $image, $size, $format = null, $filters = null)
     {
         $this->image = $image;
-        $this->filter = Arr::except($filter, ['format']);
-        $this->format = $format ?? data_get($filter, 'format');
+        $this->size = Arr::except($size, ['format']);
+        $this->format = $format ?? data_get($size, 'format');
+        $this->filters = $filters;
     }
 
     public function id(): string
     {
-        return $this->filter['id'];
+        return $this->size['id'];
     }
 
     public function url(): string
@@ -39,9 +42,9 @@ class ImageSize implements ImageSizeContract
             $mime = !is_null($metadata) ? $metadata->mime() : null;
             $isSVG = $mime === 'image/svg' || $mime === 'image/svg+xml';
             $path = parse_url($imageUrl, PHP_URL_PATH);
-            $filters = [];
-            if ($this->filter['id'] !== 'original' && !$isSVG) {
-                $filters[] = $this->filter['id'];
+            $filters = $this->filters ?? [];
+            if ($this->size['id'] !== 'original' && !$isSVG) {
+                $filters[] = $this->size['id'];
             }
             if (
                 isset($this->format) &&
@@ -101,12 +104,12 @@ class ImageSize implements ImageSizeContract
         $metadata = $this->image->metadata();
         $imageWidth = $metadata->width();
         $imageHeight = $metadata->height();
-        $filterWidth = data_get($this->filter, 'maxWidth');
-        $filterHeight = data_get($this->filter, 'maxHeight');
+        $filterWidth = data_get($this->size, 'maxWidth');
+        $filterHeight = data_get($this->size, 'maxHeight');
 
         $dimension = [
-            'width' => data_get($this->filter, 'width', $imageWidth),
-            'height' => data_get($this->filter, 'height', $imageHeight),
+            'width' => data_get($this->size, 'width', $imageWidth),
+            'height' => data_get($this->size, 'height', $imageHeight),
         ];
 
         if (isset($filterWidth) && isset($filterHeight)) {
