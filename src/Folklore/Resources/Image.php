@@ -5,12 +5,23 @@ namespace Folklore\Resources;
 use Folklore\Contracts\Resources\Image as ImageContract;
 use Folklore\Contracts\Resources\ImageMetadata as ImageMetadataContract;
 use Illuminate\Support\Collection;
+use Folklore\Image\Facade as ImageFacade;
 
 class Image extends Media implements ImageContract
 {
     protected $sizes;
 
     protected $filters;
+
+    public function url(): string
+    {
+        $url = parent::url();
+        if (isset($this->filters)) {
+            $path = parse_url($url, PHP_URL_PATH);
+            return rtrim(config('app.url'), '/') . ImageFacade::url($path, $this->filters);
+        }
+        return $url;
+    }
 
     public function sizes(): Collection
     {
