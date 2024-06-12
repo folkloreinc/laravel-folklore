@@ -304,7 +304,7 @@ abstract class Resources implements ResourcesContract
         $identifier,
         $handleColumn = null,
         $idColumn = 'id'
-    ): ?string {
+    ) {
         $handleColumn = $handleColumn ?? $this->identifierHandleColumn;
         $identifiers = self::getIdsFromItems($identifier);
         $ids = collect($identifiers)
