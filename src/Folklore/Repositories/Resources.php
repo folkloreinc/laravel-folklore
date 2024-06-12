@@ -25,6 +25,8 @@ abstract class Resources implements ResourcesContract
 
     protected $queryColumns = [];
 
+    protected $identifierHandleColumn = 'handle';
+
     abstract protected function newModel(): Model;
 
     protected function newQuery()
@@ -262,6 +264,35 @@ abstract class Resources implements ResourcesContract
             }
         }
 
+        return $query;
+    }
+
+    protected function getQueryFromIdentifier(
+        $query,
+        $identifier,
+        $handleColumn = null,
+        $idColumn = 'id'
+    ): ?string {
+        $handleColumn = $handleColumn ?? $this->identifierHandleColumn;
+        $identifiers = self::getIdsFromItems($identifier);
+        $ids = collect($identifiers)
+            ->filter(function ($value) {
+                return is_numeric($value);
+            })
+            ->values()
+            ->toArray();
+        $handles = collect($identifiers)
+            ->filter(function ($value) {
+                return !is_numeric($value);
+            })
+            ->values()
+            ->toArray();
+        if (sizeof($ids) > 0) {
+            $query->whereIn($idColumn, $ids);
+        }
+        if (sizeof($handles) > 0) {
+            $query->{sizeof($ids) > 0 ? 'orWhereIn' : 'whereIn'}($handleColumn, $handles);
+        }
         return $query;
     }
 

@@ -70,7 +70,9 @@ trait QueriesRelations
                     ) {
                         $table = $query->getModel()->getTable();
                         if ($column instanceof Closure) {
-                            $column($query, $ids, $relationName);
+                            $query->where(function ($query) use ($column, $ids, $relationName) {
+                                $column($query, $ids, $relationName);
+                            });
                         } else {
                             $query->whereIn($table . '.' . $column, $ids);
                         }
