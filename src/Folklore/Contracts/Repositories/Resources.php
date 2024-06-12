@@ -15,6 +15,8 @@ interface Resources extends Repository
 
     public function has(array $params = []): bool;
 
+    public function pluck($column, array $query = [], ?int $page = null, ?int $count = 10);
+
     public function create($data): Resource;
 
     public function update(string $id, $data): ?Resource;

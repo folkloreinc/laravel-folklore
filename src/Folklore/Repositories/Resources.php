@@ -48,14 +48,43 @@ abstract class Resources implements ResourcesContract
 
     public function count(array $params = []): int
     {
-        $query = $this->buildQueryFromParams($this->newQuery(), $this->getQueryParams($params));
+        $query = $this->newQueryWithParams($params);
         return $query->count();
     }
 
     public function has(array $params = []): bool
     {
-        $query = $this->buildQueryFromParams($this->newQuery(), $this->getQueryParams($params));
+        $query = $this->newQueryWithParams($params);
         return $query->exists();
+    }
+
+    public function pluck($column, array $params = [], ?int $page = null, ?int $count = null)
+    {
+        $query = $this->newQueryWithParams($params);
+        if (
+            !is_null($page) &&
+            isset($params['offset_paginator']) &&
+            $params['offset_paginator'] === true
+        ) {
+            $models = new OffsetPaginator(
+                $query
+                    ->skip($page)
+                    ->take($count)
+                    ->pluck($column),
+                $query->toBase()->getCountForPagination(),
+                $page
+            );
+        } elseif (!is_null($page)) {
+            $models =
+                $query instanceof ScoutBuilder
+                    ? $query->paginate($count, 'page', $page)
+                    : $query->paginate($count, [$column], 'page', $page);
+            $models->setCollection($models->toBase()->pluck($column));
+        } else {
+            $models = $query->take($count)->pluck($column);
+        }
+
+        return $models;
     }
 
     protected function getFromQuery(
@@ -69,12 +98,11 @@ abstract class Resources implements ResourcesContract
             isset($params['offset_paginator']) &&
             $params['offset_paginator'] === true
         ) {
-            $query->skip($page);
-            if (!is_null($count)) {
-                $query->take($count);
-            }
             $models = new OffsetPaginator(
-                $query->get(),
+                $query
+                    ->skip($page)
+                    ->take($count)
+                    ->get(),
                 $query->toBase()->getCountForPagination(),
                 $page
             );
@@ -84,10 +112,7 @@ abstract class Resources implements ResourcesContract
                     ? $query->paginate($count, 'page', $page)
                     : $query->paginate($count, ['*'], 'page', $page);
         } else {
-            if (!is_null($count)) {
-                $query->take($count);
-            }
-            $models = $query->get();
+            $models = $query->take($count)->get();
         }
 
         $collection = $models->map(function ($model) {
