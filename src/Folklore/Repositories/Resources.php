@@ -243,6 +243,13 @@ abstract class Resources implements ResourcesContract
         },
         $query);
 
+        if (isset($params['identifier'])) {
+            $identifier = $params['identifier'];
+            $query->where(function ($query) use ($identifier) {
+                $this->getQueryFromIdentifier($query, $identifier);
+            });
+        }
+
         if (isset($params['order'])) {
             if (is_array($params['order'])) {
                 $order = $params['order'];
