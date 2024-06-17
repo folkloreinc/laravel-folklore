@@ -87,6 +87,11 @@ abstract class Resources implements ResourcesContract
         return $models;
     }
 
+    public function value($column, array $params = [])
+    {
+        return $this->newQueryWithParams($params)->value($column);
+    }
+
     protected function getFromQuery(
         $query,
         ?int $page = null,
