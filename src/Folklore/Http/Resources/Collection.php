@@ -19,30 +19,37 @@ class Collection extends ResourceCollection
         return [];
     }
 
-    /**
-     * Transform the resource into an array.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return array
-     */
-    public function toArray($request)
+    public function paginationInformation()
     {
-        return $this->resource instanceof AbstractPaginator
-            ? [
-                'data' => parent::toArray($request),
-                'pagination' => new PaginationResource($this->resource),
-            ]
-            : parent::toArray($request);
+        return [
+            'pagination' => new PaginationResource($this->resource),
+        ];
     }
 
-    /**
-     * Create an HTTP response that represents the object.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function toResponse($request)
-    {
-        return (new ResourceResponse($this))->toResponse($request);
-    }
+    // /**
+    //  * Transform the resource into an array.
+    //  *
+    //  * @param  \Illuminate\Http\Request  $request
+    //  * @return array
+    //  */
+    // public function toArray($request)
+    // {
+    //     return $this->resource instanceof AbstractPaginator
+    //         ? [
+    //             'data' => parent::toArray($request),
+    //             'pagination' => new PaginationResource($this->resource),
+    //         ]
+    //         : parent::toArray($request);
+    // }
+
+    // /**
+    //  * Create an HTTP response that represents the object.
+    //  *
+    //  * @param  \Illuminate\Http\Request  $request
+    //  * @return \Illuminate\Http\JsonResponse
+    //  */
+    // public function toResponse($request)
+    // {
+    //     return (new ResourceResponse($this))->toResponse($request);
+    // }
 }
