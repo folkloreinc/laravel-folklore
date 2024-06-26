@@ -11,4 +11,6 @@ interface Image extends Media
     public function sizes(): Collection;
 
     public function setFilters($filters): Image;
+
+    public function urlWithoutFilters(): string;
 }

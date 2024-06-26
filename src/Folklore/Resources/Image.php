@@ -23,6 +23,11 @@ class Image extends Media implements ImageContract
         return $url;
     }
 
+    public function urlWithoutFilters(): string
+    {
+        return parent::url();
+    }
+
     public function sizes(): Collection
     {
         if (!isset($this->sizes)) {
