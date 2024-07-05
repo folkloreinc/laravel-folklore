@@ -385,6 +385,12 @@ class Client implements CustomerIo
         return $response;
     }
 
+    public function triggerWebhook(string $url, array $data)
+    {
+        $response = $this->requestJson($url, 'POST', $data);
+        return $response;
+    }
+
     public function trackUserPageview($user, string $url, $data): bool
     {
         $identifier = $this->getIdentifierFromResource($user);

@@ -38,6 +38,8 @@ interface CustomerIo
 
     public function sendEmail($message, string $to);
 
+    public function triggerWebhook(string $url, array $data);
+
     public function createOrUpdateCustomerFromUser(
         $user,
         $extraData = [],
