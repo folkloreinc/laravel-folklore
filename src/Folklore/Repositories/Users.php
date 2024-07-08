@@ -126,4 +126,18 @@ class Users extends Resources implements UsersContract
     {
         return $this->userProvider->validateCredentials($user, $credentials);
     }
+
+    public function rehashPasswordIfRequired(
+        Authenticatable $user,
+        array $credentials,
+        bool $force = false
+    ) {
+        // if (! $this->hasher->needsRehash($user->getAuthPassword()) && ! $force) {
+        //     return;
+        // }
+
+        // $user->forceFill([
+        //     $user->getAuthPasswordName() => $this->hasher->make($credentials['password']),
+        // ])->save();
+    }
 }
