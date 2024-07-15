@@ -132,6 +132,8 @@ class Users extends Resources implements UsersContract
         array $credentials,
         bool $force = false
     ) {
+        // TODO: fix this
+
         // if (! $this->hasher->needsRehash($user->getAuthPassword()) && ! $force) {
         //     return;
         // }

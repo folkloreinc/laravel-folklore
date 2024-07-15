@@ -95,6 +95,16 @@ class User implements UserContract, HasModel
     }
 
     /**
+     * Get the password name for the user.
+     *
+     * @return string
+     */
+    public function getAuthPasswordName()
+    {
+        return 'password';
+    }
+
+    /**
      * Get the token value for the "remember me" session.
      *
      * @return string
