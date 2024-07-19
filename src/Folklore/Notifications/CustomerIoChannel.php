@@ -30,7 +30,7 @@ class CustomerIoChannel
         } elseif ($notification instanceof CustomerIoObject) {
             $object = $notification->toObject();
             resolve(CustomerIo::class)->identifyObject($object);
-            if (!$notification->includeRelationships) {
+            if (!$notification->includeRelationships && isset($notification->relationships)) {
                 resolve(CustomerIo::class)->addRelationshipsToObject(
                     $object->type(),
                     $object->id(),
