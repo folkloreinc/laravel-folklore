@@ -12,6 +12,7 @@ use Folklore\Contracts\Resources\User;
 use Folklore\Contracts\Resources\Contact;
 use Folklore\Contracts\Resources\Resource;
 use Folklore\Contracts\Services\CustomerIo\Customer as CustomerContract;
+use Folklore\Contracts\Services\CustomerIo\CustomerIdentifiers;
 use Folklore\Contracts\Services\CustomerIo\CustomerObject;
 use Folklore\Contracts\Services\CustomerIo\Delivery as DeliveryContract;
 use Folklore\Contracts\Services\CustomerIo\Newsletter as NewsletterContract;
@@ -326,34 +327,42 @@ class Client implements CustomerIo
 
     protected function getIdentifierFromResource($resource)
     {
-        $identifier = $resource instanceof HasIdentifier ? $resource->customerIoIdentifier() : null;
-        if (empty($identifier) && ($resource instanceof Contact || $resource instanceof User)) {
-            $identifier = $resource->email();
-        }
-        if (empty($identifier) && $resource instanceof Resource) {
-            $identifier = $resource->id();
-        }
-        return $identifier;
+        $identifiers = $this->getIdentifiersFromResource($resource);
+        return data_get(
+            $identifiers,
+            'cio_id',
+            data_get($identifiers, 'email', data_get($identifiers, 'id', null))
+        );
     }
 
     protected function getIdentifiersFromResource($resource)
     {
-        $cioId = $resource instanceof HasIdentifier ? $resource->customerIoIdentifier() : null;
+        $cioId =
+            ($resource instanceof HasIdentifier ? $resource->customerIoIdentifier() : null) ??
+            ($resource instanceof CustomerIdentifiers ? $resource->cioId() : null);
         if (!empty($cioId)) {
             return [
                 'cio_id' => $cioId,
             ];
         }
         $email =
-            $resource instanceof Contact || $resource instanceof User ? $resource->email() : null;
+            $resource instanceof Contact ||
+            $resource instanceof User ||
+            $resource instanceof CustomerIdentifiers
+                ? $resource->email()
+                : null;
         if (!empty($email)) {
             return [
                 'email' => $email,
             ];
         }
-        if ($resource instanceof Resource) {
+        $id =
+            $resource instanceof Resource || $resource instanceof CustomerIdentifiers
+                ? $resource->id()
+                : null;
+        if (!empty($id)) {
             return [
-                'id' => $resource->id(),
+                'id' => $id,
             ];
         }
         return null;
