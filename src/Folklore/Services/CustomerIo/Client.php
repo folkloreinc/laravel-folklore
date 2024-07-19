@@ -395,7 +395,9 @@ class Client implements CustomerIo
     {
         $relationships = collect($object->relationships() ?? [])
             ->map(function ($relationship) {
-                return $this->getIdentifiersFromResource($relationship);
+                return [
+                    'identifiers' => $this->getIdentifiersFromResource($relationship),
+                ];
             })
             ->filter(function ($relationship) {
                 return !is_null($relationship);
@@ -424,7 +426,9 @@ class Client implements CustomerIo
     {
         $relationships = $relationships
             ->map(function ($relationship) {
-                return $this->getIdentifiersFromResource($relationship);
+                return [
+                    'identifiers' => $this->getIdentifiersFromResource($relationship),
+                ];
             })
             ->filter(function ($relationship) {
                 return !is_null($relationship);
