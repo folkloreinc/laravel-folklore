@@ -43,6 +43,8 @@ interface CustomerIo
 
     public function identifyObject(CustomerObject $object);
 
+    public function findObjectById($typeId, $objectId): ?CustomerObject;
+
     public function createOrUpdateCustomerFromUser(
         $user,
         $extraData = [],

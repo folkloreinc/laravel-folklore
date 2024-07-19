@@ -14,17 +14,17 @@ class CustomerObject implements CustomerObjectContract
 
     public function id(): string
     {
-        return $this->data['id'];
+        return data_get($this->data, 'identifiers.id', $this->data['id']);
     }
 
     public function type(): string
     {
-        return $this->data['type'];
+        return data_get($this->data, 'object_type_id', $this->data['type']);
     }
 
-    public function data(): ?array
+    public function attributes(): ?array
     {
-        return Arr::except($this->data, ['id', 'type']);
+        return data_get($this->data, 'attributes', Arr::except($this->data, ['id', 'type']));
     }
 
     public function relationships(): ?Collection

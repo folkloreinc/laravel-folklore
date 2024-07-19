@@ -22,6 +22,7 @@ use Folklore\Contracts\Services\CustomerIo\HasCustomerData;
 use Folklore\Contracts\Services\CustomerIo\HasIdentifier;
 use Folklore\Contracts\Services\CustomerIo\HasSubscriptionPreferences;
 use Illuminate\Contracts\Translation\HasLocalePreference;
+use Folklore\Contracts\Services\CustomerIo\CustomerObject as CustomerObjectContract;
 
 class Client implements CustomerIo
 {
@@ -409,12 +410,22 @@ class Client implements CustomerIo
             ],
             'type' => 'object',
             'action' => 'identify',
-            'data' => $object->data() ?? [],
+            'attributes' => $object->attributes() ?? [],
             'cio_relationships' => $relationships,
         ];
 
         $response = $this->trackEntity($request);
         return $response;
+    }
+
+    public function findObjectById($typeId, $objectId): ?CustomerObjectContract
+    {
+        $response = $this->requestJson(
+            sprintf('https://api.customer.io/v1/objects/%s/%s', $typeId, $objectId),
+            'GET'
+        );
+        $data = data_get($response, 'object');
+        return isset($data) ? new CustomerObject($data) : null;
     }
 
     public function trackUserPageview($user, string $url, $data): bool

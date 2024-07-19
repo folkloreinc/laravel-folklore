@@ -9,7 +9,7 @@ interface CustomerObject extends Resource
 {
     public function type(): string;
 
-    public function data(): ?array;
+    public function attributes(): ?array;
 
     public function relationships(): ?Collection;
 }
