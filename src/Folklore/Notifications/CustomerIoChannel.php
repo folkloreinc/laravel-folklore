@@ -25,7 +25,14 @@ class CustomerIoChannel
         } elseif ($notification instanceof CustomerIoWebhook) {
             resolve(CustomerIo::class)->triggerWebhook($notification->url, $notification->data);
         } elseif ($notification instanceof CustomerIoObject) {
-            resolve(CustomerIo::class)->identifyObject($notification->toObject());
+            $object = $notification->toObject();
+            resolve(CustomerIo::class)->identifyObject($object);
+            if (!$notification->includeRelationships) {
+                resolve(CustomerIo::class)->addRelationshipsToObject(
+                    $object->type(),
+                    $object->id()
+                );
+            }
         }
     }
 }

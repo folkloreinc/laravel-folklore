@@ -400,8 +400,7 @@ class Client implements CustomerIo
             ->filter(function ($relationship) {
                 return !is_null($relationship);
             })
-            ->values()
-            ->toArray();
+            ->values();
 
         $request = [
             'identifiers' => [
@@ -411,6 +410,35 @@ class Client implements CustomerIo
             'type' => 'object',
             'action' => 'identify',
             'attributes' => $object->attributes() ?? [],
+        ];
+
+        if ($relationships->isNotEmpty()) {
+            $request['cio_relationships'] = $relationships->toArray();
+        }
+
+        $response = $this->trackEntity($request);
+        return $response;
+    }
+
+    public function addRelationshipsToObject($typeId, $objectId, Collection $relationships)
+    {
+        $relationships = $relationships
+            ->map(function ($relationship) {
+                return $this->getIdentifiersFromResource($relationship);
+            })
+            ->filter(function ($relationship) {
+                return !is_null($relationship);
+            })
+            ->values()
+            ->toArray();
+
+        $request = [
+            'identifiers' => [
+                'object_type' => $typeId,
+                'object_id' => $objectId,
+            ],
+            'type' => 'object',
+            'action' => 'add_relationships',
             'cio_relationships' => $relationships,
         ];
 
@@ -421,7 +449,7 @@ class Client implements CustomerIo
     public function findObjectById($typeId, $objectId): ?CustomerObjectContract
     {
         $response = $this->requestJson(
-            sprintf('https://api.customer.io/v1/objects/%s/%s', $typeId, $objectId),
+            sprintf('https://api.customer.io/v1/objects/%s/%s/attributes', $typeId, $objectId),
             'GET'
         );
         $data = data_get($response, 'object');

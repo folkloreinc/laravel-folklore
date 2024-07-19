@@ -45,6 +45,8 @@ interface CustomerIo
 
     public function findObjectById($typeId, $objectId): ?CustomerObject;
 
+    public function addRelationshipsToObject($typeId, $objectId, Collection $relationships);
+
     public function createOrUpdateCustomerFromUser(
         $user,
         $extraData = [],

@@ -12,6 +12,8 @@ class CustomerIoObject
 
     public ?Collection $relationships;
 
+    public bool $includeRelationships = false;
+
     public function __construct(public string $type, public string $id)
     {
     }
@@ -28,6 +30,12 @@ class CustomerIoObject
         return $this;
     }
 
+    public function includeRelationships()
+    {
+        $this->includeRelationships = true;
+        return $this;
+    }
+
     public function toObject(): CustomerObjectContract
     {
         return new CustomerObject(
@@ -38,7 +46,7 @@ class CustomerIoObject
                 ],
                 $this->data
             ),
-            $this->relationships
+            $this->includeRelationships ? $this->relationships : null
         );
     }
 }
