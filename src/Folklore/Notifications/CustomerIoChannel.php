@@ -18,11 +18,14 @@ class CustomerIoChannel
     {
         $notification = $notification->toCustomerIo($notifiable);
         $email =
-            $notifiable->routeNotificationFor('customer_io', $notification) ?? $notifiable->email();
+            $notifiable->routeNotificationFor('customer_io', $notification) ??
+            ($notifiable->routeNotificationFor('mail', $notification) ?? $notifiable->email());
         if ($notification instanceof CustomerIoMessage && !empty($email)) {
             resolve(CustomerIo::class)->sendEmail($notification, $email);
         } elseif ($notification instanceof CustomerIoWebhook) {
             resolve(CustomerIo::class)->triggerWebhook($notification->url, $notification->data);
+        } elseif ($notification instanceof CustomerIoObject) {
+            resolve(CustomerIo::class)->identifyObject($notification->toObject());
         }
     }
 }
