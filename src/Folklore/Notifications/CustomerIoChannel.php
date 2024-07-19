@@ -33,7 +33,8 @@ class CustomerIoChannel
             if (!$notification->includeRelationships) {
                 resolve(CustomerIo::class)->addRelationshipsToObject(
                     $object->type(),
-                    $object->id()
+                    $object->id(),
+                    $notification->relationships
                 );
             }
         }
