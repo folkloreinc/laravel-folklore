@@ -13,6 +13,10 @@ class PageSlugLocalized extends LocalizedField
 
     public function field($locale)
     {
-        return new PageSlug($locale);
+        $field = new PageSlug($locale);
+        if ($this->disabled) {
+            $field->isDisabled();
+        }
+        return $field;
     }
 }
