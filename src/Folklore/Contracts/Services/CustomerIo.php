@@ -6,6 +6,7 @@ use Folklore\Contracts\Resources\Contact;
 use Illuminate\Support\Collection;
 use Folklore\Contracts\Resources\User;
 use Folklore\Contracts\Services\CustomerIo\Customer;
+use Folklore\Contracts\Services\CustomerIo\CustomerObject;
 use Folklore\Contracts\Services\CustomerIo\Delivery;
 use Folklore\Contracts\Services\CustomerIo\Newsletter;
 use Folklore\Contracts\Services\CustomerIo\NewsletterContent;
@@ -39,6 +40,12 @@ interface CustomerIo
     public function sendEmail($message, string $to);
 
     public function triggerWebhook(string $url, array $data);
+
+    public function identifyObject(CustomerObject $object);
+
+    public function findObjectById($typeId, $objectId): ?CustomerObject;
+
+    public function addRelationshipsToObject($typeId, $objectId, Collection $relationships);
 
     public function createOrUpdateCustomerFromUser(
         $user,

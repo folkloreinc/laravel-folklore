@@ -12,6 +12,8 @@ use Folklore\Contracts\Resources\User;
 use Folklore\Contracts\Resources\Contact;
 use Folklore\Contracts\Resources\Resource;
 use Folklore\Contracts\Services\CustomerIo\Customer as CustomerContract;
+use Folklore\Contracts\Services\CustomerIo\CustomerIdentifiers;
+use Folklore\Contracts\Services\CustomerIo\CustomerObject;
 use Folklore\Contracts\Services\CustomerIo\Delivery as DeliveryContract;
 use Folklore\Contracts\Services\CustomerIo\Newsletter as NewsletterContract;
 use Folklore\Contracts\Services\CustomerIo\NewsletterContent as NewsletterContentContract;
@@ -20,6 +22,7 @@ use Folklore\Contracts\Services\CustomerIo\HasCustomerData;
 use Folklore\Contracts\Services\CustomerIo\HasIdentifier;
 use Folklore\Contracts\Services\CustomerIo\HasSubscriptionPreferences;
 use Illuminate\Contracts\Translation\HasLocalePreference;
+use Folklore\Contracts\Services\CustomerIo\CustomerObject as CustomerObjectContract;
 
 class Client implements CustomerIo
 {
@@ -243,24 +246,7 @@ class Client implements CustomerIo
     {
         $customer = $this->findCustomerByEmail($email);
         $userData = [
-            'email' => $email,
-            'cio_subscription_preferences' => [
-                'topics' => array_merge(
-                    isset($customer)
-                        ? $customer
-                            ->subscriptionPreferences()
-                            ->mapWithKeys(function ($preference) {
-                                return [
-                                    $preference->topic() => $preference->subscribed(),
-                                ];
-                            })
-                            ->toArray()
-                        : [],
-                    [
-                        $topic => true,
-                    ]
-                ),
-            ],
+            'cio_subscription_preferences.topics.' . $topic => true,
         ];
         $identifier = $email;
         if (isset($customer)) {
@@ -273,24 +259,7 @@ class Client implements CustomerIo
     {
         $customer = $this->findCustomerByEmail($email);
         $userData = [
-            'email' => $email,
-            'cio_subscription_preferences' => [
-                'topics' => array_merge(
-                    isset($customer)
-                        ? $customer
-                            ->subscriptionPreferences()
-                            ->mapWithKeys(function ($preference) {
-                                return [
-                                    $preference->topic() => $preference->subscribed(),
-                                ];
-                            })
-                            ->toArray()
-                        : [],
-                    [
-                        $topic => false,
-                    ]
-                ),
-            ],
+            'cio_subscription_preferences.topics.' . $topic => false,
         ];
         $identifier = $email;
         if (isset($customer)) {
@@ -359,14 +328,45 @@ class Client implements CustomerIo
 
     protected function getIdentifierFromResource($resource)
     {
-        $identifier = $resource instanceof HasIdentifier ? $resource->customerIoIdentifier() : null;
-        if (empty($identifier) && ($resource instanceof Contact || $resource instanceof User)) {
-            $identifier = $resource->email();
+        $identifiers = $this->getIdentifiersFromResource($resource);
+        return data_get(
+            $identifiers,
+            'cio_id',
+            data_get($identifiers, 'email', data_get($identifiers, 'id', null))
+        );
+    }
+
+    protected function getIdentifiersFromResource($resource)
+    {
+        $cioId =
+            ($resource instanceof HasIdentifier ? $resource->customerIoIdentifier() : null) ??
+            ($resource instanceof CustomerIdentifiers ? $resource->cioId() : null);
+        if (!empty($cioId)) {
+            return [
+                'cio_id' => $cioId,
+            ];
         }
-        if (empty($identifier) && $resource instanceof Resource) {
-            $identifier = $resource->id();
+        $email =
+            $resource instanceof Contact ||
+            $resource instanceof User ||
+            $resource instanceof CustomerIdentifiers
+                ? $resource->email()
+                : null;
+        if (!empty($email)) {
+            return [
+                'email' => $email,
+            ];
         }
-        return $identifier;
+        $id =
+            $resource instanceof Resource || $resource instanceof CustomerIdentifiers
+                ? $resource->id()
+                : null;
+        if (!empty($id)) {
+            return [
+                'id' => $id,
+            ];
+        }
+        return null;
     }
 
     public function getTransactionalMessages(): Collection
@@ -389,6 +389,75 @@ class Client implements CustomerIo
     {
         $response = $this->requestJson($url, 'POST', $data);
         return $response;
+    }
+
+    public function identifyObject(CustomerObject $object)
+    {
+        $relationships = collect($object->relationships() ?? [])
+            ->map(function ($relationship) {
+                return [
+                    'identifiers' => $this->getIdentifiersFromResource($relationship),
+                ];
+            })
+            ->filter(function ($relationship) {
+                return !is_null($relationship);
+            })
+            ->values();
+
+        $request = [
+            'identifiers' => [
+                'object_type_id' => $object->type(),
+                'object_id' => $object->id(),
+            ],
+            'type' => 'object',
+            'action' => 'identify',
+            'attributes' => $object->attributes() ?? [],
+        ];
+
+        if ($relationships->isNotEmpty()) {
+            $request['cio_relationships'] = $relationships->toArray();
+        }
+
+        $response = $this->trackEntity($request);
+        return $response;
+    }
+
+    public function addRelationshipsToObject($typeId, $objectId, Collection $relationships)
+    {
+        $relationships = $relationships
+            ->map(function ($relationship) {
+                return [
+                    'identifiers' => $this->getIdentifiersFromResource($relationship),
+                ];
+            })
+            ->filter(function ($relationship) {
+                return !is_null($relationship);
+            })
+            ->values()
+            ->toArray();
+
+        $request = [
+            'identifiers' => [
+                'object_type_id' => $typeId,
+                'object_id' => $objectId,
+            ],
+            'type' => 'object',
+            'action' => 'add_relationships',
+            'cio_relationships' => $relationships,
+        ];
+
+        $response = $this->trackEntity($request);
+        return $response;
+    }
+
+    public function findObjectById($typeId, $objectId): ?CustomerObjectContract
+    {
+        $response = $this->requestJson(
+            sprintf('https://api.customer.io/v1/objects/%s/%s/attributes', $typeId, $objectId),
+            'GET'
+        );
+        $data = data_get($response, 'object');
+        return isset($data) ? new CustomerObject($data) : null;
     }
 
     public function trackUserPageview($user, string $url, $data): bool
@@ -444,6 +513,11 @@ class Client implements CustomerIo
                 Arr::only($data, ['timestamp', 'id'])
             )
         );
+    }
+
+    protected function trackEntity($entity): ?array
+    {
+        return $this->requestJson('https://track.customer.io/api/v2/entity', 'POST', $entity);
     }
 
     protected function getAuthorizationHeader($url)
