@@ -295,30 +295,19 @@ class Client implements CustomerIo
             $data['locale'] = $resource->preferredLocale();
         }
         if ($resource instanceof HasSubscriptionPreferences) {
-            $data['cio_subscription_preferences'] = [
-                'topics' => array_merge(
-                    isset($customer)
-                        ? $customer
-                            ->subscriptionPreferences()
-                            ->mapWithKeys(function ($preference) {
-                                return [
-                                    $preference->topic() => $preference->subscribed(),
-                                ];
-                            })
-                            ->toArray()
-                        : [],
-                    $resource instanceof HasSubscriptionPreferences
-                        ? $resource
-                            ->subscriptionPreferences()
-                            ->mapWithKeys(function ($preference) {
-                                return [
-                                    $preference->topic() => $preference->subscribed(),
-                                ];
-                            })
-                            ->toArray()
-                        : []
-                ),
-            ];
+            $data =
+                $resource instanceof HasSubscriptionPreferences
+                    ? $resource
+                        ->subscriptionPreferences()
+                        ->reduce(function ($currentData, $preference) {
+                            data_set(
+                                $currentData,
+                                'cio_subscription_preferences.topics.' . $preference->topic(),
+                                $preference->subscribed()
+                            );
+                            return $currentData;
+                        }, $data)
+                    : $data;
         }
         if ($resource instanceof HasCustomerData) {
             return $resource->getCustomerData($data, $customer);
