@@ -53,9 +53,9 @@ interface CustomerIo
         bool $updateOnly = false
     ): bool;
 
-    public function subscribeToTopic(string $email, $topic): bool;
+    public function subscribeToTopic(string $email, $topic, $data = []): bool;
 
-    public function unsubscribeToTopic(string $email, $topic): bool;
+    public function unsubscribeToTopic(string $email, $topic, $data = []): bool;
 
     public function updateCustomer(string $identifier, $data = []): bool;
 

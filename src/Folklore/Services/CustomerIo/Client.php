@@ -242,12 +242,15 @@ class Client implements CustomerIo
         return $this->mergeCustomers($customer, $mergeCustomer);
     }
 
-    public function subscribeToTopic(string $email, $topic): bool
+    public function subscribeToTopic(string $email, $topic, $data = []): bool
     {
         $customer = $this->findCustomerByEmail($email);
-        $userData = [
-            'cio_subscription_preferences.topics.' . $topic => true,
-        ];
+        $userData = array_merge(
+            [
+                'cio_subscription_preferences.topics.' . $topic => true,
+            ],
+            $data
+        );
         $identifier = $email;
         if (isset($customer)) {
             $identifier = 'cio_' . $customer->id();
@@ -255,12 +258,15 @@ class Client implements CustomerIo
         return $this->updateCustomer($identifier, $userData);
     }
 
-    public function unsubscribeToTopic(string $email, $topic): bool
+    public function unsubscribeToTopic(string $email, $topic, $data = []): bool
     {
         $customer = $this->findCustomerByEmail($email);
-        $userData = [
-            'cio_subscription_preferences.topics.' . $topic => false,
-        ];
+        $userData = array_merge(
+            [
+                'cio_subscription_preferences.topics.' . $topic => false,
+            ],
+            $data
+        );
         $identifier = $email;
         if (isset($customer)) {
             $identifier = 'cio_' . $customer->id();
