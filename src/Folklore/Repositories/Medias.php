@@ -68,6 +68,26 @@ class Medias extends Resources implements MediasRepositoryContract
         return $model instanceof Resourcable ? $model->toResource() : $model;
     }
 
+    public function updateFromFile(string $id, File $file, $data = []): MediaContract
+    {
+        $model = $this->findModelById($id);
+        $model->files()->detach();
+
+        $model->setOriginalFile($file);
+        $model->save();
+
+        $type = $model->getType();
+        if (!is_null($type)) {
+            $pipeline = $type->pipeline();
+            if (!is_null($pipeline) && !$model->typePipelineDisabled()) {
+                $model->runPipeline($pipeline);
+            }
+        }
+
+        $model->load('files');
+        return $model instanceof Resourcable ? $model->toResource() : $model;
+    }
+
     public function createFromPath(string $path, $data = []): ?MediaContract
     {
         $name = $this->getNameFromPath($path);
