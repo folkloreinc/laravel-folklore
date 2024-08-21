@@ -4,6 +4,7 @@ namespace Folklore\Support\Concerns;
 
 use Folklore\Support\Data;
 use Closure;
+use Folklore\Contracts\Repositories\Medias;
 use Folklore\Mediatheque\Contracts\Models\Media;
 
 trait SeedsData
@@ -69,19 +70,10 @@ trait SeedsData
             ) .
             '/' .
             basename($path);
-        $model = resolve(Media::class);
-        $media = $model
-            ->newQuery()
-            ->where('name', $filename)
-            ->first();
+        $media = resolve(Medias::class)->findByName($filename);
         if (isset($media)) {
             return $media;
         }
-        $newMedia = media($path);
-        if (isset($newMedia)) {
-            $newMedia->name = $filename;
-            $newMedia->save();
-        }
-        return $newMedia;
+        return resolve(Medias::class)->createFromPath($path);
     }
 }
