@@ -35,6 +35,8 @@ class ServiceProvider extends BaseServiceProvider
         if ($this->app['config']->get('pubsubhubbub') !== null) {
             $this->registerPubsubHubbub();
         }
+
+        $this->registerGoogle();
     }
 
     protected function registerRepositories()
@@ -107,6 +109,21 @@ class ServiceProvider extends BaseServiceProvider
         $this->app->bind(
             \Folklore\Contracts\Services\PubSubHubbub\Factory::class,
             'services.pubsubhubbub.manager'
+        );
+    }
+
+    /**
+     * Register Google
+     *
+     * @return void
+     */
+    protected function registerGoogle()
+    {
+        $this->registerBindingsFromConfig(\Folklore\Services\Google\Drive::class, []);
+
+        $this->app->alias(
+            \Folklore\Services\Google\Drive::class,
+            \Folklore\Contracts\Services\Google\Drive::class
         );
     }
 
