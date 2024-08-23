@@ -24,7 +24,9 @@ class Drive implements DriveContract
             'headers' => 0,
         ]);
 
-        $csv = new Csv($data);
+        $csv = new Csv();
+        $csv->heading = false;
+        $csv->parse($data);
         return $csv->data;
     }
 
