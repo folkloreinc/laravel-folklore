@@ -4,6 +4,7 @@ namespace Folklore\Services\Google;
 
 use Folklore\Support\Concerns\MakesRequests;
 use Folklore\Contracts\Services\Google\Drive as DriveContract;
+use ParseCsv\Csv;
 
 class Drive implements DriveContract
 {
@@ -20,11 +21,11 @@ class Drive implements DriveContract
         $data = $this->requestData($url, 'GET', [
             'tqx' => 'out:csv',
             'sheet' => $sheet,
+            'headers' => 0,
         ]);
-        $lines = explode("\n", $data);
-        return array_map(function ($line) {
-            return str_getcsv($line);
-        }, $lines);
+
+        $csv = new Csv($data);
+        return $csv->data;
     }
 
     protected function getIdFromUrl($url)
