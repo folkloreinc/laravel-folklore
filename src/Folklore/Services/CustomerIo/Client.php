@@ -175,37 +175,47 @@ class Client implements CustomerIo
         $identifier = isset($customer)
             ? 'cio_' . $customer->id()
             : $this->getIdentifierFromResource($user);
-        return $this->updateCustomer(
-            $identifier,
-            array_merge(
-                $userData,
-                $extraData,
-                $updateOnly
-                    ? [
-                        '_update' => true,
-                    ]
-                    : []
-            )
-        );
+        return $this->updateCustomer($identifier, array_merge($userData, $extraData));
     }
 
     public function updateCustomer(string $identifier, $data = []): bool
     {
-        $response = $this->requestJson(
-            'https://track.customer.io/api/v1/customers/' . $identifier,
-            'PUT',
-            $data
-        );
+        $identifiers = $this->getIdentifiersFromIdentifier($identifier);
+        $response = $this->trackEntity([
+            'type' => 'person',
+            'action' => 'identify',
+            'identifiers' => $identifiers,
+            'data' => $data,
+        ]);
         return !is_null($response);
     }
 
     public function deleteCustomer(string $identifier): bool
     {
-        $response = $this->requestJson(
-            'https://track.customer.io/api/v1/customers/' . $identifier,
-            'DELETE'
-        );
+        $identifiers = $this->getIdentifiersFromIdentifier($identifier);
+        $response = $this->trackEntity([
+            'type' => 'person',
+            'action' => 'delete',
+            'identifiers' => $identifiers,
+        ]);
         return !is_null($response);
+    }
+
+    protected function getIdentifiersFromIdentifier(string $identifier): array
+    {
+        if (preg_match('/^cio_(.*)$/', $identifier, $matches) === 1) {
+            return [
+                'cio_id' => $matches[1],
+            ];
+        }
+        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+            return [
+                'email' => $identifier,
+            ];
+        }
+        return [
+            'id' => $identifier,
+        ];
     }
 
     public function deleteCustomerFromUser($user): bool
@@ -221,7 +231,9 @@ class Client implements CustomerIo
         CustomerContract $customer,
         CustomerContract $mergeCustomer
     ): ?CustomerContract {
-        $response = $this->requestJson('https://track.customer.io/api/v1/merge_customers', 'POST', [
+        $this->trackEntity([
+            'type' => 'person',
+            'action' => 'merge',
             'primary' => [
                 'cio_id' => $customer->id(),
             ],
@@ -306,11 +318,9 @@ class Client implements CustomerIo
                     ? $resource
                         ->subscriptionPreferences()
                         ->reduce(function ($currentData, $preference) {
-                            data_set(
-                                $currentData,
-                                'cio_subscription_preferences.topics.' . $preference->topic(),
-                                $preference->subscribed()
-                            );
+                            $currentData[
+                                'cio_subscription_preferences.topics.' . $preference->topic()
+                            ] = $preference->subscribed();
                             return $currentData;
                         }, $data)
                     : $data;
@@ -477,16 +487,17 @@ class Client implements CustomerIo
         return $this->trackAnonymousEventBase($anonymousId, 'event', $name, $data) !== null;
     }
 
-    protected function trackCustomerEventBase($identifier, $type, $name, $data): ?array
+    protected function trackCustomerEventBase($identifier, $action, $name, $data): ?array
     {
-        return $this->requestJson(
-            sprintf('https://track.customer.io/api/v1/customers/%s/events', $identifier),
-            'POST',
+        $identifiers = $this->getIdentifiersFromIdentifier($identifier);
+        return $this->trackEntity(
             array_merge(
                 [
-                    'type' => $type,
+                    'type' => 'person',
+                    'action' => $action,
+                    'identifiers' => $identifiers,
                     'name' => $name,
-                    'data' => Arr::except($data, ['timestamp', 'id']),
+                    'attributes' => Arr::except($data, ['timestamp', 'id']),
                 ],
                 Arr::only($data, ['timestamp', 'id'])
             )
