@@ -411,7 +411,7 @@ class Client implements CustomerIo
 
         $request = [
             'identifiers' => [
-                'object_type_id' => $object->type(),
+                'object_type_id' => (string)$object->type(),
                 'object_id' => $object->id(),
             ],
             'type' => 'object',
@@ -443,7 +443,7 @@ class Client implements CustomerIo
 
         $request = [
             'identifiers' => [
-                'object_type_id' => $typeId,
+                'object_type_id' => (string)$typeId,
                 'object_id' => $objectId,
             ],
             'type' => 'object',
