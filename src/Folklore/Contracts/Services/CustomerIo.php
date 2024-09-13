@@ -74,4 +74,6 @@ interface CustomerIo
     public function trackAnonymousPageview(string $anonymousId, string $url, $data): bool;
 
     public function trackAnonymousEvent(string $anonymousId, string $name, $data): bool;
+
+    public function getIdentifiersFromResource($resource);
 }

@@ -341,7 +341,7 @@ class Client implements CustomerIo
         );
     }
 
-    protected function getIdentifiersFromResource($resource)
+    public function getIdentifiersFromResource($resource)
     {
         $cioId =
             ($resource instanceof HasIdentifier ? $resource->customerIoIdentifier() : null) ??
