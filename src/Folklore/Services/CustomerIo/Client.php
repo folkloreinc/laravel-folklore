@@ -431,7 +431,7 @@ class Client implements CustomerIo
     {
         $relationships = $relationships
             ->map(function ($relationship) {
-                return [
+                return is_array($relationship) ? $relationship : [
                     'identifiers' => $this->getIdentifiersFromResource($relationship),
                 ];
             })
