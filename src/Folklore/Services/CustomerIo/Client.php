@@ -185,7 +185,7 @@ class Client implements CustomerIo
             'type' => 'person',
             'action' => 'identify',
             'identifiers' => $identifiers,
-            'data' => $data,
+            'attributes' => $data,
         ]);
         return !is_null($response);
     }
