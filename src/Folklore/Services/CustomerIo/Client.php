@@ -514,7 +514,7 @@ class Client implements CustomerIo
                     'type' => $type,
                     'name' => $name,
                     'anonymous_id' => $anonymousId,
-                    'data' => Arr::except($data, ['timestamp', 'id']),
+                    'attributes' => Arr::except($data, ['timestamp', 'id']),
                 ],
                 Arr::only($data, ['timestamp', 'id'])
             )
