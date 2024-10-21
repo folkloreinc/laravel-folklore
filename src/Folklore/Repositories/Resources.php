@@ -120,9 +120,11 @@ abstract class Resources implements ResourcesContract
             $models = $query->take($count)->get();
         }
 
-        $collection = $models->map(function ($model) {
-            return $model instanceof Resourcable ? $model->toResource() : $model;
-        });
+        $collection = $models
+            ->map(function ($model) {
+                return $model instanceof Resourcable ? $model->toResource() : $model;
+            })
+            ->toBase();
 
         if ($models instanceof AbstractPaginator) {
             $models->setCollection($collection);
