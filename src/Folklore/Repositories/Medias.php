@@ -74,6 +74,7 @@ class Medias extends Resources implements MediasRepositoryContract
         $model->files()->detach();
 
         $model->setOriginalFile($file);
+        $this->fillModel($model, $data);
         $model->save();
 
         $type = $model->getType();
