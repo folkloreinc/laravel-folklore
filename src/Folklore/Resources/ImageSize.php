@@ -59,7 +59,8 @@ class ImageSize implements ImageSizeContract
                 $filters['format'] = $this->format;
             }
             $this->url = sizeof($filters)
-                ? rtrim(config('app.url'), '/') . ImageFacade::url($path, $filters)
+                ? rtrim(config('app.image_url', config('app.url')), '/') .
+                    ImageFacade::url($path, $filters)
                 : $imageUrl;
         }
         return $this->url;
