@@ -5,6 +5,7 @@ namespace Folklore\Contracts\Services;
 use Folklore\Contracts\Resources\Contact;
 use Illuminate\Support\Collection;
 use Folklore\Contracts\Resources\User;
+use Folklore\Contracts\Services\CustomerIo\Campaign;
 use Folklore\Contracts\Services\CustomerIo\Customer;
 use Folklore\Contracts\Services\CustomerIo\CustomerObject;
 use Folklore\Contracts\Services\CustomerIo\Delivery;
@@ -30,6 +31,8 @@ interface CustomerIo
         string $newsletterId,
         string $contentId
     ): ?NewsletterContent;
+
+    public function findCampaignById(string $id): ?Campaign;
 
     public function findTransactionalMessageById(string $id): ?TransactionalMessage;
 

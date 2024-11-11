@@ -7,6 +7,7 @@ use Folklore\Contracts\Services\CustomerIo\Delivery as DeliveryContract;
 use Folklore\Contracts\Services\CustomerIo\Newsletter as NewsletterContract;
 use Folklore\Contracts\Services\CustomerIo\NewsletterContent as NewsletterContentContract;
 use Folklore\Contracts\Services\CustomerIo\TransactionalMessage as TransactionalMessageContract;
+use Folklore\Contracts\Services\CustomerIo\Campaign as CampaignContract;
 use Folklore\Contracts\Services\CustomerIo;
 
 class Delivery implements DeliveryContract
@@ -70,11 +71,20 @@ class Delivery implements DeliveryContract
         return !empty($id);
     }
 
+    public function campaign(): ?CampaignContract
+    {
+        $id = data_get($this->data, 'campaign_id');
+        if (!empty($id) && !isset($this->campaign)) {
+            $this->campaign = $this->service->findCampaignById($id);
+        }
+        return $this->campaign;
+    }
+
     public function transactionalMessage(): ?TransactionalMessageContract
     {
         $id = data_get($this->data, 'transactional_message_id');
         if (!empty($id) && !isset($this->transactional)) {
-            $this->transactional = $this->service->findTransactionMessageById($id);
+            $this->transactional = $this->service->findTransactionalMessageById($id);
         }
         return $this->transactional;
     }

@@ -18,6 +18,7 @@ use Folklore\Contracts\Services\CustomerIo\Delivery as DeliveryContract;
 use Folklore\Contracts\Services\CustomerIo\Newsletter as NewsletterContract;
 use Folklore\Contracts\Services\CustomerIo\NewsletterContent as NewsletterContentContract;
 use Folklore\Contracts\Services\CustomerIo\TransactionalMessage as TransactionalMessageContract;
+use Folklore\Contracts\Services\CustomerIo\Campaign as CampaignContract;
 use Folklore\Contracts\Services\CustomerIo\HasCustomerData;
 use Folklore\Contracts\Services\CustomerIo\HasIdentifier;
 use Folklore\Contracts\Services\CustomerIo\HasSubscriptionPreferences;
@@ -145,6 +146,16 @@ class Client implements CustomerIo
         );
         $data = data_get($response, 'content');
         return isset($data) ? new NewsletterContent($data) : null;
+    }
+
+    public function findCampaignById(string $id): ?CampaignContract
+    {
+        $response = $this->requestJson(
+            sprintf('https://api.customer.io/v1/campaigns/%s', $id),
+            'GET'
+        );
+        $data = data_get($response, 'campaign');
+        return isset($data) ? new Campaign($data) : null;
     }
 
     public function findTransactionalMessageById(string $id): ?TransactionalMessageContract
