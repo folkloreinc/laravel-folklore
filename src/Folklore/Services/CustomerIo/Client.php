@@ -354,6 +354,10 @@ class Client implements CustomerIo
 
     public function getIdentifiersFromResource($resource)
     {
+        if (is_array($resource)) {
+            return $resource;
+        }
+
         $cioId =
             ($resource instanceof HasIdentifier ? $resource->customerIoIdentifier() : null) ??
             ($resource instanceof CustomerIdentifiers ? $resource->cioId() : null);
