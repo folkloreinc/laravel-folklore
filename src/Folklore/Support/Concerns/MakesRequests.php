@@ -90,11 +90,6 @@ trait MakesRequests
             data_get($opts, 'headers', [])
         );
         $options = Arr::except($opts, ['headers']);
-        $contentType = data_get(
-            $headers,
-            'Content-type',
-            data_get($headers, 'Content-Type', data_get($headers, 'content-type'))
-        );
 
         $params = method_exists($this, 'getRequestParams')
             ? $this->getRequestParams($url, $method, $params, $opts)
@@ -116,13 +111,10 @@ trait MakesRequests
 
     protected function getRequestClient()
     {
-        if (!$this->requestClient) {
-            $opts = [];
-            if (method_exists($this, 'getRequestBaseUri')) {
-                $opts['base_uri'] = $this->getRequestBaseUri();
-            }
-            $this->requestClient = Http::withOptions($opts);
+        $opts = [];
+        if (method_exists($this, 'getRequestBaseUri')) {
+            $opts['base_uri'] = $this->getRequestBaseUri();
         }
-        return $this->requestClient;
+        return Http::withOptions($opts);
     }
 }
