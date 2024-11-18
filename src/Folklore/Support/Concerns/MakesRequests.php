@@ -3,11 +3,10 @@
 namespace Folklore\Support\Concerns;
 
 use Illuminate\Support\Arr;
-use GuzzleHttp\Client as HttpClient;
-use GuzzleHttp\Exception\ClientException;
 use Exception;
 use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 
 trait MakesRequests
 {
@@ -35,16 +34,11 @@ trait MakesRequests
                 'headers' => $headers,
             ])
         );
-        $isSuccess =
-            !is_null($response) &&
-            $response->getStatusCode() >= 200 &&
-            $response->getStatusCode() < 300;
+        $isSuccess = !is_null($response) && $response->successful();
 
         $returnErrors = data_get($opts, 'return_errors', false);
 
-        return !is_null($response) && ($returnErrors || $isSuccess)
-            ? json_decode((string) $response->getBody(), true)
-            : null;
+        return !is_null($response) && ($returnErrors || $isSuccess) ? $response->json() : null;
     }
 
     protected function requestWebpage(
@@ -58,7 +52,7 @@ trait MakesRequests
             ],
             data_get($opts, 'headers', [])
         );
-        $response = $this->makeRequest(
+        return $this->requestData(
             $url,
             'GET',
             [],
@@ -66,16 +60,6 @@ trait MakesRequests
                 'headers' => $headers,
             ])
         );
-        $isSuccess =
-            !is_null($response) &&
-            $response->getStatusCode() >= 200 &&
-            $response->getStatusCode() < 300;
-
-        $returnErrors = data_get($opts, 'return_errors', false);
-
-        return !is_null($response) && ($returnErrors || $isSuccess)
-            ? (string) $response->getBody()
-            : null;
     }
 
     protected function requestData($url, $method = 'GET', $params = [], $opts = [])
@@ -86,15 +70,10 @@ trait MakesRequests
             $params,
             Arr::except($opts, ['return_errors'])
         );
-        $isSuccess =
-            !is_null($response) &&
-            $response->getStatusCode() >= 200 &&
-            $response->getStatusCode() < 300;
+        $isSuccess = !is_null($response) && $response->successful();
 
         $returnErrors = data_get($opts, 'return_errors', false);
-        return !is_null($response) && ($returnErrors || $isSuccess)
-            ? (string) $response->getBody()
-            : null;
+        return !is_null($response) && ($returnErrors || $isSuccess) ? $response->body() : null;
     }
 
     protected function makeRequest($url, $method, $params = [], $opts = [])
@@ -116,25 +95,16 @@ trait MakesRequests
             'Content-type',
             data_get($headers, 'Content-Type', data_get($headers, 'content-type'))
         );
-        $postKey = $contentType === 'application/json' ? 'json' : 'form_params';
 
         $params = method_exists($this, 'getRequestParams')
             ? $this->getRequestParams($url, $method, $params, $opts)
             : $params;
 
         try {
-            $response = $this->getRequestClient()->request(
-                $method,
-                $url,
-                array_merge(
-                    [
-                        $postKey => $method == 'POST' || $method == 'PUT' ? $params : null,
-                        'query' => $method === 'GET' ? $params : null,
-                        'headers' => $headers,
-                    ],
-                    $options
-                )
-            );
+            $response = $this->getRequestClient()
+                ->withHeaders($headers)
+                ->withOptions($options)
+                ->{strtolower($method)}($url, $params);
             return $response;
         } catch (RequestException $e) {
             return $e->getResponse();
@@ -151,7 +121,7 @@ trait MakesRequests
             if (method_exists($this, 'getRequestBaseUri')) {
                 $opts['base_uri'] = $this->getRequestBaseUri();
             }
-            $this->requestClient = new HttpClient($opts);
+            $this->requestClient = Http::withOptions($opts);
         }
         return $this->requestClient;
     }

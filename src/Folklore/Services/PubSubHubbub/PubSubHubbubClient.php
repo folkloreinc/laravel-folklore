@@ -34,14 +34,10 @@ class PubSubHubbubClient implements PubSubHubbubClientContract
                 'hub.topic' => $topic,
             ])
         );
-        if (
-            isset($response) &&
-            $response->getStatusCode() == 202 &&
-            $response->getStatusCode() == 204
-        ) {
+        if (isset($response) && $response->successful()) {
             return true;
         }
-        return isset($response) ? (string) $response->getBody() : false;
+        return isset($response) ? $response->body() : false;
     }
 
     public function unsubscribe($callback, $topic)
@@ -56,13 +52,9 @@ class PubSubHubbubClient implements PubSubHubbubClientContract
                 'hub.topic' => $topic,
             ])
         );
-        if (
-            isset($response) &&
-            $response->getStatusCode() == 202 &&
-            $response->getStatusCode() == 204
-        ) {
+        if (isset($response) && $response->successful()) {
             return true;
         }
-        return isset($response) ? (string) $response->getBody() : false;
+        return isset($response) ? $response->body() : false;
     }
 }
