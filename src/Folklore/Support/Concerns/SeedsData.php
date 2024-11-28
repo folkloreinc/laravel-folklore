@@ -74,6 +74,8 @@ trait SeedsData
         if (isset($media)) {
             return $media;
         }
-        return resolve(Medias::class)->createFromPath($path);
+        return resolve(Medias::class)->createFromPath($path, [
+            'name' => $filename
+        ]);
     }
 }
