@@ -10,5 +10,7 @@ use Illuminate\Contracts\Translation\HasLocalePreference;
 
 interface Customer extends Contact, Resource, HasSubscriptionPreferences, HasLocalePreference
 {
+    public function externalId(): string;
+
     public function createdAt(): ?Carbon;
 }
