@@ -35,11 +35,14 @@ class Client implements CustomerIo
 
     protected $trackingKey;
 
-    public function __construct($key, $siteId, $trackingKey = null)
+    protected $apiBaseUrl;
+
+    public function __construct($key, $siteId, $trackingKey = null, $apiBaseUrl = null)
     {
         $this->key = $key;
         $this->siteId = $siteId;
         $this->trackingKey = $trackingKey;
+        $this->apiBaseUrl = isset($apiBaseUrl) ? $apiBaseUrl : 'https://api.customer.io';
     }
 
     public function findCustomerFromUser($user): ?CustomerContract
@@ -74,7 +77,7 @@ class Client implements CustomerIo
     public function findCustomerById(string $id, string $type = 'cio_id'): ?CustomerContract
     {
         $response = $this->requestJson(
-            sprintf('https://api.customer.io/v1/customers/%s/attributes', $id),
+            $this->buildApiEndpoint('/v1/customers/%s/attributes', [$id]),
             'GET',
             [
                 'id_type' => $type,
@@ -86,7 +89,7 @@ class Client implements CustomerIo
 
     public function findCustomerByEmail(string $email): ?CustomerContract
     {
-        $response = $this->requestJson('https://api.customer.io/v1/customers', 'GET', [
+        $response = $this->requestJson($this->buildApiEndpoint('/v1/customers'), 'GET', [
             'email' => $email,
         ]);
         $id = data_get($response, 'results.0.cio_id');
@@ -95,7 +98,7 @@ class Client implements CustomerIo
 
     public function findCustomerByPhone(string $phone): ?CustomerContract
     {
-        $response = $this->requestJson('https://api.customer.io/v1/customers', 'POST', [
+        $response = $this->requestJson($this->buildApiEndpoint('/v1/customers'), 'POST', [
             'filter' => [
                 'and' => [
                     [
@@ -115,7 +118,7 @@ class Client implements CustomerIo
     public function findDeliveryById(string $id): ?DeliveryContract
     {
         $response = $this->requestJson(
-            sprintf('https://api.customer.io/v1/messages/%s', $id),
+            $this->buildApiEndpoint('/v1/messages/%s', [$id]),
             'GET'
         );
         $data = data_get($response, 'message');
@@ -125,7 +128,7 @@ class Client implements CustomerIo
     public function findNewsletterById(string $id): ?NewsletterContract
     {
         $response = $this->requestJson(
-            sprintf('https://api.customer.io/v1/newsletters/%s', $id),
+            $this->buildApiEndpoint('/v1/newsletters/%s', [$id]),
             'GET'
         );
         $data = data_get($response, 'newsletter');
@@ -137,11 +140,7 @@ class Client implements CustomerIo
         string $contentId
     ): ?NewsletterContentContract {
         $response = $this->requestJson(
-            sprintf(
-                'https://api.customer.io/v1/newsletters/%s/contents/%s',
-                $newsletterId,
-                $contentId
-            ),
+            $this->buildApiEndpoint('/v1/newsletters/%s/contents/%s', [$newsletterId, $contentId]),
             'GET'
         );
         $data = data_get($response, 'content');
@@ -151,7 +150,7 @@ class Client implements CustomerIo
     public function findCampaignById(string $id): ?CampaignContract
     {
         $response = $this->requestJson(
-            sprintf('https://api.customer.io/v1/campaigns/%s', $id),
+            $this->buildApiEndpoint('/v1/campaigns/%s', [$id]),
             'GET'
         );
         $data = data_get($response, 'campaign');
@@ -161,7 +160,7 @@ class Client implements CustomerIo
     public function findTransactionalMessageById(string $id): ?TransactionalMessageContract
     {
         $response = $this->requestJson(
-            sprintf('https://api.customer.io/v1/transactional/%s', $id),
+            $this->buildApiEndpoint('/v1/transactional/%s', [$id]),
             'GET'
         );
         $data = data_get($response, 'message');
@@ -391,7 +390,7 @@ class Client implements CustomerIo
 
     public function getTransactionalMessages(): Collection
     {
-        $response = $this->requestJson('https://api.customer.io/v1/transactional', 'GET');
+        $response = $this->requestJson($this->buildApiEndpoint('/v1/transactional'), 'GET');
         return collect(data_get($response, 'messages', []))->map(function ($item) {
             return new TransactionalMessage($item);
         });
@@ -401,7 +400,7 @@ class Client implements CustomerIo
     {
         $data = $message instanceof Arrayable ? $message->toArray() : $message;
         $data['to'] = $to;
-        $response = $this->requestJson('https://api.customer.io/v1/send/email', 'POST', $data);
+        $response = $this->requestJson($this->buildApiEndpoint('/v1/send/email'), 'POST', $data);
         return $response;
     }
 
@@ -473,7 +472,7 @@ class Client implements CustomerIo
     public function findObjectById($typeId, $objectId): ?CustomerObjectContract
     {
         $response = $this->requestJson(
-            sprintf('https://api.customer.io/v1/objects/%s/%s/attributes', $typeId, $objectId),
+            $this->buildApiEndpoint('/v1/objects/%s/%s/attributes', [$typeId, $objectId]),
             'GET'
         );
         $data = data_get($response, 'object');
@@ -522,7 +521,7 @@ class Client implements CustomerIo
     protected function trackAnonymousEventBase($anonymousId, $type, $name, $data): ?array
     {
         return $this->requestJson(
-            'https://track.customer.io/api/v1/events',
+            $this->buildTrackEndpoint('/api/v1/events'),
             'POST',
             array_merge(
                 [
@@ -538,7 +537,7 @@ class Client implements CustomerIo
 
     protected function trackEntity($entity): ?array
     {
-        return $this->requestJson('https://track.customer.io/api/v2/entity', 'POST', $entity);
+        return $this->requestJson($this->buildTrackEndpoint('/api/v2/entity'), 'POST', $entity);
     }
 
     protected function getAuthorizationHeader($url)
@@ -547,5 +546,23 @@ class Client implements CustomerIo
             return sprintf('Basic %s', base64_encode($this->siteId . ':' . $this->trackingKey));
         }
         return sprintf('Bearer %s', $this->key);
+    }
+
+    protected function buildApiEndpoint(string $path, ?array $pathParams = null) : string
+    {
+        return $this->buildEndpoint($this->apiBaseUrl, $path, $pathParams);
+    }
+
+    protected function buildTrackEndpoint(string $path, ?array $pathParams = null) : string
+    {
+        return $this->buildEndpoint('https://track.customer.io', $path, $pathParams);
+    }
+
+    protected function buildEndpoint(string $base, string $path, ?array $pathParams = null) {
+        if (isset($pathParams)) {
+            $path = sprintf($path, ...$pathParams);
+        }
+        $url = $base . '/' . ltrim($path, '/');
+        return $url;
     }
 }
