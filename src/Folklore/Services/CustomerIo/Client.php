@@ -35,22 +35,26 @@ class Client implements CustomerIo
 
     protected $trackingKey;
 
-    protected $baseApiUrl;
+    protected $apiBaseUrl;
 
-    protected $baseTrackUrl;
+    protected $trackBaseUrl;
 
     public function __construct(
         $key,
         $siteId,
         $trackingKey = null,
-        $baseApiUrl = null,
-        $baseTrackUrl = null
+        $apiBaseUrl = null,
+        $trackBaseUrl = null
     ) {
         $this->key = $key;
         $this->siteId = $siteId;
         $this->trackingKey = $trackingKey;
-        $this->baseApiUrl = !empty($baseApiUrl) ? rtrim($baseApiUrl, '/') : null;
-        $this->baseTrackUrl = !empty($baseTrackUrl) ? rtrim($baseTrackUrl, '/') : null;
+        $this->apiBaseUrl = !empty($apiBaseUrl)
+            ? rtrim($apiBaseUrl, '/')
+            : 'https://api.customer.io';
+        $this->trackBaseUrl = !empty($trackBaseUrl)
+            ? rtrim($trackBaseUrl, '/')
+            : 'https://track.customer.io';
     }
 
     public function findCustomerFromUser($user): ?CustomerContract
@@ -529,7 +533,7 @@ class Client implements CustomerIo
                 Arr::only($data, ['timestamp', 'id'])
             ),
             [
-                'base_uri' => $this->baseTrackUrl ?? 'https://track.customer.io',
+                'base_uri' => $this->trackBaseUrl,
             ]
         );
     }
@@ -537,7 +541,7 @@ class Client implements CustomerIo
     protected function trackEntity($entity): ?array
     {
         return $this->requestJson('/api/v2/entity', 'POST', $entity, [
-            'base_uri' => $this->baseTrackUrl ?? 'https://track.customer.io',
+            'base_uri' => $this->trackBaseUrl,
         ]);
     }
 
@@ -551,6 +555,6 @@ class Client implements CustomerIo
 
     protected function getRequestBaseUri()
     {
-        return $this->baseApiUrl ?? 'https://api.customer.io';
+        return $this->apiBaseUrl;
     }
 }
