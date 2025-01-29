@@ -170,7 +170,7 @@ class ServiceProvider extends BaseServiceProvider
     public function bootMail()
     {
         if ($this->app['config']->get('services.customerio') !== null) {
-            Mail::extend('mailchimp', function (array $config = []) {
+            Mail::extend('customerio', function (array $config = []) {
                 return new MailTransport(
                     $this->app[\Folklore\Contracts\Services\CustomerIo::class],
                     $config
