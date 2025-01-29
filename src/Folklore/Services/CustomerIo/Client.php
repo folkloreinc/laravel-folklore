@@ -550,7 +550,7 @@ class Client implements CustomerIo
 
     protected function getAuthorizationHeader($url)
     {
-        if (preg_match('/^https\:\/\/track\.customer\.io\//', $url) === 1) {
+        if (in_array($url, ['/api/v2/entity', '/api/v1/events'])) {
             return sprintf('Basic %s', base64_encode($this->siteId . ':' . $this->trackingKey));
         }
         return sprintf('Bearer %s', $this->key);
