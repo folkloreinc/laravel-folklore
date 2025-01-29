@@ -398,6 +398,9 @@ class Client implements CustomerIo
         if (!isset($data['to'])) {
             $data['to'] = $to;
         }
+        $data['identifiers'] = [
+            'email' => $to,
+        ];
         $response = $this->requestJson('/v1/send/email', 'POST', $data);
         return $response;
     }
