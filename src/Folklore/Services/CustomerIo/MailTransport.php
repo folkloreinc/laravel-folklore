@@ -41,7 +41,7 @@ class MailTransport extends AbstractTransport
                 'body' => $email->getHtmlBody(),
                 'body_plain' => $email->getTextBody(),
                 'subject' => $email->getSubject(),
-                'from' => $email->getFrom(),
+                'from' => collect($email->getFrom())->first()->toString(),
                 'to' => collect($email->getTo())
                     ->map(function (Address $email) {
                         return $email->getAddress();
