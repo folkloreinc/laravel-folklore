@@ -35,11 +35,22 @@ class Client implements CustomerIo
 
     protected $trackingKey;
 
-    public function __construct($key, $siteId, $trackingKey = null)
-    {
+    protected $baseApiUrl;
+
+    protected $baseTrackUrl;
+
+    public function __construct(
+        $key,
+        $siteId,
+        $trackingKey = null,
+        $baseApiUrl = null,
+        $baseTrackUrl = null
+    ) {
         $this->key = $key;
         $this->siteId = $siteId;
         $this->trackingKey = $trackingKey;
+        $this->baseApiUrl = !empty($baseApiUrl) ? rtrim($baseApiUrl, '/') : null;
+        $this->baseTrackUrl = !empty($baseTrackUrl) ? rtrim($baseTrackUrl, '/') : null;
     }
 
     public function findCustomerFromUser($user): ?CustomerContract
@@ -73,20 +84,16 @@ class Client implements CustomerIo
 
     public function findCustomerById(string $id, string $type = 'cio_id'): ?CustomerContract
     {
-        $response = $this->requestJson(
-            sprintf('https://api.customer.io/v1/customers/%s/attributes', $id),
-            'GET',
-            [
-                'id_type' => $type,
-            ]
-        );
+        $response = $this->requestJson(sprintf('/v1/customers/%s/attributes', $id), 'GET', [
+            'id_type' => $type,
+        ]);
         $data = data_get($response, 'customer');
         return isset($data) ? new Customer($data) : null;
     }
 
     public function findCustomerByEmail(string $email): ?CustomerContract
     {
-        $response = $this->requestJson('https://api.customer.io/v1/customers', 'GET', [
+        $response = $this->requestJson('/v1/customers', 'GET', [
             'email' => $email,
         ]);
         $id = data_get($response, 'results.0.cio_id');
@@ -95,7 +102,7 @@ class Client implements CustomerIo
 
     public function findCustomerByPhone(string $phone): ?CustomerContract
     {
-        $response = $this->requestJson('https://api.customer.io/v1/customers', 'POST', [
+        $response = $this->requestJson('/v1/customers', 'POST', [
             'filter' => [
                 'and' => [
                     [
@@ -114,20 +121,14 @@ class Client implements CustomerIo
 
     public function findDeliveryById(string $id): ?DeliveryContract
     {
-        $response = $this->requestJson(
-            sprintf('https://api.customer.io/v1/messages/%s', $id),
-            'GET'
-        );
+        $response = $this->requestJson(sprintf('/v1/messages/%s', $id), 'GET');
         $data = data_get($response, 'message');
         return isset($data) ? new Delivery($data, $this) : null;
     }
 
     public function findNewsletterById(string $id): ?NewsletterContract
     {
-        $response = $this->requestJson(
-            sprintf('https://api.customer.io/v1/newsletters/%s', $id),
-            'GET'
-        );
+        $response = $this->requestJson(sprintf('/v1/newsletters/%s', $id), 'GET');
         $data = data_get($response, 'newsletter');
         return isset($data) ? new Newsletter($data, $this) : null;
     }
@@ -137,11 +138,7 @@ class Client implements CustomerIo
         string $contentId
     ): ?NewsletterContentContract {
         $response = $this->requestJson(
-            sprintf(
-                'https://api.customer.io/v1/newsletters/%s/contents/%s',
-                $newsletterId,
-                $contentId
-            ),
+            sprintf('/v1/newsletters/%s/contents/%s', $newsletterId, $contentId),
             'GET'
         );
         $data = data_get($response, 'content');
@@ -150,20 +147,14 @@ class Client implements CustomerIo
 
     public function findCampaignById(string $id): ?CampaignContract
     {
-        $response = $this->requestJson(
-            sprintf('https://api.customer.io/v1/campaigns/%s', $id),
-            'GET'
-        );
+        $response = $this->requestJson(sprintf('/v1/campaigns/%s', $id), 'GET');
         $data = data_get($response, 'campaign');
         return isset($data) ? new Campaign($data) : null;
     }
 
     public function findTransactionalMessageById(string $id): ?TransactionalMessageContract
     {
-        $response = $this->requestJson(
-            sprintf('https://api.customer.io/v1/transactional/%s', $id),
-            'GET'
-        );
+        $response = $this->requestJson(sprintf('/v1/transactional/%s', $id), 'GET');
         $data = data_get($response, 'message');
         return isset($data) ? new TransactionalMessage($data) : null;
     }
@@ -391,7 +382,7 @@ class Client implements CustomerIo
 
     public function getTransactionalMessages(): Collection
     {
-        $response = $this->requestJson('https://api.customer.io/v1/transactional', 'GET');
+        $response = $this->requestJson('/v1/transactional', 'GET');
         return collect(data_get($response, 'messages', []))->map(function ($item) {
             return new TransactionalMessage($item);
         });
@@ -400,8 +391,10 @@ class Client implements CustomerIo
     public function sendEmail($message, string $to)
     {
         $data = $message instanceof Arrayable ? $message->toArray() : $message;
-        $data['to'] = $to;
-        $response = $this->requestJson('https://api.customer.io/v1/send/email', 'POST', $data);
+        if (!isset($data['to'])) {
+            $data['to'] = $to;
+        }
+        $response = $this->requestJson('/v1/send/email', 'POST', $data);
         return $response;
     }
 
@@ -426,7 +419,7 @@ class Client implements CustomerIo
 
         $request = [
             'identifiers' => [
-                'object_type_id' => (string)$object->type(),
+                'object_type_id' => (string) $object->type(),
                 'object_id' => $object->id(),
             ],
             'type' => 'object',
@@ -446,9 +439,11 @@ class Client implements CustomerIo
     {
         $relationships = $relationships
             ->map(function ($relationship) {
-                return is_array($relationship) ? $relationship : [
-                    'identifiers' => $this->getIdentifiersFromResource($relationship),
-                ];
+                return is_array($relationship)
+                    ? $relationship
+                    : [
+                        'identifiers' => $this->getIdentifiersFromResource($relationship),
+                    ];
             })
             ->filter(function ($relationship) {
                 return !is_null($relationship);
@@ -458,7 +453,7 @@ class Client implements CustomerIo
 
         $request = [
             'identifiers' => [
-                'object_type_id' => (string)$typeId,
+                'object_type_id' => (string) $typeId,
                 'object_id' => $objectId,
             ],
             'type' => 'object',
@@ -473,7 +468,7 @@ class Client implements CustomerIo
     public function findObjectById($typeId, $objectId): ?CustomerObjectContract
     {
         $response = $this->requestJson(
-            sprintf('https://api.customer.io/v1/objects/%s/%s/attributes', $typeId, $objectId),
+            sprintf('/v1/objects/%s/%s/attributes', $typeId, $objectId),
             'GET'
         );
         $data = data_get($response, 'object');
@@ -522,7 +517,7 @@ class Client implements CustomerIo
     protected function trackAnonymousEventBase($anonymousId, $type, $name, $data): ?array
     {
         return $this->requestJson(
-            'https://track.customer.io/api/v1/events',
+            '/api/v1/events',
             'POST',
             array_merge(
                 [
@@ -532,13 +527,18 @@ class Client implements CustomerIo
                     'attributes' => Arr::except($data, ['timestamp', 'id']),
                 ],
                 Arr::only($data, ['timestamp', 'id'])
-            )
+            ),
+            [
+                'base_uri' => $this->baseTrackUrl ?? 'https://track.customer.io',
+            ]
         );
     }
 
     protected function trackEntity($entity): ?array
     {
-        return $this->requestJson('https://track.customer.io/api/v2/entity', 'POST', $entity);
+        return $this->requestJson('/api/v2/entity', 'POST', $entity, [
+            'base_uri' => $this->baseTrackUrl ?? 'https://track.customer.io',
+        ]);
     }
 
     protected function getAuthorizationHeader($url)
@@ -547,5 +547,10 @@ class Client implements CustomerIo
             return sprintf('Basic %s', base64_encode($this->siteId . ':' . $this->trackingKey));
         }
         return sprintf('Bearer %s', $this->key);
+    }
+
+    protected function getRequestBaseUri()
+    {
+        return $this->baseApiUrl ?? 'https://api.customer.io';
     }
 }

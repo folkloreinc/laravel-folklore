@@ -9,8 +9,10 @@ use Illuminate\Http\Request;
 use PubNub\PubNub;
 use PubNub\PNConfiguration;
 use Folklore\Broadcasters\PubNubBroadcaster;
+use Folklore\Services\CustomerIo\MailTransport;
 use Folklore\Support\Concerns\RegistersBindings;
 use Folklore\Support\OffsetPaginator;
+use Illuminate\Support\Facades\Mail;
 use Ramsey\Uuid\Uuid;
 
 class ServiceProvider extends BaseServiceProvider
@@ -91,6 +93,7 @@ class ServiceProvider extends BaseServiceProvider
             '$key' => 'services.customerio.key',
             '$siteId' => 'services.customerio.site_id',
             '$trackingKey' => 'services.customerio.tracking_key',
+            '$baseApiUrl' => 'services.customerio.base_api_url',
         ]);
 
         $this->app->singleton('services.customerio', function () {
@@ -140,6 +143,8 @@ class ServiceProvider extends BaseServiceProvider
 
         $this->bootPubNubBroadcaster();
 
+        $this->bootMail();
+
         // Console
         if ($this->app->runningInConsole()) {
             $this->commands([
@@ -158,6 +163,18 @@ class ServiceProvider extends BaseServiceProvider
         // Boot local environment
         if ($this->app->environment('local')) {
             $this->bootLocal();
+        }
+    }
+
+    public function bootMail()
+    {
+        if ($this->app['config']->get('services.customerio') !== null) {
+            Mail::extend('mailchimp', function (array $config = []) {
+                return new MailTransport(
+                    $this->app[\Folklore\Contracts\Services\CustomerIo::class],
+                    $config
+                );
+            });
         }
     }
 
