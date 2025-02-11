@@ -194,7 +194,10 @@ abstract class Resources implements ResourcesContract
         $newAttributeValue = collect(
             $jsonAttributeFillable === '*'
                 ? array_diff(array_keys($data), $fillable, $jsonAttributeExclude)
-                : $jsonAttributeFillable
+                : array_diff(
+                    array_intersect(array_keys($data), $jsonAttributeFillable),
+                    $jsonAttributeExclude
+                )
         )->reduce(function ($newValue, $path, $field) use ($data) {
             if (is_numeric($field)) {
                 $field = $path;
