@@ -62,8 +62,7 @@ class Medias extends Resources implements MediasRepositoryContract
         $type = $this->typeFactory->typeFromPath($file->getRealPath());
         $model = $type->newModel();
         $model->setOriginalFile($file);
-        $this->fillModel($model, $data);
-        $model->save(); // @TODO
+        $this->saveData($model, $data);
         $model->load('files'); // @TODO
         return $model instanceof Resourcable ? $model->toResource() : $model;
     }
@@ -74,8 +73,7 @@ class Medias extends Resources implements MediasRepositoryContract
         $model->files()->detach();
 
         $model->setOriginalFile($file);
-        $this->fillModel($model, $data);
-        $model->save();
+        $this->saveData($model, $data);
 
         $type = $model->getType();
         if (!is_null($type)) {
