@@ -17,6 +17,8 @@ interface CustomerIo
 {
     public function findCustomerById(string $id, string $type = 'cio_id'): ?Customer;
 
+    public function findCustomerByIdentifier($identifier): ?Customer;
+
     public function findCustomerByEmail(string $email): ?Customer;
 
     public function findCustomerByPhone(string $phone): ?Customer;
@@ -40,6 +42,8 @@ interface CustomerIo
 
     public function getTransactionalMessages(): Collection;
 
+    public function getDeliveriesForIdentifier($identifier, $query = [], $count = 50): Collection;
+
     public function sendEmail($message, string $to);
 
     public function triggerWebhook(string $url, array $data);
@@ -60,13 +64,13 @@ interface CustomerIo
 
     public function unsubscribeToTopic(string $email, $topic, $data = []): bool;
 
-    public function updateCustomer(string $identifier, $data = []): bool;
+    public function updateCustomer($identifier, $data = []): bool;
 
     public function mergeCustomers(Customer $customer, Customer $mergeCustomer): ?Customer;
 
     public function mergeUsers($user, $mergeUser): ?Customer;
 
-    public function deleteCustomer(string $identifier): bool;
+    public function deleteCustomer($identifier): bool;
 
     public function deleteCustomerFromUser($user): bool;
 

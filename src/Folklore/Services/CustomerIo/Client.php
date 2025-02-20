@@ -65,14 +65,7 @@ class Client implements CustomerIo
             return $customer;
         }
 
-        $identifier = $user instanceof HasIdentifier ? $user->customerIoIdentifier() : null;
-        if (!empty($identifier) && filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
-            $customer = $this->findCustomerById($identifier, 'email');
-        } elseif (!empty($identifier) && preg_match('/^cio_(.*)$/', $identifier, $matches) === 1) {
-            $customer = $this->findCustomerById($matches[1], 'cio_id');
-        } elseif (!empty($identifier)) {
-            $customer = $this->findCustomerById($identifier, 'id');
-        }
+        $customer = $this->findCustomerByIdentifier($user);
         if (isset($customer)) {
             return $customer;
         }
@@ -84,6 +77,15 @@ class Client implements CustomerIo
         }
 
         return null;
+    }
+
+    public function findCustomerByIdentifier($identifier): ?CustomerContract
+    {
+        $identifiers = $this->getIdentifiersFromResource($identifier);
+        if (!isset($identifiers)) {
+            return null;
+        }
+        return $this->findCustomerById(array_values($identifiers)[0], array_keys($identifiers)[0]);
     }
 
     public function findCustomerById(string $id, string $type = 'cio_id'): ?CustomerContract
@@ -184,44 +186,31 @@ class Client implements CustomerIo
         return $this->updateCustomer($identifier, array_merge($userData, $extraData));
     }
 
-    public function updateCustomer(string $identifier, $data = []): bool
+    public function updateCustomer($identifier, $data = []): bool
     {
-        $identifiers = $this->getIdentifiersFromIdentifier($identifier);
-        $response = $this->trackEntity([
-            'type' => 'person',
-            'action' => 'identify',
-            'identifiers' => $identifiers,
-            'attributes' => $data,
-        ]);
+        $identifiers = $this->getIdentifiersFromResource($identifier);
+        $response = isset($identifiers)
+            ? $this->trackEntity([
+                'type' => 'person',
+                'action' => 'identify',
+                'identifiers' => $identifiers,
+                'attributes' => $data,
+            ])
+            : null;
         return !is_null($response);
     }
 
-    public function deleteCustomer(string $identifier): bool
+    public function deleteCustomer($identifier): bool
     {
-        $identifiers = $this->getIdentifiersFromIdentifier($identifier);
-        $response = $this->trackEntity([
-            'type' => 'person',
-            'action' => 'delete',
-            'identifiers' => $identifiers,
-        ]);
+        $identifiers = $this->getIdentifiersFromResource($identifier);
+        $response = isset($identifiers)
+            ? $this->trackEntity([
+                'type' => 'person',
+                'action' => 'delete',
+                'identifiers' => $identifiers,
+            ])
+            : null;
         return !is_null($response);
-    }
-
-    protected function getIdentifiersFromIdentifier(string $identifier): array
-    {
-        if (preg_match('/^cio_(.*)$/', $identifier, $matches) === 1) {
-            return [
-                'cio_id' => $matches[1],
-            ];
-        }
-        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
-            return [
-                'email' => $identifier,
-            ];
-        }
-        return [
-            'id' => $identifier,
-        ];
     }
 
     public function deleteCustomerFromUser($user): bool
@@ -353,9 +342,18 @@ class Client implements CustomerIo
             return $resource;
         }
 
-        $cioId =
-            ($resource instanceof HasIdentifier ? $resource->customerIoIdentifier() : null) ??
-            ($resource instanceof CustomerIdentifiers ? $resource->cioId() : null);
+        if (is_string($resource)) {
+            return $this->getIdentifiersFromIdentifier($resource);
+        }
+
+        $identifiers = $this->getIdentifiersFromIdentifier(
+            $resource instanceof HasIdentifier ? $resource->customerIoIdentifier() : null
+        );
+        if (isset($identifiers)) {
+            return $identifiers;
+        }
+
+        $cioId = $resource instanceof CustomerIdentifiers ? $resource->cioId() : null;
         if (!empty($cioId)) {
             return [
                 'cio_id' => $cioId,
@@ -384,11 +382,52 @@ class Client implements CustomerIo
         return null;
     }
 
+    protected function getIdentifiersFromIdentifier(string $identifier): ?array
+    {
+        if (empty($identifier)) {
+            return null;
+        }
+        if (preg_match('/^cio_(.*)$/', $identifier, $matches) === 1) {
+            return [
+                'cio_id' => $matches[1],
+            ];
+        }
+        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+            return [
+                'email' => $identifier,
+            ];
+        }
+        return is_numeric($identifier)
+            ? [
+                'id' => $identifier,
+            ]
+            : null;
+    }
+
     public function getTransactionalMessages(): Collection
     {
         $response = $this->requestJson('/v1/transactional', 'GET');
         return collect(data_get($response, 'messages', []))->map(function ($item) {
             return new TransactionalMessage($item);
+        });
+    }
+
+    public function getDeliveriesForIdentifier($identifier, $query = [], $count = 50): Collection
+    {
+        $identifiers = $this->getIdentifiersFromResource($identifier);
+        if (is_null($identifiers)) {
+            return collect();
+        }
+        $response = $this->requestJson(
+            sprintf('/v1/customers/%s/messages', array_values($identifiers)[0]),
+            'GET',
+            [
+                'id_type' => array_keys($identifiers)[0],
+            ]
+        );
+        $data = data_get($response, 'messages', []);
+        return collect($data)->map(function ($item) {
+            return new Delivery($item, $this);
         });
     }
 
