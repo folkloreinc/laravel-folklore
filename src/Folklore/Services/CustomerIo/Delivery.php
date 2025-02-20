@@ -62,7 +62,10 @@ class Delivery implements DeliveryContract
         if (!empty($subject)) {
             return $subject;
         }
-        if ($this->isNewsletter()) {
+        $message = $this->message();
+        if (isset($message)) {
+            return $message->subject();
+        } elseif ($this->isNewsletter()) {
             return $this->content()->subject();
         } elseif ($this->isCampaign()) {
             return $this->action()->subject();
@@ -72,7 +75,10 @@ class Delivery implements DeliveryContract
 
     public function body(): ?string
     {
-        if ($this->isNewsletter()) {
+        $message = $this->message();
+        if (isset($message)) {
+            return $message->body();
+        } elseif ($this->isNewsletter()) {
             return $this->content()->body();
         } elseif ($this->isCampaign()) {
             return $this->action()->body();
