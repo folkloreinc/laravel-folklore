@@ -6,7 +6,7 @@ use Folklore\Contracts\Resources\Resource;
 
 interface MessageContent
 {
-    public function type(): string;
+    public function type(): ?string;
 
     public function name(): ?string;
 

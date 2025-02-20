@@ -28,6 +28,8 @@ interface CustomerIo
 
     public function findDeliveryById(string $id): ?Delivery;
 
+    public function findDeliveryMessageById(string $id): ?DeliveryMessage;
+
     public function findNewsletterById(string $id): ?Newsletter;
 
     public function findNewsletterContentById(

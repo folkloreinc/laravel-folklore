@@ -20,6 +20,8 @@ interface Delivery extends Resource
 
     public function isNewsletter(): bool;
 
+    public function message(): ?DeliveryMessage;
+
     public function transactionalMessage(): ?TransactionalMessage;
 
     public function campaign(): ?Campaign;

@@ -15,7 +15,7 @@ class MessageContent implements MessageContentContract
         $this->data = $data;
     }
 
-    public function type(): string
+    public function type(): ?string
     {
         return data_get($this->data, 'type');
     }

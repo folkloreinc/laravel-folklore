@@ -15,6 +15,7 @@ use Folklore\Contracts\Services\CustomerIo\Customer as CustomerContract;
 use Folklore\Contracts\Services\CustomerIo\CustomerIdentifiers;
 use Folklore\Contracts\Services\CustomerIo\CustomerObject;
 use Folklore\Contracts\Services\CustomerIo\Delivery as DeliveryContract;
+use Folklore\Contracts\Services\CustomerIo\DeliveryMessage as DeliveryMessageContract;
 use Folklore\Contracts\Services\CustomerIo\Newsletter as NewsletterContract;
 use Folklore\Contracts\Services\CustomerIo\NewsletterContent as NewsletterContentContract;
 use Folklore\Contracts\Services\CustomerIo\CampaignAction as CampaignActionContract;
@@ -131,6 +132,13 @@ class Client implements CustomerIo
         $response = $this->requestJson(sprintf('/v1/messages/%s', $id), 'GET');
         $data = data_get($response, 'message');
         return isset($data) ? new Delivery($data, $this) : null;
+    }
+
+    public function findDeliveryMessageById(string $id): ?DeliveryMessageContract
+    {
+        $response = $this->requestJson(sprintf('/v1/messages/%s/archived_message', $id), 'GET');
+        $data = data_get($response, 'archived_message');
+        return isset($data) ? new DeliveryMessage($data, $this) : null;
     }
 
     public function findNewsletterById(string $id): ?NewsletterContract

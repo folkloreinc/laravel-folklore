@@ -4,6 +4,7 @@ namespace Folklore\Services\CustomerIo;
 
 use Folklore\Contracts\Services\CustomerIo\CustomerIdentifiers as CustomerIdentifiersContract;
 use Folklore\Contracts\Services\CustomerIo\Delivery as DeliveryContract;
+use Folklore\Contracts\Services\CustomerIo\DeliveryMessage as DeliveryMessageContract;
 use Folklore\Contracts\Services\CustomerIo\Newsletter as NewsletterContract;
 use Folklore\Contracts\Services\CustomerIo\NewsletterContent as NewsletterContentContract;
 use Folklore\Contracts\Services\CustomerIo\CampaignAction as CampaignActionContract;
@@ -18,6 +19,8 @@ class Delivery implements DeliveryContract
     protected $service;
 
     protected $newsletter;
+
+    protected $message;
 
     protected $campaign;
 
@@ -93,6 +96,14 @@ class Delivery implements DeliveryContract
     {
         $id = data_get($this->data, 'newsletter_id');
         return !empty($id);
+    }
+
+    public function message(): ?DeliveryMessageContract
+    {
+        if (!empty($id) && !isset($this->message)) {
+            $this->message = $this->service->findDeliveryMessageById($this->id());
+        }
+        return $this->message;
     }
 
     public function campaign(): ?CampaignContract
