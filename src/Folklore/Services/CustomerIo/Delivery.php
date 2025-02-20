@@ -106,7 +106,7 @@ class Delivery implements DeliveryContract
 
     public function message(): ?DeliveryMessageContract
     {
-        if (!empty($id) && !isset($this->message)) {
+        if (!isset($this->message)) {
             $this->message = $this->service->findDeliveryMessageById($this->id());
         }
         return $this->message;
