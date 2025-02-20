@@ -17,6 +17,7 @@ use Folklore\Contracts\Services\CustomerIo\CustomerObject;
 use Folklore\Contracts\Services\CustomerIo\Delivery as DeliveryContract;
 use Folklore\Contracts\Services\CustomerIo\Newsletter as NewsletterContract;
 use Folklore\Contracts\Services\CustomerIo\NewsletterContent as NewsletterContentContract;
+use Folklore\Contracts\Services\CustomerIo\CampaignAction as CampaignActionContract;
 use Folklore\Contracts\Services\CustomerIo\TransactionalMessage as TransactionalMessageContract;
 use Folklore\Contracts\Services\CustomerIo\Campaign as CampaignContract;
 use Folklore\Contracts\Services\CustomerIo\HasCustomerData;
@@ -161,7 +162,7 @@ class Client implements CustomerIo
     public function findCampaignActionById(
         string $campaignId,
         string $actionId
-    ): ?NewsletterContentContract {
+    ): ?CampaignActionContract {
         $response = $this->requestJson(
             sprintf('/v1/campaigns/%s/actions/%s', $campaignId, $actionId),
             'GET'
