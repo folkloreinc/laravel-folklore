@@ -10,6 +10,7 @@ use Folklore\Contracts\Services\CustomerIo\CampaignAction;
 use Folklore\Contracts\Services\CustomerIo\Customer;
 use Folklore\Contracts\Services\CustomerIo\CustomerObject;
 use Folklore\Contracts\Services\CustomerIo\Delivery;
+use Folklore\Contracts\Services\CustomerIo\DeliveryMessage;
 use Folklore\Contracts\Services\CustomerIo\Newsletter;
 use Folklore\Contracts\Services\CustomerIo\NewsletterContent;
 use Folklore\Contracts\Services\CustomerIo\TransactionalMessage;
