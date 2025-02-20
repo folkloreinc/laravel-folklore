@@ -394,7 +394,7 @@ class Client implements CustomerIo
         return null;
     }
 
-    protected function getIdentifiersFromIdentifier(string $identifier): ?array
+    protected function getIdentifiersFromIdentifier($identifier): ?array
     {
         if (empty($identifier)) {
             return null;
