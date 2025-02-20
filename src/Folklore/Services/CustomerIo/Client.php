@@ -158,6 +158,18 @@ class Client implements CustomerIo
         return isset($data) ? new Campaign($data) : null;
     }
 
+    public function findCampaignActionById(
+        string $campaignId,
+        string $actionId
+    ): ?NewsletterContentContract {
+        $response = $this->requestJson(
+            sprintf('/v1/campaigns/%s/actions/%s', $campaignId, $actionId),
+            'GET'
+        );
+        $data = data_get($response, 'action');
+        return isset($data) ? new CampaignAction($data) : null;
+    }
+
     public function findTransactionalMessageById(string $id): ?TransactionalMessageContract
     {
         $response = $this->requestJson(sprintf('/v1/transactional/%s', $id), 'GET');

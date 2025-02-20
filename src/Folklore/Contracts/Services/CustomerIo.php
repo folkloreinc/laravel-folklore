@@ -6,6 +6,7 @@ use Folklore\Contracts\Resources\Contact;
 use Illuminate\Support\Collection;
 use Folklore\Contracts\Resources\User;
 use Folklore\Contracts\Services\CustomerIo\Campaign;
+use Folklore\Contracts\Services\CustomerIo\CampaignAction;
 use Folklore\Contracts\Services\CustomerIo\Customer;
 use Folklore\Contracts\Services\CustomerIo\CustomerObject;
 use Folklore\Contracts\Services\CustomerIo\Delivery;
@@ -35,6 +36,8 @@ interface CustomerIo
     ): ?NewsletterContent;
 
     public function findCampaignById(string $id): ?Campaign;
+
+    public function findCampaignActionById(string $campaignId, string $actionId): ?CampaignAction;
 
     public function findTransactionalMessageById(string $id): ?TransactionalMessage;
 
