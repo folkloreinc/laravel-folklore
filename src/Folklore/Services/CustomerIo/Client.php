@@ -141,6 +141,31 @@ class Client implements CustomerIo
         return isset($data) ? new DeliveryMessage($data, $this) : null;
     }
 
+    public function getDeliveriesForCustomer(
+        $customer,
+        $query = [],
+        $count = 100,
+        $cursor = null
+    ): CollectionWithCursor {
+        $identifiers = $this->getIdentifiersFromResource($customer);
+        if (is_null($identifiers)) {
+            return collect();
+        }
+        $response = $this->requestJson(
+            sprintf('/v1/customers/%s/messages', array_values($identifiers)[0]),
+            'GET',
+            array_merge(!empty($cursor) ? ['start' => $cursor] : [], $query, [
+                'id_type' => array_keys($identifiers)[0],
+                'limit' => $count,
+            ])
+        );
+        $data = data_get($response, 'messages', []);
+        $next = data_get($response, 'next');
+        return (new CollectionWithCursor($data))->setCursor($next)->map(function ($item) {
+            return new Delivery($item, $this);
+        });
+    }
+
     public function findNewsletterById(string $id): ?NewsletterContract
     {
         $response = $this->requestJson(sprintf('/v1/newsletters/%s', $id), 'GET');
@@ -158,6 +183,22 @@ class Client implements CustomerIo
         );
         $data = data_get($response, 'content');
         return isset($data) ? new NewsletterContent($data) : null;
+    }
+
+    public function getNewsletters($query = [], $count = 100, $cursor = null): CollectionWithCursor
+    {
+        $response = $this->requestJson(
+            '/v1/newsletters',
+            'GET',
+            array_merge(!empty($cursor) ? ['start' => $cursor] : [], $query, [
+                'limit' => $count,
+            ])
+        );
+        $data = data_get($response, 'newsletters', []);
+        $next = data_get($response, 'next');
+        return (new CollectionWithCursor($data))->setCursor($next)->map(function ($item) {
+            return new Newsletter($item, $this);
+        });
     }
 
     public function findCampaignById(string $id): ?CampaignContract
@@ -430,25 +471,6 @@ class Client implements CustomerIo
         $response = $this->requestJson('/v1/transactional', 'GET');
         return collect(data_get($response, 'messages', []))->map(function ($item) {
             return new TransactionalMessage($item);
-        });
-    }
-
-    public function getDeliveriesForIdentifier($identifier, $query = [], $count = 50): Collection
-    {
-        $identifiers = $this->getIdentifiersFromResource($identifier);
-        if (is_null($identifiers)) {
-            return collect();
-        }
-        $response = $this->requestJson(
-            sprintf('/v1/customers/%s/messages', array_values($identifiers)[0]),
-            'GET',
-            [
-                'id_type' => array_keys($identifiers)[0],
-            ]
-        );
-        $data = data_get($response, 'messages', []);
-        return collect($data)->map(function ($item) {
-            return new Delivery($item, $this);
         });
     }
 

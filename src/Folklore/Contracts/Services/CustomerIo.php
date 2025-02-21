@@ -14,6 +14,8 @@ use Folklore\Contracts\Services\CustomerIo\DeliveryMessage;
 use Folklore\Contracts\Services\CustomerIo\Newsletter;
 use Folklore\Contracts\Services\CustomerIo\NewsletterContent;
 use Folklore\Contracts\Services\CustomerIo\TransactionalMessage;
+use Folklore\Services\CustomerIo\CollectionWithCursor;
+use Illuminate\Contracts\Pagination\CursorPaginator;
 
 interface CustomerIo
 {
@@ -27,16 +29,14 @@ interface CustomerIo
 
     public function findCustomerFromUser($user): ?Customer;
 
-    public function findDeliveryById(string $id): ?Delivery;
-
-    public function findDeliveryMessageById(string $id): ?DeliveryMessage;
-
     public function findNewsletterById(string $id): ?Newsletter;
 
     public function findNewsletterContentById(
         string $newsletterId,
         string $contentId
     ): ?NewsletterContent;
+
+    public function getNewsletters($query = [], $count = 50, $start = null): CollectionWithCursor;
 
     public function findCampaignById(string $id): ?Campaign;
 
@@ -48,7 +48,11 @@ interface CustomerIo
 
     public function getTransactionalMessages(): Collection;
 
-    public function getDeliveriesForIdentifier($identifier, $query = [], $count = 50): Collection;
+    public function findDeliveryById(string $id): ?Delivery;
+
+    public function findDeliveryMessageById(string $id): ?DeliveryMessage;
+
+    public function getDeliveriesForCustomer($identifier, $query = [], $count = 50, $start = null): CollectionWithCursor;
 
     public function sendEmail($message, string $to);
 
