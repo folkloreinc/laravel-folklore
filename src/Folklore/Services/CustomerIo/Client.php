@@ -196,9 +196,11 @@ class Client implements CustomerIo
         );
         $data = data_get($response, 'newsletters', []);
         $next = data_get($response, 'next');
-        return (new CollectionWithCursor($data))->setCursor($next)->map(function ($item) {
-            return new Newsletter($item, $this);
-        });
+        return (new CollectionWithCursor($data))
+            ->map(function ($item) {
+                return new Newsletter($item, $this);
+            })
+            ->setCursor($next);
     }
 
     public function findCampaignById(string $id): ?CampaignContract
