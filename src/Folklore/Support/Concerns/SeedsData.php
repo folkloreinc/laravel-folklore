@@ -20,7 +20,7 @@ trait SeedsData
 
         $handle = fopen($path, 'r');
         $rowIndex = 0;
-        while (($data = fgetcsv($handle, 1000, ',')) !== false) {
+        while (($data = fgetcsv($handle, 5000, ',')) !== false) {
             if (is_null($columns) && $firstRowIsColumns) {
                 $columns = $data;
                 continue;
