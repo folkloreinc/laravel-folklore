@@ -9,8 +9,10 @@ use Illuminate\Http\Request;
 use PubNub\PubNub;
 use PubNub\PNConfiguration;
 use Folklore\Broadcasters\PubNubBroadcaster;
+use Folklore\Services\CustomerIo\MailTransport;
 use Folklore\Support\Concerns\RegistersBindings;
 use Folklore\Support\OffsetPaginator;
+use Illuminate\Support\Facades\Mail;
 use Ramsey\Uuid\Uuid;
 
 class ServiceProvider extends BaseServiceProvider
@@ -35,6 +37,8 @@ class ServiceProvider extends BaseServiceProvider
         if ($this->app['config']->get('pubsubhubbub') !== null) {
             $this->registerPubsubHubbub();
         }
+
+        $this->registerGoogle();
     }
 
     protected function registerRepositories()
@@ -89,6 +93,8 @@ class ServiceProvider extends BaseServiceProvider
             '$key' => 'services.customerio.key',
             '$siteId' => 'services.customerio.site_id',
             '$trackingKey' => 'services.customerio.tracking_key',
+            '$apiBaseUrl' => 'services.customerio.api_base_url',
+            '$trackBaseUrl' => 'services.customerio.track_base_url',
         ]);
 
         $this->app->singleton('services.customerio', function () {
@@ -111,6 +117,21 @@ class ServiceProvider extends BaseServiceProvider
     }
 
     /**
+     * Register Google
+     *
+     * @return void
+     */
+    protected function registerGoogle()
+    {
+        $this->registerBindingsFromConfig(\Folklore\Services\Google\Drive::class, []);
+
+        $this->app->alias(
+            \Folklore\Services\Google\Drive::class,
+            \Folklore\Contracts\Services\Google\Drive::class
+        );
+    }
+
+    /**
      * Bootstrap any application services.
      *
      * @return void
@@ -122,6 +143,8 @@ class ServiceProvider extends BaseServiceProvider
         $this->bootAuth();
 
         $this->bootPubNubBroadcaster();
+
+        $this->bootMail();
 
         // Console
         if ($this->app->runningInConsole()) {
@@ -141,6 +164,18 @@ class ServiceProvider extends BaseServiceProvider
         // Boot local environment
         if ($this->app->environment('local')) {
             $this->bootLocal();
+        }
+    }
+
+    public function bootMail()
+    {
+        if ($this->app['config']->get('services.customerio') !== null) {
+            Mail::extend('customerio', function (array $config = []) {
+                return new MailTransport(
+                    $this->app[\Folklore\Contracts\Services\CustomerIo::class],
+                    $config
+                );
+            });
         }
     }
 

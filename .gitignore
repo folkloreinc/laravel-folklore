@@ -7,3 +7,4 @@ node_modules
 /coverage
 package-lock.json
 .phpunit.result.cache
+.phpunit.cache

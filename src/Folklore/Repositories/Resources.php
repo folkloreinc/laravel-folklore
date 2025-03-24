@@ -87,6 +87,13 @@ abstract class Resources implements ResourcesContract
         return $models;
     }
 
+    public function valueById($id, $column)
+    {
+        return $this->newQuery()
+            ->where('id', $id)
+            ->value($column);
+    }
+
     public function value($column, array $params = [])
     {
         return $this->newQueryWithParams($params)->value($column);
@@ -120,9 +127,11 @@ abstract class Resources implements ResourcesContract
             $models = $query->take($count)->get();
         }
 
-        $collection = $models->map(function ($model) {
-            return $model instanceof Resourcable ? $model->toResource() : $model;
-        });
+        $collection = $models
+            ->map(function ($model) {
+                return $model instanceof Resourcable ? $model->toResource() : $model;
+            })
+            ->toBase();
 
         if ($models instanceof AbstractPaginator) {
             $models->setCollection($collection);
@@ -192,7 +201,10 @@ abstract class Resources implements ResourcesContract
         $newAttributeValue = collect(
             $jsonAttributeFillable === '*'
                 ? array_diff(array_keys($data), $fillable, $jsonAttributeExclude)
-                : $jsonAttributeFillable
+                : array_diff(
+                    array_intersect(array_keys($data), $jsonAttributeFillable),
+                    $jsonAttributeExclude
+                )
         )->reduce(function ($newValue, $path, $field) use ($data) {
             if (is_numeric($field)) {
                 $field = $path;

@@ -6,34 +6,32 @@ use Orchestra\Testbench\TestCase as BaseTestCase;
 
 class TestCase extends BaseTestCase
 {
-    public function setUp(): void
+    /**
+     * Define environment setup.
+     *
+     * @param  \Illuminate\Foundation\Application  $app
+     * @return void
+     */
+    protected function getEnvironmentSetUp($app)
     {
-        parent::setUp();
+        // Setup default database to use sqlite :memory:
+        $app['config']->set('database.default', 'testbench');
+        $app['config']->set('database.connections.testbench', [
+            'driver' => 'sqlite',
+            'database' => ':memory:',
+            'prefix' => '',
+        ]);
 
-        $this->app->config->set('locale.locales', ['fr', 'en']);
-
-        $this->app->instance('path.public', __DIR__ . '/fixture');
+        $app->usePublicPath(__DIR__ . '/fixture');
     }
 
     protected function getPackageProviders($app)
     {
-        return [
-            'Cviebrock\EloquentSluggable\ServiceProvider',
-            'Folklore\Mediatheque\ServiceProvider',
-            'Folklore\Locale\LocaleServiceProvider',
-            'Folklore\ServiceProvider',
-        ];
+        return [\Folklore\ServiceProvider::class, \Folklore\Mediatheque\ServiceProvider::class];
     }
 
-    /**
-     * Define database migrations.
-     *
-     * @return void
-     */
-    protected function defineDatabaseMigrations()
+    protected function getPackageAliases($app)
     {
-        $this->app->config->set('locale.locales', ['fr', 'en']);
-
-        $this->loadMigrationsFrom(__DIR__ . '/../src/migrations');
+        return [];
     }
 }

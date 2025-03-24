@@ -15,9 +15,12 @@ use Folklore\Contracts\Services\CustomerIo\Customer as CustomerContract;
 use Folklore\Contracts\Services\CustomerIo\CustomerIdentifiers;
 use Folklore\Contracts\Services\CustomerIo\CustomerObject;
 use Folklore\Contracts\Services\CustomerIo\Delivery as DeliveryContract;
+use Folklore\Contracts\Services\CustomerIo\DeliveryMessage as DeliveryMessageContract;
 use Folklore\Contracts\Services\CustomerIo\Newsletter as NewsletterContract;
 use Folklore\Contracts\Services\CustomerIo\NewsletterContent as NewsletterContentContract;
+use Folklore\Contracts\Services\CustomerIo\CampaignAction as CampaignActionContract;
 use Folklore\Contracts\Services\CustomerIo\TransactionalMessage as TransactionalMessageContract;
+use Folklore\Contracts\Services\CustomerIo\Campaign as CampaignContract;
 use Folklore\Contracts\Services\CustomerIo\HasCustomerData;
 use Folklore\Contracts\Services\CustomerIo\HasIdentifier;
 use Folklore\Contracts\Services\CustomerIo\HasSubscriptionPreferences;
@@ -34,11 +37,26 @@ class Client implements CustomerIo
 
     protected $trackingKey;
 
-    public function __construct($key, $siteId, $trackingKey = null)
-    {
+    protected $apiBaseUrl;
+
+    protected $trackBaseUrl;
+
+    public function __construct(
+        $key,
+        $siteId,
+        $trackingKey = null,
+        $apiBaseUrl = null,
+        $trackBaseUrl = null
+    ) {
         $this->key = $key;
         $this->siteId = $siteId;
         $this->trackingKey = $trackingKey;
+        $this->apiBaseUrl = !empty($apiBaseUrl)
+            ? rtrim($apiBaseUrl, '/')
+            : 'https://api.customer.io';
+        $this->trackBaseUrl = !empty($trackBaseUrl)
+            ? rtrim($trackBaseUrl, '/')
+            : 'https://track.customer.io';
     }
 
     public function findCustomerFromUser($user): ?CustomerContract
@@ -49,14 +67,7 @@ class Client implements CustomerIo
             return $customer;
         }
 
-        $identifier = $user instanceof HasIdentifier ? $user->customerIoIdentifier() : null;
-        if (!empty($identifier) && filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
-            $customer = $this->findCustomerById($identifier, 'email');
-        } elseif (!empty($identifier) && preg_match('/^cio_(.*)$/', $identifier, $matches) === 1) {
-            $customer = $this->findCustomerById($matches[1], 'cio_id');
-        } elseif (!empty($identifier)) {
-            $customer = $this->findCustomerById($identifier, 'id');
-        }
+        $customer = $this->findCustomerByIdentifier($user);
         if (isset($customer)) {
             return $customer;
         }
@@ -70,22 +81,27 @@ class Client implements CustomerIo
         return null;
     }
 
+    public function findCustomerByIdentifier($identifier): ?CustomerContract
+    {
+        $identifiers = $this->getIdentifiersFromResource($identifier);
+        if (!isset($identifiers)) {
+            return null;
+        }
+        return $this->findCustomerById(array_values($identifiers)[0], array_keys($identifiers)[0]);
+    }
+
     public function findCustomerById(string $id, string $type = 'cio_id'): ?CustomerContract
     {
-        $response = $this->requestJson(
-            sprintf('https://api.customer.io/v1/customers/%s/attributes', $id),
-            'GET',
-            [
-                'id_type' => $type,
-            ]
-        );
+        $response = $this->requestJson(sprintf('/v1/customers/%s/attributes', $id), 'GET', [
+            'id_type' => $type,
+        ]);
         $data = data_get($response, 'customer');
         return isset($data) ? new Customer($data) : null;
     }
 
     public function findCustomerByEmail(string $email): ?CustomerContract
     {
-        $response = $this->requestJson('https://api.customer.io/v1/customers', 'GET', [
+        $response = $this->requestJson('/v1/customers', 'GET', [
             'email' => $email,
         ]);
         $id = data_get($response, 'results.0.cio_id');
@@ -94,7 +110,7 @@ class Client implements CustomerIo
 
     public function findCustomerByPhone(string $phone): ?CustomerContract
     {
-        $response = $this->requestJson('https://api.customer.io/v1/customers', 'POST', [
+        $response = $this->requestJson('/v1/customers', 'POST', [
             'filter' => [
                 'and' => [
                     [
@@ -113,20 +129,46 @@ class Client implements CustomerIo
 
     public function findDeliveryById(string $id): ?DeliveryContract
     {
-        $response = $this->requestJson(
-            sprintf('https://api.customer.io/v1/messages/%s', $id),
-            'GET'
-        );
+        $response = $this->requestJson(sprintf('/v1/messages/%s', $id), 'GET');
         $data = data_get($response, 'message');
         return isset($data) ? new Delivery($data, $this) : null;
     }
 
+    public function findDeliveryMessageById(string $id): ?DeliveryMessageContract
+    {
+        $response = $this->requestJson(sprintf('/v1/messages/%s/archived_message', $id), 'GET');
+        $data = data_get($response, 'archived_message');
+        return isset($data) ? new DeliveryMessage($data, $this) : null;
+    }
+
+    public function getDeliveriesForCustomer(
+        $customer,
+        $query = [],
+        $count = 100,
+        $cursor = null
+    ): CollectionWithCursor {
+        $identifiers = $this->getIdentifiersFromResource($customer);
+        if (is_null($identifiers)) {
+            return collect();
+        }
+        $response = $this->requestJson(
+            sprintf('/v1/customers/%s/messages', array_values($identifiers)[0]),
+            'GET',
+            array_merge(!empty($cursor) ? ['start' => $cursor] : [], $query, [
+                'id_type' => array_keys($identifiers)[0],
+                'limit' => $count,
+            ])
+        );
+        $data = data_get($response, 'messages', []);
+        $next = data_get($response, 'next');
+        return (new CollectionWithCursor($data))->setCursor($next)->map(function ($item) {
+            return new Delivery($item, $this);
+        });
+    }
+
     public function findNewsletterById(string $id): ?NewsletterContract
     {
-        $response = $this->requestJson(
-            sprintf('https://api.customer.io/v1/newsletters/%s', $id),
-            'GET'
-        );
+        $response = $this->requestJson(sprintf('/v1/newsletters/%s', $id), 'GET');
         $data = data_get($response, 'newsletter');
         return isset($data) ? new Newsletter($data, $this) : null;
     }
@@ -136,23 +178,53 @@ class Client implements CustomerIo
         string $contentId
     ): ?NewsletterContentContract {
         $response = $this->requestJson(
-            sprintf(
-                'https://api.customer.io/v1/newsletters/%s/contents/%s',
-                $newsletterId,
-                $contentId
-            ),
+            sprintf('/v1/newsletters/%s/contents/%s', $newsletterId, $contentId),
             'GET'
         );
         $data = data_get($response, 'content');
         return isset($data) ? new NewsletterContent($data) : null;
     }
 
-    public function findTransactionalMessageById(string $id): ?TransactionalMessageContract
+    public function getNewsletters($query = [], $count = 100, $cursor = null): CollectionWithCursor
     {
         $response = $this->requestJson(
-            sprintf('https://api.customer.io/v1/transactional/%s', $id),
+            '/v1/newsletters',
+            'GET',
+            array_merge(!empty($cursor) ? ['start' => $cursor] : [], $query, [
+                'limit' => $count,
+            ])
+        );
+        $data = data_get($response, 'newsletters', []);
+        $next = data_get($response, 'next');
+        return (new CollectionWithCursor($data))
+            ->map(function ($item) {
+                return new Newsletter($item, $this);
+            })
+            ->setCursor($next);
+    }
+
+    public function findCampaignById(string $id): ?CampaignContract
+    {
+        $response = $this->requestJson(sprintf('/v1/campaigns/%s', $id), 'GET');
+        $data = data_get($response, 'campaign');
+        return isset($data) ? new Campaign($data) : null;
+    }
+
+    public function findCampaignActionById(
+        string $campaignId,
+        string $actionId
+    ): ?CampaignActionContract {
+        $response = $this->requestJson(
+            sprintf('/v1/campaigns/%s/actions/%s', $campaignId, $actionId),
             'GET'
         );
+        $data = data_get($response, 'action');
+        return isset($data) ? new CampaignAction($data) : null;
+    }
+
+    public function findTransactionalMessageById(string $id): ?TransactionalMessageContract
+    {
+        $response = $this->requestJson(sprintf('/v1/transactional/%s', $id), 'GET');
         $data = data_get($response, 'message');
         return isset($data) ? new TransactionalMessage($data) : null;
     }
@@ -175,36 +247,33 @@ class Client implements CustomerIo
         $identifier = isset($customer)
             ? 'cio_' . $customer->id()
             : $this->getIdentifierFromResource($user);
-        return $this->updateCustomer(
-            $identifier,
-            array_merge(
-                $userData,
-                $extraData,
-                $updateOnly
-                    ? [
-                        '_update' => true,
-                    ]
-                    : []
-            )
-        );
+        return $this->updateCustomer($identifier, array_merge($userData, $extraData));
     }
 
-    public function updateCustomer(string $identifier, $data = []): bool
+    public function updateCustomer($identifier, $data = []): bool
     {
-        $response = $this->requestJson(
-            'https://track.customer.io/api/v1/customers/' . $identifier,
-            'PUT',
-            $data
-        );
+        $identifiers = $this->getIdentifiersFromResource($identifier);
+        $response = isset($identifiers)
+            ? $this->trackEntity([
+                'type' => 'person',
+                'action' => 'identify',
+                'identifiers' => $identifiers,
+                'attributes' => $data,
+            ])
+            : null;
         return !is_null($response);
     }
 
-    public function deleteCustomer(string $identifier): bool
+    public function deleteCustomer($identifier): bool
     {
-        $response = $this->requestJson(
-            'https://track.customer.io/api/v1/customers/' . $identifier,
-            'DELETE'
-        );
+        $identifiers = $this->getIdentifiersFromResource($identifier);
+        $response = isset($identifiers)
+            ? $this->trackEntity([
+                'type' => 'person',
+                'action' => 'delete',
+                'identifiers' => $identifiers,
+            ])
+            : null;
         return !is_null($response);
     }
 
@@ -221,7 +290,9 @@ class Client implements CustomerIo
         CustomerContract $customer,
         CustomerContract $mergeCustomer
     ): ?CustomerContract {
-        $response = $this->requestJson('https://track.customer.io/api/v1/merge_customers', 'POST', [
+        $this->trackEntity([
+            'type' => 'person',
+            'action' => 'merge',
             'primary' => [
                 'cio_id' => $customer->id(),
             ],
@@ -242,12 +313,15 @@ class Client implements CustomerIo
         return $this->mergeCustomers($customer, $mergeCustomer);
     }
 
-    public function subscribeToTopic(string $email, $topic): bool
+    public function subscribeToTopic(string $email, $topic, $data = []): bool
     {
         $customer = $this->findCustomerByEmail($email);
-        $userData = [
-            'cio_subscription_preferences.topics.' . $topic => true,
-        ];
+        $userData = array_merge(
+            [
+                'cio_subscription_preferences.topics.' . $topic => true,
+            ],
+            $data
+        );
         $identifier = $email;
         if (isset($customer)) {
             $identifier = 'cio_' . $customer->id();
@@ -255,12 +329,15 @@ class Client implements CustomerIo
         return $this->updateCustomer($identifier, $userData);
     }
 
-    public function unsubscribeToTopic(string $email, $topic): bool
+    public function unsubscribeToTopic(string $email, $topic, $data = []): bool
     {
         $customer = $this->findCustomerByEmail($email);
-        $userData = [
-            'cio_subscription_preferences.topics.' . $topic => false,
-        ];
+        $userData = array_merge(
+            [
+                'cio_subscription_preferences.topics.' . $topic => false,
+            ],
+            $data
+        );
         $identifier = $email;
         if (isset($customer)) {
             $identifier = 'cio_' . $customer->id();
@@ -295,30 +372,17 @@ class Client implements CustomerIo
             $data['locale'] = $resource->preferredLocale();
         }
         if ($resource instanceof HasSubscriptionPreferences) {
-            $data['cio_subscription_preferences'] = [
-                'topics' => array_merge(
-                    isset($customer)
-                        ? $customer
-                            ->subscriptionPreferences()
-                            ->mapWithKeys(function ($preference) {
-                                return [
-                                    $preference->topic() => $preference->subscribed(),
-                                ];
-                            })
-                            ->toArray()
-                        : [],
-                    $resource instanceof HasSubscriptionPreferences
-                        ? $resource
-                            ->subscriptionPreferences()
-                            ->mapWithKeys(function ($preference) {
-                                return [
-                                    $preference->topic() => $preference->subscribed(),
-                                ];
-                            })
-                            ->toArray()
-                        : []
-                ),
-            ];
+            $data =
+                $resource instanceof HasSubscriptionPreferences
+                    ? $resource
+                        ->subscriptionPreferences()
+                        ->reduce(function ($currentData, $preference) {
+                            $currentData[
+                                'cio_subscription_preferences.topics.' . $preference->topic()
+                            ] = $preference->subscribed();
+                            return $currentData;
+                        }, $data)
+                    : $data;
         }
         if ($resource instanceof HasCustomerData) {
             return $resource->getCustomerData($data, $customer);
@@ -336,11 +400,24 @@ class Client implements CustomerIo
         );
     }
 
-    protected function getIdentifiersFromResource($resource)
+    public function getIdentifiersFromResource($resource)
     {
-        $cioId =
-            ($resource instanceof HasIdentifier ? $resource->customerIoIdentifier() : null) ??
-            ($resource instanceof CustomerIdentifiers ? $resource->cioId() : null);
+        if (is_array($resource)) {
+            return $resource;
+        }
+
+        if (is_string($resource)) {
+            return $this->getIdentifiersFromIdentifier($resource);
+        }
+
+        $identifiers = $this->getIdentifiersFromIdentifier(
+            $resource instanceof HasIdentifier ? $resource->customerIoIdentifier() : null
+        );
+        if (isset($identifiers)) {
+            return $identifiers;
+        }
+
+        $cioId = $resource instanceof CustomerIdentifiers ? $resource->cioId() : null;
         if (!empty($cioId)) {
             return [
                 'cio_id' => $cioId,
@@ -369,9 +446,31 @@ class Client implements CustomerIo
         return null;
     }
 
+    protected function getIdentifiersFromIdentifier($identifier): ?array
+    {
+        if (empty($identifier)) {
+            return null;
+        }
+        if (preg_match('/^cio_(.*)$/', $identifier, $matches) === 1) {
+            return [
+                'cio_id' => $matches[1],
+            ];
+        }
+        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+            return [
+                'email' => $identifier,
+            ];
+        }
+        return is_numeric($identifier)
+            ? [
+                'id' => $identifier,
+            ]
+            : null;
+    }
+
     public function getTransactionalMessages(): Collection
     {
-        $response = $this->requestJson('https://api.customer.io/v1/transactional', 'GET');
+        $response = $this->requestJson('/v1/transactional', 'GET');
         return collect(data_get($response, 'messages', []))->map(function ($item) {
             return new TransactionalMessage($item);
         });
@@ -380,8 +479,13 @@ class Client implements CustomerIo
     public function sendEmail($message, string $to)
     {
         $data = $message instanceof Arrayable ? $message->toArray() : $message;
-        $data['to'] = $to;
-        $response = $this->requestJson('https://api.customer.io/v1/send/email', 'POST', $data);
+        if (!isset($data['to'])) {
+            $data['to'] = $to;
+        }
+        $data['identifiers'] = [
+            'email' => $to,
+        ];
+        $response = $this->requestJson('/v1/send/email', 'POST', $data);
         return $response;
     }
 
@@ -406,7 +510,7 @@ class Client implements CustomerIo
 
         $request = [
             'identifiers' => [
-                'object_type_id' => $object->type(),
+                'object_type_id' => (string) $object->type(),
                 'object_id' => $object->id(),
             ],
             'type' => 'object',
@@ -426,9 +530,11 @@ class Client implements CustomerIo
     {
         $relationships = $relationships
             ->map(function ($relationship) {
-                return [
-                    'identifiers' => $this->getIdentifiersFromResource($relationship),
-                ];
+                return is_array($relationship)
+                    ? $relationship
+                    : [
+                        'identifiers' => $this->getIdentifiersFromResource($relationship),
+                    ];
             })
             ->filter(function ($relationship) {
                 return !is_null($relationship);
@@ -438,7 +544,7 @@ class Client implements CustomerIo
 
         $request = [
             'identifiers' => [
-                'object_type_id' => $typeId,
+                'object_type_id' => (string) $typeId,
                 'object_id' => $objectId,
             ],
             'type' => 'object',
@@ -453,7 +559,7 @@ class Client implements CustomerIo
     public function findObjectById($typeId, $objectId): ?CustomerObjectContract
     {
         $response = $this->requestJson(
-            sprintf('https://api.customer.io/v1/objects/%s/%s/attributes', $typeId, $objectId),
+            sprintf('/v1/objects/%s/%s/attributes', $typeId, $objectId),
             'GET'
         );
         $data = data_get($response, 'object');
@@ -482,16 +588,17 @@ class Client implements CustomerIo
         return $this->trackAnonymousEventBase($anonymousId, 'event', $name, $data) !== null;
     }
 
-    protected function trackCustomerEventBase($identifier, $type, $name, $data): ?array
+    protected function trackCustomerEventBase($identifier, $action, $name, $data): ?array
     {
-        return $this->requestJson(
-            sprintf('https://track.customer.io/api/v1/customers/%s/events', $identifier),
-            'POST',
+        $identifiers = $this->getIdentifiersFromIdentifier($identifier);
+        return $this->trackEntity(
             array_merge(
                 [
-                    'type' => $type,
+                    'type' => 'person',
+                    'action' => $action,
+                    'identifiers' => $identifiers,
                     'name' => $name,
-                    'data' => Arr::except($data, ['timestamp', 'id']),
+                    'attributes' => Arr::except($data, ['timestamp', 'id']),
                 ],
                 Arr::only($data, ['timestamp', 'id'])
             )
@@ -501,30 +608,40 @@ class Client implements CustomerIo
     protected function trackAnonymousEventBase($anonymousId, $type, $name, $data): ?array
     {
         return $this->requestJson(
-            'https://track.customer.io/api/v1/events',
+            '/api/v1/events',
             'POST',
             array_merge(
                 [
                     'type' => $type,
                     'name' => $name,
                     'anonymous_id' => $anonymousId,
-                    'data' => Arr::except($data, ['timestamp', 'id']),
+                    'attributes' => Arr::except($data, ['timestamp', 'id']),
                 ],
                 Arr::only($data, ['timestamp', 'id'])
-            )
+            ),
+            [
+                'base_uri' => $this->trackBaseUrl,
+            ]
         );
     }
 
     protected function trackEntity($entity): ?array
     {
-        return $this->requestJson('https://track.customer.io/api/v2/entity', 'POST', $entity);
+        return $this->requestJson('/api/v2/entity', 'POST', $entity, [
+            'base_uri' => $this->trackBaseUrl,
+        ]);
     }
 
     protected function getAuthorizationHeader($url)
     {
-        if (preg_match('/^https\:\/\/track\.customer\.io\//', $url) === 1) {
+        if (in_array($url, ['/api/v2/entity', '/api/v1/events'])) {
             return sprintf('Basic %s', base64_encode($this->siteId . ':' . $this->trackingKey));
         }
         return sprintf('Bearer %s', $this->key);
+    }
+
+    protected function getRequestBaseUri()
+    {
+        return $this->apiBaseUrl;
     }
 }

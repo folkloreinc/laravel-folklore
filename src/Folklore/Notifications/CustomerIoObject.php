@@ -26,7 +26,7 @@ class CustomerIoObject
 
     public function relationships($relationships)
     {
-        $this->relationships = collect($relationships);
+        $this->relationships = isset($relationships) ? collect($relationships) : null;
         return $this;
     }
 

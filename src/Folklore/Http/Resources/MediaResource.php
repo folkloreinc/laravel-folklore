@@ -14,6 +14,8 @@ class MediaResource extends JsonResource
 
     protected $withImageSizes = true;
 
+    protected $withFilesAsMap = false;
+
     /**
      * Transform the resource into an array.
      *
@@ -38,6 +40,13 @@ class MediaResource extends JsonResource
                 }
             ),
             'files' => $this->when($this->withFiles, function () {
+                if ($this->withFilesAsMap) {
+                    return $this->files()->mapWithKeys(function ($file) {
+                        return [
+                            $file->handle() => with(new MediaFileResource($file)),
+                        ];
+                    });
+                }
                 return MediaFileResource::collection($this->files());
             }),
         ];
@@ -64,6 +73,12 @@ class MediaResource extends JsonResource
     public function withFiles()
     {
         $this->withFiles = true;
+        return $this;
+    }
+
+    public function withFilesAsMap()
+    {
+        $this->withFilesAsMap = true;
         return $this;
     }
 

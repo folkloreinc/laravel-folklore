@@ -20,6 +20,11 @@ class Customer implements CustomerContract
         return data_get($this->data, 'cio_id', data_get($this->data, 'identifiers.cio_id'));
     }
 
+    public function externalId(): string
+    {
+        return data_get($this->data, 'id', data_get($this->data, 'identifiers.id'));
+    }
+
     public function email(): ?string
     {
         return data_get($this->data, 'email', data_get($this->data, 'attributes.email'));
