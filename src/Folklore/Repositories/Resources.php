@@ -87,6 +87,13 @@ abstract class Resources implements ResourcesContract
         return $models;
     }
 
+    public function valueById($id, $column)
+    {
+        return $this->newQuery()
+            ->where('id', $id)
+            ->value($column);
+    }
+
     public function value($column, array $params = [])
     {
         return $this->newQueryWithParams($params)->value($column);
