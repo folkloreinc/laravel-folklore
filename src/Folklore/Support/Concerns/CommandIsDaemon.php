@@ -18,6 +18,7 @@ trait CommandIsDaemon
     public function handle()
     {
         $daemon = $this->option('daemon');
+        $silent = $this->option('silent') ?? false;
         $interval = (int) $this->option('interval');
         if ($daemon) {
             $lastRestart = $this->getTimestampOfLastDaemonRestart();
@@ -28,16 +29,21 @@ trait CommandIsDaemon
                 $endTime = time();
                 $wait = max(0, $interval - ($endTime - $startTime));
                 if ($this->daemonShouldStop($lastRestart)) {
-                    $this->line('[Daemon ' . $className . '] <info>Restarting daemon.</info>');
+                    if (!$silent) {
+                        $this->line('[Daemon ' . $className . '] <info>Restarting daemon.</info>');
+                    }
+
                     return;
                 }
-                $this->line(
-                    '[Daemon ' .
-                        $className .
-                        '] <comment>Waiting:</comment> ' .
-                        $wait .
-                        ' second(s)'
-                );
+                if (!$silent) {
+                    $this->line(
+                        '[Daemon ' .
+                            $className .
+                            '] <comment>Waiting:</comment> ' .
+                            $wait .
+                            ' second(s)'
+                    );
+                }
                 sleep($wait);
             }
         } else {
