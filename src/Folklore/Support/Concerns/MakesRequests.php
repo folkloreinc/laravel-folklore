@@ -115,6 +115,19 @@ trait MakesRequests
         if (method_exists($this, 'getRequestBaseUri')) {
             $opts['base_uri'] = $this->getRequestBaseUri();
         }
-        return Http::withOptions($opts);
+
+        $client = Http::withOptions($opts);
+
+        $timeout = method_exists($this, 'getRequestTimeout') ? $this->getRequestTimeout() : null;
+        if (isset($timeout)) {
+            $client = $client->timeout($timeout);
+        }
+
+        return $client;
+    }
+
+    protected function getRequestTimeout(): ?int
+    {
+        return null;
     }
 }
