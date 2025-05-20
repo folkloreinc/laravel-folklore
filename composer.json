@@ -31,7 +31,7 @@
         "folklore/laravel-mediatheque": "v1.1.x-dev",
         "folklore/laravel-image": "v1.x-dev",
         "folklore/laravel-locale": "^8.0",
-        "cviebrock/eloquent-sluggable": "^9.0|^10.0|^11.0",
+        "cviebrock/eloquent-sluggable": "^9.0|^10.0|^11.0|^12.0",
         "laravel/fortify": "^1.13",
         "parsecsv/php-parsecsv": "^1.3"
     },
