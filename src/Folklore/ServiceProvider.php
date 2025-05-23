@@ -95,6 +95,7 @@ class ServiceProvider extends BaseServiceProvider
             '$trackingKey' => 'services.customerio.tracking_key',
             '$apiBaseUrl' => 'services.customerio.api_base_url',
             '$trackBaseUrl' => 'services.customerio.track_base_url',
+            '$debug' => ['services.customerio.debug', false],
         ]);
 
         $this->app->singleton('services.customerio', function () {

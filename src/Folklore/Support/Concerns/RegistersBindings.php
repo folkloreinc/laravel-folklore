@@ -11,7 +11,9 @@ trait RegistersBindings
                 ->when($classes)
                 ->needs($variable)
                 ->give(function () use ($configKey) {
-                    return $this->app['config']->get($configKey);
+                    return is_array($configKey)
+                        ? $this->app['config']->get($configKey[0], $configKey[1])
+                        : $this->app['config']->get($configKey);
                 });
         }
     }

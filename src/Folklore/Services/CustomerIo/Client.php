@@ -31,32 +31,24 @@ class Client implements CustomerIo
 {
     use MakesRequests;
 
-    protected $key;
+    protected string $apiBaseUrl = 'https://api.customer.io';
 
-    protected $siteId;
-
-    protected $trackingKey;
-
-    protected $apiBaseUrl;
-
-    protected $trackBaseUrl;
+    protected string $trackBaseUrl = 'https://track.customer.io';
 
     public function __construct(
-        $key,
-        $siteId,
-        $trackingKey = null,
-        $apiBaseUrl = null,
-        $trackBaseUrl = null
+        protected string $key,
+        protected string $siteId,
+        protected ?string $trackingKey = null,
+        ?string $apiBaseUrl = null,
+        ?string $trackBaseUrl = null,
+        protected bool $debug = false
     ) {
-        $this->key = $key;
-        $this->siteId = $siteId;
-        $this->trackingKey = $trackingKey;
-        $this->apiBaseUrl = !empty($apiBaseUrl)
-            ? rtrim($apiBaseUrl, '/')
-            : 'https://api.customer.io';
-        $this->trackBaseUrl = !empty($trackBaseUrl)
-            ? rtrim($trackBaseUrl, '/')
-            : 'https://track.customer.io';
+        if (!empty($apiBaseUrl)) {
+            $this->apiBaseUrl = rtrim($apiBaseUrl, '/');
+        }
+        if (!empty($trackBaseUrl)) {
+            $this->trackBaseUrl = rtrim($trackBaseUrl, '/');
+        }
     }
 
     public function findCustomerFromUser($user): ?CustomerContract
@@ -643,5 +635,10 @@ class Client implements CustomerIo
     protected function getRequestBaseUri()
     {
         return $this->apiBaseUrl;
+    }
+
+    protected function getRequestLogErrors()
+    {
+        return $this->debug;
     }
 }
