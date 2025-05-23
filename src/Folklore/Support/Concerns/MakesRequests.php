@@ -72,7 +72,10 @@ trait MakesRequests
         );
         $isSuccess = !is_null($response) && $response->successful();
 
-        $returnErrors = data_get($opts, 'return_errors', false);
+        $defaultReturnErrors = method_exists($this, 'getRequestReturnErrors')
+            ? $this->getRequestReturnErrors()
+            : false;
+        $returnErrors = data_get($opts, 'return_errors', $defaultReturnErrors);
         return !is_null($response) && ($returnErrors || $isSuccess) ? $response->body() : null;
     }
 
