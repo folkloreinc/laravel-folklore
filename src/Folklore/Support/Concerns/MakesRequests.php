@@ -36,7 +36,22 @@ trait MakesRequests
         );
         $isSuccess = !is_null($response) && $response->successful();
 
-        $returnErrors = data_get($opts, 'return_errors', false);
+        $logErrors = method_exists($this, 'getRequestLogErrors')
+            ? $this->getRequestLogErrors()
+            : false;
+        if ($logErrors && !$isSuccess) {
+            Log::error(sprintf('[%s] Request failed', get_class($this)), [
+                'url' => $url,
+                'method' => $method,
+                'params' => $params,
+                'response' => $response ? $response->json() : null,
+            ]);
+        }
+
+        $defaultReturnErrors = method_exists($this, 'getRequestReturnErrors')
+            ? $this->getRequestReturnErrors()
+            : false;
+        $returnErrors = data_get($opts, 'return_errors', $defaultReturnErrors);
 
         return !is_null($response) && ($returnErrors || $isSuccess) ? $response->json() : null;
     }
