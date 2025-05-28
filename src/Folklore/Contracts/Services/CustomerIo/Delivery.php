@@ -2,9 +2,9 @@
 
 namespace Folklore\Contracts\Services\CustomerIo;
 
-use Folklore\Contracts\Resources\Resource;
+use Folklore\Contracts\Entities\Entity;
 
-interface Delivery extends Resource
+interface Delivery extends Entity
 {
     public function type(): string;
 

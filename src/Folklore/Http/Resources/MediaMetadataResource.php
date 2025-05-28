@@ -3,10 +3,10 @@
 namespace Folklore\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
-use Folklore\Contracts\Resources\AudioMetadata;
-use Folklore\Contracts\Resources\ImageMetadata;
-use Folklore\Contracts\Resources\VideoMetadata;
-use Folklore\Contracts\Resources\DocumentMetadata;
+use Folklore\Contracts\Entities\AudioMetadata;
+use Folklore\Contracts\Entities\ImageMetadata;
+use Folklore\Contracts\Entities\VideoMetadata;
+use Folklore\Contracts\Entities\DocumentMetadata;
 
 class MediaMetadataResource extends JsonResource
 {

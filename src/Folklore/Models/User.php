@@ -4,11 +4,11 @@ namespace Folklore\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Folklore\Contracts\Resources\Resourcable;
-use Folklore\Contracts\Resources\User as UserContract;
-use Folklore\Resources\User as UserResource;
+use Folklore\Contracts\Entities\ToEntity;
+use Folklore\Contracts\Entities\User as UserContract;
+use Folklore\Entities\User as UserEntity;
 
-class User extends Authenticatable implements Resourcable
+class User extends Authenticatable implements ToEntity
 {
     use Notifiable;
 
@@ -35,8 +35,8 @@ class User extends Authenticatable implements Resourcable
         'email_verified_at' => 'datetime',
     ];
 
-    public function toResource(): UserContract
+    public function toEntity(): UserContract
     {
-        return new UserResource($this);
+        return new UserEntity($this);
     }
 }

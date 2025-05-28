@@ -3,7 +3,7 @@
 namespace Folklore\Support\Concerns;
 
 use Closure;
-use Folklore\Repositories\Resources;
+use Folklore\Repositories\Entities;
 use Illuminate\Support\Str;
 
 trait QueriesRelations
@@ -25,7 +25,7 @@ trait QueriesRelations
                 if (empty($paramValue)) {
                     return $query;
                 }
-                $ids = Resources::getIdsFromItems($paramValue);
+                $ids = Entities::getIdsFromItems($paramValue);
                 $or = preg_match('/^or_/', $paramName) === 1;
                 $exclude = preg_match('/^(or_)?exclude_/', $paramName) === 1;
                 $methodName = Str::camel(
@@ -55,7 +55,7 @@ trait QueriesRelations
                     if (empty($paramValue)) {
                         return $query;
                     }
-                    $ids = Resources::getIdsFromItems($paramValue);
+                    $ids = Entities::getIdsFromItems($paramValue);
                     $or = preg_match('/^or_/', $realParamName) === 1;
                     $exclude = preg_match('/^(or_)?exclude_/', $realParamName) === 1;
                     $methodName = Str::camel(

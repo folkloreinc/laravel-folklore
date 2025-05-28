@@ -2,11 +2,11 @@
 
 namespace Folklore\Contracts\Repositories;
 
-use Folklore\Contracts\Resources\Organisation;
-use Folklore\Contracts\Resources\OrganisationMember;
-use Folklore\Contracts\Resources\User;
+use Folklore\Contracts\Entities\Organisation;
+use Folklore\Contracts\Entities\OrganisationMember;
+use Folklore\Contracts\Entities\User;
 
-interface Organisations extends Resources
+interface Organisations extends Entities
 {
     public function findById(string $id): ?Organisation;
 

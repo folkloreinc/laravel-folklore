@@ -5,17 +5,17 @@ namespace Folklore\Models;
 use Illuminate\Database\Eloquent\Model;
 use Cviebrock\EloquentSluggable\Sluggable;
 use Folklore\Mediatheque\Support\Traits\HasMedias;
-use Folklore\Contracts\Resources\Page as PageContract;
-use Folklore\Contracts\Resources\Resourcable;
-use Folklore\Resources\Page as PageResource;
+use Folklore\Contracts\Entities\Page as PageContract;
+use Folklore\Entities\Page as PageEntity;
 use Folklore\Models\Concerns\SluggableWithFallback;
 use Folklore\Eloquent\JsonDataCast;
 use Folklore\Contracts\Eloquent\HasJsonDataRelations;
-use Folklore\Support\Concerns\HasTypedResource;
+use Folklore\Contracts\Entities\ToEntity;
+use Folklore\Support\Concerns\HasTypedEntity;
 
-class Page extends Model implements Resourcable, HasJsonDataRelations
+class Page extends Model implements ToEntity, HasJsonDataRelations
 {
-    use Sluggable, SluggableWithFallback, HasMedias, HasTypedResource;
+    use Sluggable, SluggableWithFallback, HasMedias, HasTypedEntity;
 
     protected $fillable = ['handle', 'type', 'parent_id', 'data', 'published'];
 
@@ -23,7 +23,7 @@ class Page extends Model implements Resourcable, HasJsonDataRelations
         'data' => JsonDataCast::class,
     ];
 
-    protected $typedResources = [];
+    protected $entitiesByType = [];
 
     public function getJsonDataRelations($key, $value, $attributes = [])
     {
@@ -50,11 +50,11 @@ class Page extends Model implements Resourcable, HasJsonDataRelations
     }
 
     /**
-     * To resource
+     * To entity
      */
-    public function toResource(): PageContract
+    public function toEntity(): PageContract
     {
-        return $this->toTypedResource() ?? new PageResource($this);
+        return $this->toTypedEntity() ?? new PageEntity($this);
     }
 
     /**

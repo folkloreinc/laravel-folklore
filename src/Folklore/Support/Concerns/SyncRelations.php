@@ -2,8 +2,8 @@
 
 namespace Folklore\Support\Concerns;
 
-use Folklore\Contracts\Resources\HasModel;
-use Folklore\Contracts\Resources\Resource;
+use Folklore\Contracts\Entities\HasModel;
+use Folklore\Contracts\Entities\Entity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
 
@@ -16,7 +16,7 @@ trait SyncRelations
             if ($item instanceof HasModel) {
                 return $item->getModel();
             }
-            if ($item instanceof Resource) {
+            if ($item instanceof Entity) {
                 return $item->id();
             }
             if (is_array($item)) {

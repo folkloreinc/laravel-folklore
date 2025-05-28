@@ -3,9 +3,9 @@
 namespace Folklore\Contracts\Repositories;
 
 use Symfony\Component\HttpFoundation\File\File;
-use Folklore\Contracts\Resources\Media;
+use Folklore\Contracts\Entities\Media;
 
-interface Medias extends Resources
+interface Medias extends Entities
 {
     public function findById(string $id): ?Media;
 

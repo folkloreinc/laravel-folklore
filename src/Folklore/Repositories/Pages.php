@@ -5,10 +5,9 @@ namespace Folklore\Repositories;
 use Folklore\Models\Page as PageModel;
 use Folklore\Contracts\Repositories\Blocks as BlocksRepositoryContract;
 use Folklore\Contracts\Repositories\Pages as PagesRepositoryContract;
-use Folklore\Contracts\Resources\Page as PageContract;
-use Folklore\Contracts\Resources\Resourcable;
+use Folklore\Contracts\Entities\Page as PageContract;
 
-class Pages extends Resources implements PagesRepositoryContract
+class Pages extends Entities implements PagesRepositoryContract
 {
     protected $blocks;
 
@@ -39,7 +38,7 @@ class Pages extends Resources implements PagesRepositoryContract
         $model = $this->newQueryWithParams()
             ->where('handle', $handle)
             ->first();
-        return $model instanceof Resourcable ? $model->toResource() : $model;
+        return to_entity($model);
     }
 
     public function findBySlug(string $slug, string $locale = null): ?PageContract
@@ -51,7 +50,7 @@ class Pages extends Resources implements PagesRepositoryContract
         $model = $this->newQueryWithParams()
             ->where('slug_' . $locale, $slug)
             ->first();
-        return $model instanceof Resourcable ? $model->toResource() : $model;
+        return to_entity($model);
     }
 
     public function create($data): PageContract

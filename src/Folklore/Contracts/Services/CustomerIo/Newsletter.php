@@ -3,10 +3,10 @@
 namespace Folklore\Contracts\Services\CustomerIo;
 
 use Carbon\Carbon;
-use Folklore\Contracts\Resources\Resource;
+use Folklore\Contracts\Entities\Entity;
 use Illuminate\Support\Collection;
 
-interface Newsletter extends Resource
+interface Newsletter extends Entity
 {
     public function name(): string;
 

@@ -1,0 +1,55 @@
+<?php
+
+namespace  Folklore\Entities;
+
+use Folklore\Contracts\Entities\HasModel;
+use Illuminate\Support\Collection;
+use Folklore\Contracts\Entities\MediaFile as MediaFileContract;
+use Folklore\Models\MediaFile as MediaFileModel;
+use Illuminate\Database\Eloquent\Model;
+
+class MediaFile implements MediaFileContract, HasModel
+{
+    protected $model;
+
+    public function __construct(MediaFileModel $model)
+    {
+        $this->model = $model;
+    }
+
+    public function id(): string
+    {
+        return $this->model->id;
+    }
+
+    public function handle(): ?string
+    {
+        return $this->model->handle ??
+            (isset($this->model->pivot) ? $this->model->pivot->handle : null);
+    }
+
+    public function name(): ?string
+    {
+        return $this->model->name;
+    }
+
+    public function url(): string
+    {
+        return $this->model->getUrl();
+    }
+
+    public function mime(): ?string
+    {
+        return $this->model->mime;
+    }
+
+    public function size(): ?int
+    {
+        return $this->model->size;
+    }
+
+    public function getModel(): Model
+    {
+        return $this->model;
+    }
+}

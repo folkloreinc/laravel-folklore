@@ -4,16 +4,16 @@ namespace Folklore\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Folklore\Mediatheque\Support\Traits\HasMedias;
-use Folklore\Contracts\Resources\Block as BlockContract;
-use Folklore\Contracts\Resources\Resourcable;
-use Folklore\Resources\Block as BlockResource;
+use Folklore\Contracts\Entities\Block as BlockContract;
+use Folklore\Contracts\Entities\ToEntity;
+use Folklore\Entities\Block as BlockEntity;
 use Folklore\Eloquent\JsonDataCast;
 use Folklore\Contracts\Eloquent\HasJsonDataRelations;
-use Folklore\Support\Concerns\HasTypedResource;
+use Folklore\Support\Concerns\HasTypedEntity;
 
-class Block extends Model implements Resourcable, HasJsonDataRelations
+class Block extends Model implements ToEntity, HasJsonDataRelations
 {
-    use HasMedias, HasTypedResource;
+    use HasMedias, HasTypedEntity;
 
     protected $table = 'blocks';
 
@@ -23,7 +23,7 @@ class Block extends Model implements Resourcable, HasJsonDataRelations
         'data' => JsonDataCast::class,
     ];
 
-    protected $typedResources = [];
+    protected $entitiesByType = [];
 
     public function getJsonDataRelations($key, $value, $attributes = [])
     {
@@ -43,8 +43,8 @@ class Block extends Model implements Resourcable, HasJsonDataRelations
         return $this->morphToMany(Block::class, 'blockable', 'blocks_pivot');
     }
 
-    public function toResource(): BlockContract
+    public function toEntity(): BlockContract
     {
-        return $this->toTypedResource() ?? new BlockResource($this);
+        return $this->toTypedEntity() ?? new BlockEntity($this);
     }
 }

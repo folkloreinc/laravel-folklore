@@ -2,12 +2,12 @@
 
 namespace {{ namespace }};
 
-use Folklore\Repositories\Resources;
+use Folklore\Repositories\Entities;
 use {{ namespacedModel }} as {{ modelAlias }};
 use {{ namespacedContract }} as {{ contractAlias }};
-use {{ namespacedResource }} as {{ resourceAlias }};
+use {{ namespacedEntity }} as {{ entityAlias }};
 
-class {{ class }} extends Resources implements {{ contractAlias }}
+class {{ class }} extends Entities implements {{ contractAlias }}
 {
     protected function newModel(): {{ modelAlias }}
     {
@@ -19,17 +19,17 @@ class {{ class }} extends Resources implements {{ contractAlias }}
         return parent::newQuery();
     }
 
-    public function findById(string $id): ?{{ resourceAlias }}
+    public function findById(string $id): ?{{ entityAlias }}
     {
         return parent::findById($id);
     }
 
-    public function create($data): {{ resourceAlias }}
+    public function create($data): {{ entityAlias }}
     {
         return parent::create($data);
     }
 
-    public function update(string $id, $data): ?{{ resourceAlias }}
+    public function update(string $id, $data): ?{{ entityAlias }}
     {
         return parent::update($id, $data);
     }

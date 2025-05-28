@@ -3,9 +3,9 @@
 namespace Folklore\Contracts\Repositories;
 
 use Illuminate\Contracts\Auth\UserProvider;
-use Folklore\Contracts\Resources\User;
+use Folklore\Contracts\Entities\User;
 
-interface Users extends Resources, UserProvider
+interface Users extends Entities, UserProvider
 {
     public function findById(string $id): ?User;
 

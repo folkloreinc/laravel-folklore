@@ -1,0 +1,105 @@
+<?php
+
+namespace Folklore\Entities;
+
+use Carbon\Carbon;
+use Folklore\Contracts\Entities\HasModel;
+use Illuminate\Support\Collection;
+use Folklore\Contracts\Entities\Media as MediaContract;
+use Folklore\Contracts\Entities\MediaFile as MediaFileContract;
+use Folklore\Contracts\Entities\MediaMetadata as MediaMetadataContract;
+use Folklore\Models\Media as MediaModel;
+use Illuminate\Database\Eloquent\Model;
+
+class Media implements MediaContract, HasModel
+{
+    protected $model;
+
+    protected $files;
+
+    protected $metadata;
+
+    protected $thumbnailUrl;
+
+    public function __construct(MediaModel $model)
+    {
+        $this->model = $model;
+    }
+
+    public function id(): string
+    {
+        return $this->model->id;
+    }
+
+    public function type(): string
+    {
+        return $this->model->type;
+    }
+
+    public function name(): string
+    {
+        return $this->model->name;
+    }
+
+    public function url(): string
+    {
+        $originalFile = $this->getOriginalFile();
+        return $originalFile->url();
+    }
+
+    public function thumbnailUrl(): ?string
+    {
+        if (!isset($this->thumbnailUrl)) {
+            $thumbnailFile = $this->files()->first(function ($file) {
+                return preg_match('/^thumbnail/', $file->handle()) === 1;
+            });
+            if (!is_null($thumbnailFile)) {
+                $this->thumbnailUrl = $thumbnailFile->url();
+            } elseif ($this->type() === 'image') {
+                $this->thumbnailUrl = $this->url();
+            }
+        }
+
+        return $this->thumbnailUrl;
+    }
+
+    public function files(): Collection
+    {
+        if (!isset($this->files)) {
+            $this->files = $this->model->files->toBase()->map(function ($item) {
+                return to_entity($item);
+            });
+        }
+        return $this->files;
+    }
+
+    public function metadata(): MediaMetadataContract
+    {
+        if (!isset($this->metadata)) {
+            $this->metadata = new MediaMetadata($this->model);
+        }
+        return $this->metadata;
+    }
+
+    protected function getOriginalFile(): MediaFileContract
+    {
+        return $this->files()->first(function ($file) {
+            return $file->handle() === 'original';
+        });
+    }
+
+    public function getModel(): Model
+    {
+        return $this->model;
+    }
+
+    public function createdAt(): ?Carbon
+    {
+        return $this->model->created_at;
+    }
+
+    public function updatedAt(): ?Carbon
+    {
+        return $this->model->updatedAt;
+    }
+}

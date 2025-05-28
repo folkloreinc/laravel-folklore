@@ -2,8 +2,8 @@
 
 namespace Folklore\Contracts\Services\CustomerIo;
 
-use Folklore\Contracts\Resources\Resource;
+use Folklore\Contracts\Entities\Entity;
 
-interface CampaignAction extends MessageContent, Resource
+interface CampaignAction extends MessageContent, Entity
 {
 }

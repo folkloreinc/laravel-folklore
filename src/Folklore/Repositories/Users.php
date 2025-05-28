@@ -3,9 +3,7 @@
 namespace Folklore\Repositories;
 
 use Folklore\Contracts\Repositories\Users as UsersContract;
-use Folklore\Contracts\Resources\Resourcable;
-use Folklore\Contracts\Resources\Resource;
-use Folklore\Contracts\Resources\User as UserContract;
+use Folklore\Contracts\Entities\User as UserContract;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Auth\EloquentUserProvider;
@@ -13,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Folklore\Models\User as UserModel;
 use Illuminate\Support\Facades\Hash;
 
-class Users extends Resources implements UsersContract
+class Users extends Entities implements UsersContract
 {
     protected $userProvider;
 
@@ -37,7 +35,7 @@ class Users extends Resources implements UsersContract
         $model = $this->newQuery()
             ->where('email', 'LIKE', $email)
             ->first();
-        return $model instanceof Resourcable ? $model->toResource() : $model;
+        return to_entity($model);
     }
 
     public function create($data): UserContract
@@ -68,7 +66,7 @@ class Users extends Resources implements UsersContract
     public function retrieveById($identifier)
     {
         $model = $this->userProvider->retrieveById($identifier);
-        return !is_null($model) && $model instanceof Resourcable ? $model->toResource() : null;
+        return to_entity($model);
     }
 
     /**
@@ -81,7 +79,7 @@ class Users extends Resources implements UsersContract
     public function retrieveByToken($identifier, $token)
     {
         $model = $this->userProvider->retrieveByToken($identifier, $token);
-        return !is_null($model) && $model instanceof Resourcable ? $model->toResource() : null;
+        return to_entity($model);
     }
 
     /**
@@ -110,9 +108,7 @@ class Users extends Resources implements UsersContract
     {
         $model = $this->userProvider->retrieveByCredentials($credentials);
 
-        $resource = !is_null($model) && $model instanceof Resourcable ? $model->toResource() : null;
-
-        return $resource;
+        return to_entity($model);
     }
 
     /**

@@ -8,9 +8,9 @@ use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Support\Arr;
-use Folklore\Contracts\Resources\User;
-use Folklore\Contracts\Resources\Contact;
-use Folklore\Contracts\Resources\Resource;
+use Folklore\Contracts\Entities\User;
+use Folklore\Contracts\Entities\Contact;
+use Folklore\Contracts\Entities\Entity;
 use Folklore\Contracts\Services\CustomerIo\Customer as CustomerContract;
 use Folklore\Contracts\Services\CustomerIo\CustomerIdentifiers;
 use Folklore\Contracts\Services\CustomerIo\CustomerObject;
@@ -75,7 +75,7 @@ class Client implements CustomerIo
 
     public function findCustomerByIdentifier($identifier): ?CustomerContract
     {
-        $identifiers = $this->getIdentifiersFromResource($identifier);
+        $identifiers = $this->getIdentifiersFromItem($identifier);
         if (!isset($identifiers)) {
             return null;
         }
@@ -139,7 +139,7 @@ class Client implements CustomerIo
         $count = 100,
         $cursor = null
     ): CollectionWithCursor {
-        $identifiers = $this->getIdentifiersFromResource($customer);
+        $identifiers = $this->getIdentifiersFromItem($customer);
         if (is_null($identifiers)) {
             return collect();
         }
@@ -235,16 +235,16 @@ class Client implements CustomerIo
         bool $updateOnly = false
     ): bool {
         $customer = $this->findCustomerFromUser($user);
-        $userData = $this->getCustomerDataFromResource($user, $customer);
+        $userData = $this->getCustomerDataFromItem($user, $customer);
         $identifier = isset($customer)
             ? 'cio_' . $customer->id()
-            : $this->getIdentifierFromResource($user);
+            : $this->getIdentifierFromItem($user);
         return $this->updateCustomer($identifier, array_merge($userData, $extraData));
     }
 
     public function updateCustomer($identifier, $data = []): bool
     {
-        $identifiers = $this->getIdentifiersFromResource($identifier);
+        $identifiers = $this->getIdentifiersFromItem($identifier);
         $response = isset($identifiers)
             ? $this->trackEntity([
                 'type' => 'person',
@@ -258,7 +258,7 @@ class Client implements CustomerIo
 
     public function deleteCustomer($identifier): bool
     {
-        $identifiers = $this->getIdentifiersFromResource($identifier);
+        $identifiers = $this->getIdentifiersFromItem($identifier);
         $response = isset($identifiers)
             ? $this->trackEntity([
                 'type' => 'person',
@@ -274,7 +274,7 @@ class Client implements CustomerIo
         $customer = $this->findCustomerFromUser($user);
         $identifier = isset($customer)
             ? 'cio_' . $customer->id()
-            : $this->getIdentifierFromResource($user);
+            : $this->getIdentifierFromItem($user);
         return $this->deleteCustomer($identifier);
     }
 
@@ -337,36 +337,36 @@ class Client implements CustomerIo
         return $this->updateCustomer($identifier, $userData);
     }
 
-    public function getCustomerDataFromResource(
-        $resource,
+    public function getCustomerDataFromItem(
+        $item,
         ?CustomerContract $customer = null
     ): array {
         $data = [];
-        if ($resource instanceof Resource) {
-            $data['id'] = $resource->id();
+        if ($item instanceof Entity) {
+            $data['id'] = $item->id();
         }
-        if ($resource instanceof User) {
-            $data['name'] = $resource->name();
-            $data['email'] = $resource->email();
+        if ($item instanceof User) {
+            $data['name'] = $item->name();
+            $data['email'] = $item->email();
         }
-        if ($resource instanceof Contact) {
-            $data['name'] = $resource->name();
-            $data['firstname'] = $resource->firstName();
-            $data['lastname'] = $resource->lastName();
-            $data['phone'] = $resource->phone();
-            $data['email'] = $resource->email();
-            $birthdate = $resource->birthdate();
+        if ($item instanceof Contact) {
+            $data['name'] = $item->name();
+            $data['firstname'] = $item->firstName();
+            $data['lastname'] = $item->lastName();
+            $data['phone'] = $item->phone();
+            $data['email'] = $item->email();
+            $birthdate = $item->birthdate();
             if (isset($birthdate)) {
                 $data['birthdate'] = $birthdate->getTimestamp();
             }
         }
-        if ($resource instanceof HasLocalePreference) {
-            $data['locale'] = $resource->preferredLocale();
+        if ($item instanceof HasLocalePreference) {
+            $data['locale'] = $item->preferredLocale();
         }
-        if ($resource instanceof HasSubscriptionPreferences) {
+        if ($item instanceof HasSubscriptionPreferences) {
             $data =
-                $resource instanceof HasSubscriptionPreferences
-                    ? $resource
+                $item instanceof HasSubscriptionPreferences
+                    ? $item
                         ->subscriptionPreferences()
                         ->reduce(function ($currentData, $preference) {
                             $currentData[
@@ -376,15 +376,15 @@ class Client implements CustomerIo
                         }, $data)
                     : $data;
         }
-        if ($resource instanceof HasCustomerData) {
-            return $resource->getCustomerData($data, $customer);
+        if ($item instanceof HasCustomerData) {
+            return $item->getCustomerData($data, $customer);
         }
         return $data;
     }
 
-    protected function getIdentifierFromResource($resource)
+    protected function getIdentifierFromItem($item)
     {
-        $identifiers = $this->getIdentifiersFromResource($resource);
+        $identifiers = $this->getIdentifiersFromItem($item);
         return data_get(
             $identifiers,
             'cio_id',
@@ -392,34 +392,34 @@ class Client implements CustomerIo
         );
     }
 
-    public function getIdentifiersFromResource($resource)
+    public function getIdentifiersFromItem($item)
     {
-        if (is_array($resource)) {
-            return $resource;
+        if (is_array($item)) {
+            return $item;
         }
 
-        if (is_string($resource)) {
-            return $this->getIdentifiersFromIdentifier($resource);
+        if (is_string($item)) {
+            return $this->getIdentifiersFromIdentifier($item);
         }
 
         $identifiers = $this->getIdentifiersFromIdentifier(
-            $resource instanceof HasIdentifier ? $resource->customerIoIdentifier() : null
+            $item instanceof HasIdentifier ? $item->customerIoIdentifier() : null
         );
         if (isset($identifiers)) {
             return $identifiers;
         }
 
-        $cioId = $resource instanceof CustomerIdentifiers ? $resource->cioId() : null;
+        $cioId = $item instanceof CustomerIdentifiers ? $item->cioId() : null;
         if (!empty($cioId)) {
             return [
                 'cio_id' => $cioId,
             ];
         }
         $email =
-            $resource instanceof Contact ||
-            $resource instanceof User ||
-            $resource instanceof CustomerIdentifiers
-                ? $resource->email()
+            $item instanceof Contact ||
+            $item instanceof User ||
+            $item instanceof CustomerIdentifiers
+                ? $item->email()
                 : null;
         if (!empty($email)) {
             return [
@@ -427,8 +427,8 @@ class Client implements CustomerIo
             ];
         }
         $id =
-            $resource instanceof Resource || $resource instanceof CustomerIdentifiers
-                ? $resource->id()
+            $item instanceof Entity || $item instanceof CustomerIdentifiers
+                ? $item->id()
                 : null;
         if (!empty($id)) {
             return [
@@ -492,7 +492,7 @@ class Client implements CustomerIo
         $relationships = collect($object->relationships() ?? [])
             ->map(function ($relationship) {
                 return [
-                    'identifiers' => $this->getIdentifiersFromResource($relationship),
+                    'identifiers' => $this->getIdentifiersFromItem($relationship),
                 ];
             })
             ->filter(function ($relationship) {
@@ -525,7 +525,7 @@ class Client implements CustomerIo
                 return is_array($relationship)
                     ? $relationship
                     : [
-                        'identifiers' => $this->getIdentifiersFromResource($relationship),
+                        'identifiers' => $this->getIdentifiersFromItem($relationship),
                     ];
             })
             ->filter(function ($relationship) {
@@ -560,13 +560,13 @@ class Client implements CustomerIo
 
     public function trackUserPageview($user, string $url, $data): bool
     {
-        $identifier = $this->getIdentifierFromResource($user);
+        $identifier = $this->getIdentifierFromItem($user);
         return $this->trackCustomerEventBase($identifier, 'page', $url, $data) !== null;
     }
 
     public function trackUserEvent($user, string $name, $data): bool
     {
-        $identifier = $this->getIdentifierFromResource($user);
+        $identifier = $this->getIdentifierFromItem($user);
         return $this->trackCustomerEventBase($identifier, 'event', $name, $data) !== null;
     }
 

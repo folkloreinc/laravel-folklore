@@ -4,7 +4,7 @@ namespace Folklore\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
-use Folklore\Contracts\Resources\Image;
+use Folklore\Contracts\Entities\Image;
 
 class MediaResource extends JsonResource
 {

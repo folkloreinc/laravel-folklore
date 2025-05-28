@@ -2,14 +2,14 @@
 
 namespace {{ namespace }};
 
-use Folklore\Contracts\Repositories\Resources;
-use {{ namespacedResource }} as {{ resourceAlias }};
+use Folklore\Contracts\Repositories\Entities;
+use {{ namespacedEntity }} as {{ entityAlias }};
 
-interface {{ class }} extends Resources
+interface {{ class }} extends Entities
 {
-    public function findById(string $id): ?{{ resourceAlias }};
+    public function findById(string $id): ?{{ entityAlias }};
 
-    public function create($data): {{ resourceAlias }};
+    public function create($data): {{ entityAlias }};
 
-    public function update(string $id, $data): ?{{ resourceAlias }};
+    public function update(string $id, $data): ?{{ entityAlias }};
 }

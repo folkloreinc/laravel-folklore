@@ -2,7 +2,7 @@
 
 namespace Folklore\Notifications;
 
-use Folklore\Contracts\Resources\User;
+use Folklore\Contracts\Entities\User;
 use Folklore\Contracts\Services\CustomerIo;
 use Illuminate\Contracts\Support\Arrayable;
 

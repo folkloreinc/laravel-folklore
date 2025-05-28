@@ -67,6 +67,11 @@ class ServiceProvider extends BaseServiceProvider
             \Folklore\Contracts\Repositories\Organisations::class,
             \Folklore\Repositories\Organisations::class
         );
+
+        $repositories = $this->app['config']->get('app.repositories', []);
+        foreach ($repositories as $contract => $implementation) {
+            $this->app->bind($contract, $implementation);
+        }
     }
 
     protected function registerMediatheque()
@@ -275,11 +280,11 @@ class ServiceProvider extends BaseServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 \Folklore\Console\AssetsViewCommand::class,
-                \Folklore\Console\ResourceFullMakeCommand::class,
+                \Folklore\Console\EntityMakeCommand::class,
                 \Folklore\Console\RepositoryContractMakeCommand::class,
                 \Folklore\Console\RepositoryMakeCommand::class,
-                \Folklore\Console\ResourceContractMakeCommand::class,
-                \Folklore\Console\ResourceModelMakeCommand::class,
+                \Folklore\Console\EntityContractMakeCommand::class,
+                \Folklore\Console\EntityModelMakeCommand::class,
             ]);
         }
     }

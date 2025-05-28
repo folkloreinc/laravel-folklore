@@ -2,9 +2,9 @@
 
 namespace Folklore\Contracts\Services\CustomerIo;
 
-use Folklore\Contracts\Resources\Resource;
+use Folklore\Contracts\Entities\Entity;
 
-interface TransactionalMessage extends Resource
+interface TransactionalMessage extends Entity
 {
     public function name(): string;
 }

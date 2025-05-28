@@ -1,0 +1,21 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ namespacedModel }} as {{ modelAlias }};
+use {{ namespacedEntity }} as {{ entityAlias }};
+
+class {{ class }} implements {{ entityAlias }}
+{
+    protected $model;
+
+    public function __construct({{ modelAlias }} $model)
+    {
+        $this->model = $model;
+    }
+
+    public function id(): string
+    {
+        return $this->model->id;
+    }
+}

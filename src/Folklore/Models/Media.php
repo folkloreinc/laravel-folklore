@@ -3,26 +3,28 @@
 namespace Folklore\Models;
 
 use Folklore\Mediatheque\Models\Media as BaseMedia;
-use Folklore\Contracts\Resources\Resourcable;
-use Folklore\Contracts\Resources\Media as MediaContract;
-use Folklore\Resources\Media as MediaResource;
-use Folklore\Resources\Image as ImageResource;
-use Folklore\Resources\Video as VideoResource;
-use Folklore\Resources\Audio as AudioResource;
-use Folklore\Support\Concerns\HasTypedResource;
+use Folklore\Contracts\Entities\Media as MediaContract;
+use Folklore\Contracts\Entities\ToEntity;
+use Folklore\Entities\Media as MediaEntity;
+use Folklore\Entities\Image as ImageEntity;
+use Folklore\Entities\Video as VideoEntity;
+use Folklore\Entities\Audio as AudioEntity;
+use Folklore\Entities\Document as DocumentEntity;
+use Folklore\Support\Concerns\HasTypedEntity;
 
-class Media extends BaseMedia implements Resourcable
+class Media extends BaseMedia implements ToEntity
 {
-    use HasTypedResource;
+    use HasTypedEntity;
 
-    protected $typedResources = [
-        'image' => ImageResource::class,
-        'video' => VideoResource::class,
-        'audio' => AudioResource::class,
+    protected $entitiesByType = [
+        'image' => ImageEntity::class,
+        'video' => VideoEntity::class,
+        'audio' => AudioEntity::class,
+        'document' => DocumentEntity::class,
     ];
 
-    public function toResource(): MediaContract
+    public function toEntity(): MediaContract
     {
-        return $this->toTypedResource() ?? new MediaResource($this);
+        return $this->toTypedEntity() ?? new MediaEntity($this);
     }
 }

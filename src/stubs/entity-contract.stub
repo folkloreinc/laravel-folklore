@@ -1,0 +1,9 @@
+<?php
+
+namespace {{ namespace }};
+
+use Folklore\Contracts\Entities\Entity;
+
+interface {{ class }} extends Entity
+{
+}

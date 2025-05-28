@@ -2,10 +2,10 @@
 
 namespace Folklore\Contracts\Services\CustomerIo;
 
-use Folklore\Contracts\Resources\Resource;
+use Folklore\Contracts\Entities\Entity;
 use Illuminate\Support\Collection;
 
-interface CustomerObject extends Resource
+interface CustomerObject extends Entity
 {
     public function type(): string;
 

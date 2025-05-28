@@ -37,25 +37,25 @@ abstract class GeneratorCommand extends BaseGeneratorCommand
     }
 
     /**
-     * Replace the resource contract for the given stub.
+     * Replace the entity contract for the given stub.
      *
      * @param  string  $stub
      * @param  string  $model
      * @return string
      */
-    protected function replaceResource($stub, $name)
+    protected function replaceEntity($stub, $name)
     {
-        $resourceClass = $this->qualifyContract($name, 'Resources');
+        $entityClass = $this->qualifyContract($name, 'Entities');
 
         $replace = [
-            'DummyFullResourceClass' => $resourceClass,
-            '{{ namespacedResource }}' => $resourceClass,
-            '{{namespacedResource}}' => $resourceClass,
-            'DummyResourceClass' => class_basename($resourceClass),
-            '{{ resource }}' => class_basename($resourceClass),
-            '{{resource}}' => class_basename($resourceClass),
-            '{{ resourceAlias }}' => class_basename($resourceClass) . 'ResourceContract',
-            '{{resourceAlias}}' => class_basename($resourceClass) . 'ResourceContract',
+            'DummyFullEntityClass' => $entityClass,
+            '{{ namespacedEntity }}' => $entityClass,
+            '{{namespacedEntity}}' => $entityClass,
+            'DummyEntityClass' => class_basename($entityClass),
+            '{{ entity }}' => class_basename($entityClass),
+            '{{entity}}' => class_basename($entityClass),
+            '{{ entityAlias }}' => class_basename($entityClass) . 'EntityContract',
+            '{{entityAlias}}' => class_basename($entityClass) . 'EntityContract',
         ];
 
         return str_replace(array_keys($replace), array_values($replace), $stub);

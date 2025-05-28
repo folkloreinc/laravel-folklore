@@ -2,8 +2,6 @@
 
 namespace Folklore\Contracts\Services\CustomerIo;
 
-use Folklore\Contracts\Resources\Resource;
-
 interface MessageContent
 {
     public function type(): ?string;

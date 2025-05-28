@@ -2,9 +2,9 @@
 
 namespace Folklore\Contracts\Services;
 
-use Folklore\Contracts\Resources\Contact;
+use Folklore\Contracts\Entities\Contact;
 use Illuminate\Support\Collection;
-use Folklore\Contracts\Resources\User;
+use Folklore\Contracts\Entities\User;
 use Folklore\Contracts\Services\CustomerIo\Campaign;
 use Folklore\Contracts\Services\CustomerIo\CampaignAction;
 use Folklore\Contracts\Services\CustomerIo\Customer;
@@ -92,5 +92,5 @@ interface CustomerIo
 
     public function trackAnonymousEvent(string $anonymousId, string $name, $data): bool;
 
-    public function getIdentifiersFromResource($resource);
+    public function getIdentifiersFromItem($item);
 }

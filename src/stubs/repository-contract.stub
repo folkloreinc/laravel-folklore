@@ -2,8 +2,8 @@
 
 namespace {{ namespace }};
 
-use Folklore\Contracts\Repositories\Resources;
+use Folklore\Contracts\Repositories\Entities;
 
-interface {{ class }} extends Resources
+interface {{ class }} extends Entities
 {
 }

@@ -3,14 +3,14 @@
 namespace Folklore\Models;
 
 use Folklore\Mediatheque\Models\File as BaseFile;
-use Folklore\Contracts\Resources\Resourcable;
-use Folklore\Contracts\Resources\MediaFile as MediaFileContract;
-use Folklore\Resources\MediaFile as MediaFileResource;
+use Folklore\Contracts\Entities\MediaFile as MediaFileContract;
+use Folklore\Contracts\Entities\ToEntity;
+use Folklore\Entities\MediaFile as MediaFileEntity;
 
-class MediaFile extends BaseFile implements Resourcable
+class MediaFile extends BaseFile implements ToEntity
 {
-    public function toResource(): MediaFileContract
+    public function toEntity(): MediaFileContract
     {
-        return new MediaFileResource($this);
+        return new MediaFileEntity($this);
     }
 }

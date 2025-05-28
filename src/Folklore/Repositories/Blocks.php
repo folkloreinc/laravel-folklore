@@ -4,10 +4,10 @@ namespace Folklore\Repositories;
 
 use Folklore\Models\Block as BlockModel;
 use Folklore\Contracts\Repositories\Blocks as BlocksRepositoryContract;
-use Folklore\Contracts\Resources\Block as BlockContract;
-use Folklore\Contracts\Resources\Resourcable;
+use Folklore\Contracts\Entities\Block as BlockContract;
+use Folklore\Contracts\Entities\ToEntity;
 
-class Blocks extends Resources implements BlocksRepositoryContract
+class Blocks extends Entities implements BlocksRepositoryContract
 {
     protected $jsonAttributeFillable = '*';
 
@@ -31,7 +31,7 @@ class Blocks extends Resources implements BlocksRepositoryContract
         $model = $this->newQueryWithParams()
             ->where('handle', $handle)
             ->first();
-        return $model instanceof Resourcable ? $model->toResource() : $model;
+        return to_entity($model);
     }
 
     public function create($data): BlockContract

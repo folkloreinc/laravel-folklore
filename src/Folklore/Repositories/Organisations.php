@@ -3,15 +3,14 @@
 namespace Folklore\Repositories;
 
 use Folklore\Contracts\Repositories\Organisations as OrganisationsContract;
-use Folklore\Contracts\Resources\Resourcable;
-use Folklore\Contracts\Resources\Organisation as OrganisationContract;
-use Folklore\Contracts\Resources\OrganisationMember as OrganisationMemberContract;
-use Folklore\Contracts\Resources\User as UserContract;
+use Folklore\Contracts\Entities\Organisation as OrganisationContract;
+use Folklore\Contracts\Entities\OrganisationMember as OrganisationMemberContract;
+use Folklore\Contracts\Entities\User as UserContract;
 use Illuminate\Database\Eloquent\Model;
 use Folklore\Models\Organisation as OrganisationModel;
 use Folklore\Models\OrganisationMember as OrganisationMemberModel;
 
-class Organisations extends Resources implements OrganisationsContract
+class Organisations extends Entities implements OrganisationsContract
 {
     protected function newModel(): Model
     {
@@ -33,7 +32,7 @@ class Organisations extends Resources implements OrganisationsContract
         $model = $this->newQueryWithParams()
             ->where('slug', 'LIKE', $slug)
             ->first();
-        return $model instanceof Resourcable ? $model->toResource() : $model;
+        return to_entity($model);
     }
 
     public function create($data): OrganisationContract
@@ -68,6 +67,6 @@ class Organisations extends Resources implements OrganisationsContract
         $member->fill($data);
         $member->save();
 
-        return $member instanceof Resourcable ? $member->toResource() : $member;
+        return to_entity($member);
     }
 }

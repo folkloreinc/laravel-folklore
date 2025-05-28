@@ -2,17 +2,17 @@
 
 namespace Folklore\Contracts\Repositories;
 
-use Folklore\Contracts\Resources\Page as PageResource;
+use Folklore\Contracts\Entities\Page;
 
-interface Pages extends Resources
+interface Pages extends Entities
 {
-    public function findById(string $id): ?PageResource;
+    public function findById(string $id): ?Page;
 
-    public function findByHandle(string $handle): ?PageResource;
+    public function findByHandle(string $handle): ?Page;
 
-    public function findBySlug(string $slug, string $locale = null): ?PageResource;
+    public function findBySlug(string $slug, string $locale = null): ?Page;
 
-    public function create($data): PageResource;
+    public function create($data): Page;
 
-    public function update(string $id, $data): ?PageResource;
+    public function update(string $id, $data): ?Page;
 }

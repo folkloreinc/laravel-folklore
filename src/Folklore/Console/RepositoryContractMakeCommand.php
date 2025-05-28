@@ -52,8 +52,8 @@ class RepositoryContractMakeCommand extends GeneratorCommand
         $stub = parent::buildClass($name);
 
         $full = $this->option('full');
-        $resource = $this->option('resource') ?? Str::singular($name);
-        $stub = $full ? $this->replaceResource($stub, $resource) : $stub;
+        $entity = $this->option('entity') ?? Str::singular($name);
+        $stub = $full ? $this->replaceEntity($stub, $entity) : $stub;
 
         return $stub;
     }
@@ -103,12 +103,12 @@ class RepositoryContractMakeCommand extends GeneratorCommand
     {
         return [
             [
-                'resource',
+                'entity',
                 'r',
                 InputOption::VALUE_REQUIRED,
-                'The resource that the repository applies to.',
+                'The entity that the repository applies to.',
             ],
-            ['full', 'f', InputOption::VALUE_NONE, 'Add repository contract and resource contract'],
+            ['full', 'f', InputOption::VALUE_NONE, 'Add repository contract and entity contract'],
         ];
     }
 }

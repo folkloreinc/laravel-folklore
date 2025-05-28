@@ -7,14 +7,13 @@ use Folklore\Mediatheque\Contracts\Models\Media as MediaModelContract;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
 use Folklore\Contracts\Repositories\Medias as MediasRepositoryContract;
-use Folklore\Contracts\Resources\Media as MediaContract;
+use Folklore\Contracts\Entities\Media as MediaContract;
 use Folklore\Mediatheque\Contracts\Type\Factory as TypeFactory;
-use Folklore\Contracts\Resources\Resourcable;
 use GuzzleHttp\Client as HttpClient;
 use Exception;
 use Illuminate\Support\Facades\Log;
 
-class Medias extends Resources implements MediasRepositoryContract
+class Medias extends Entities implements MediasRepositoryContract
 {
     protected $typeFactory;
 
@@ -43,7 +42,7 @@ class Medias extends Resources implements MediasRepositoryContract
         $model = $this->newQueryWithParams()
             ->where('name', $name)
             ->first();
-        return $model instanceof Resourcable ? $model->toResource() : $model;
+        return to_entity($model);
     }
 
     public function findByPath(string $path): ?MediaContract
@@ -64,7 +63,7 @@ class Medias extends Resources implements MediasRepositoryContract
         $model->setOriginalFile($file);
         $this->saveData($model, $data);
         $model->load('files'); // @TODO
-        return $model instanceof Resourcable ? $model->toResource() : $model;
+        return to_entity($model);
     }
 
     public function updateFromFile(string $id, File $file, $data = []): MediaContract
@@ -84,7 +83,7 @@ class Medias extends Resources implements MediasRepositoryContract
         }
 
         $model->load('files');
-        return $model instanceof Resourcable ? $model->toResource() : $model;
+        return to_entity($model);
     }
 
     public function createFromPath(string $path, $data = []): ?MediaContract
