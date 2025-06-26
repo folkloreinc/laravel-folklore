@@ -219,10 +219,10 @@ class ServiceProvider extends BaseServiceProvider
             )->header('Content-type', 'image/png');
         });
 
-        Response::macro('csv', function (callable $getRows, $filename, $perPage = null) {
+        Response::macro('csv', function (callable $getRows, $filename) {
             try {
                 $response = response()->streamDownload(
-                    function () use ($getRows, $perPage) {
+                    function () use ($getRows) {
                         $file = fopen('php://output', 'w+');
 
                         $page = 1;
@@ -230,7 +230,7 @@ class ServiceProvider extends BaseServiceProvider
                         $columns = null;
 
                         do {
-                            $items = call_user_func($getRows, $page, $perPage);
+                            $items = call_user_func($getRows, $page);
 
                             foreach ($items as $item) {
                                 if ($item instanceof JsonResource) {
