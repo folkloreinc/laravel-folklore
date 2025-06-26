@@ -2,6 +2,8 @@
 
 namespace Folklore;
 
+use Closure;
+use Exception;
 use Illuminate\Support\ServiceProvider as BaseServiceProvider;
 use Laravel\Fortify\Fortify;
 use Illuminate\Contracts\Auth\StatefulGuard;
@@ -12,7 +14,11 @@ use Folklore\Broadcasters\PubNubBroadcaster;
 use Folklore\Services\CustomerIo\MailTransport;
 use Folklore\Support\Concerns\RegistersBindings;
 use Folklore\Support\OffsetPaginator;
+use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Pagination\AbstractPaginator;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Response;
 use Ramsey\Uuid\Uuid;
 
 class ServiceProvider extends BaseServiceProvider
@@ -144,7 +150,7 @@ class ServiceProvider extends BaseServiceProvider
      */
     public function boot()
     {
-        $this->bootRequest();
+        $this->bootHttp();
 
         $this->bootAuth();
 
@@ -185,7 +191,7 @@ class ServiceProvider extends BaseServiceProvider
         }
     }
 
-    public function bootRequest()
+    public function bootHttp()
     {
         // Routing
         \Illuminate\Routing\UrlGenerator::macro(
@@ -202,6 +208,69 @@ class ServiceProvider extends BaseServiceProvider
             }
 
             return 0;
+        });
+
+        Response::macro('pixel', function ($status = 200) {
+            return response(
+                hex2bin(
+                    '89504e470d0a1a0a0000000d494844520000000100000001010300000025db56ca00000003504c5445000000a77a3dda0000000174524e530040e6d8660000000a4944415408d76360000000020001e221bc330000000049454e44ae426082'
+                ),
+                $status
+            )->header('Content-type', 'image/png');
+        });
+
+        Response::macro('csv', function (callable $getRows, $filename, $perPage = null) {
+            try {
+                $response = response()->streamDownload(
+                    function () use ($getRows, $perPage) {
+                        $file = fopen('php://output', 'w+');
+
+                        $page = 1;
+                        $lastPage = 1;
+                        $columns = null;
+
+                        do {
+                            $items = call_user_func($getRows, $page, $perPage);
+
+                            foreach ($items as $item) {
+                                if ($item instanceof JsonResource) {
+                                    $row = json_decode(json_encode($item), true);
+                                } elseif ($item instanceof Arrayable) {
+                                    $row = $item->toArray();
+                                } else {
+                                    $row = $item;
+                                }
+                                if (is_null($columns)) {
+                                    $columns = array_keys($row);
+                                    $columns = collect($row)
+                                        ->keys()
+                                        ->toArray();
+                                    fputcsv($file, $columns);
+                                }
+                                fputcsv($file, $row);
+                            }
+                            $lastPage =
+                                $items instanceof AbstractPaginator
+                                    ? $items->lastPage()
+                                    : $lastPage;
+                            $page += 1;
+                        } while ($page <= $lastPage);
+                        fclose($file);
+                    },
+                    $filename,
+                    [
+                        'Content-type' => 'text/csv; charset="utf-8"',
+                        'Content-Disposition' => 'attachment; filename=' . $filename,
+                    ]
+                );
+
+                return $response;
+            } catch (Exception $e) {
+                return response()->json(
+                    ['error' => 'Failed to export CSV.' . $e->getMessage()],
+                    500
+                );
+            }
         });
     }
 
