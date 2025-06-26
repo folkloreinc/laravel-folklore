@@ -16,6 +16,7 @@ use Folklore\Support\Concerns\RegistersBindings;
 use Folklore\Support\OffsetPaginator;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Pagination\AbstractPaginator;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Response;
@@ -250,7 +251,9 @@ class ServiceProvider extends BaseServiceProvider
                                 fputcsv($file, $row);
                             }
                             $lastPage =
-                                $items instanceof AbstractPaginator
+                                $items instanceof AbstractPaginator ||
+                                ($items instanceof ResourceCollection &&
+                                    $items->resource instanceof AbstractPaginator)
                                     ? $items->lastPage()
                                     : $lastPage;
                             $page += 1;
