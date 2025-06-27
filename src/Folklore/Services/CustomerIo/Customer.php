@@ -61,6 +61,11 @@ class Customer implements CustomerContract
         return data_get($this->data, 'locale', data_get($this->data, 'attributes.locale'));
     }
 
+    public function attributes(): array
+    {
+        return data_get($this->data, 'attributes', []);
+    }
+
     public function createdAt(): ?Carbon
     {
         $date = data_get($this->data, 'created_at', data_get($this->data, 'attributes.created_at'));

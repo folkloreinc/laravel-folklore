@@ -12,4 +12,6 @@ interface Customer extends Contact, Entity, HasSubscriptionPreferences, HasLocal
     public function externalId(): string;
 
     public function createdAt(): ?Carbon;
+
+    public function attributes(): array;
 }
