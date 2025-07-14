@@ -18,6 +18,7 @@ use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Pagination\AbstractPaginator;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Response;
 use Ramsey\Uuid\Uuid;
@@ -269,6 +270,7 @@ class ServiceProvider extends BaseServiceProvider
 
                 return $response;
             } catch (Exception $e) {
+                Log::error($e);
                 return response()->json(
                     ['error' => 'Failed to export CSV.' . $e->getMessage()],
                     500
