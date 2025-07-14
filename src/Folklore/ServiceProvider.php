@@ -258,6 +258,7 @@ class ServiceProvider extends BaseServiceProvider
                                         $items->resource instanceof AbstractPaginator)
                                         ? $items->lastPage()
                                         : $lastPage;
+                                unset($items);
                                 $page += 1;
                             } while ($page <= $lastPage);
                             fclose($file);
