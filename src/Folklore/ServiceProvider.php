@@ -225,41 +225,45 @@ class ServiceProvider extends BaseServiceProvider
             try {
                 $response = response()->streamDownload(
                     function () use ($getRows) {
-                        $file = fopen('php://output', 'w+');
+                        try {
+                            $file = fopen('php://output', 'w+');
 
-                        $page = 1;
-                        $lastPage = 1;
-                        $columns = null;
+                            $page = 1;
+                            $lastPage = 1;
+                            $columns = null;
 
-                        do {
-                            $items = call_user_func($getRows, $page);
+                            do {
+                                $items = call_user_func($getRows, $page);
 
-                            foreach ($items as $item) {
-                                if ($item instanceof JsonResource) {
-                                    $row = json_decode(json_encode($item), true);
-                                } elseif ($item instanceof Arrayable) {
-                                    $row = $item->toArray();
-                                } else {
-                                    $row = $item;
+                                foreach ($items as $item) {
+                                    if ($item instanceof JsonResource) {
+                                        $row = json_decode(json_encode($item), true);
+                                    } elseif ($item instanceof Arrayable) {
+                                        $row = $item->toArray();
+                                    } else {
+                                        $row = $item;
+                                    }
+                                    if (is_null($columns)) {
+                                        $columns = array_keys($row);
+                                        $columns = collect($row)
+                                            ->keys()
+                                            ->toArray();
+                                        fputcsv($file, $columns);
+                                    }
+                                    fputcsv($file, $row);
                                 }
-                                if (is_null($columns)) {
-                                    $columns = array_keys($row);
-                                    $columns = collect($row)
-                                        ->keys()
-                                        ->toArray();
-                                    fputcsv($file, $columns);
-                                }
-                                fputcsv($file, $row);
-                            }
-                            $lastPage =
-                                $items instanceof AbstractPaginator ||
-                                ($items instanceof ResourceCollection &&
-                                    $items->resource instanceof AbstractPaginator)
-                                    ? $items->lastPage()
-                                    : $lastPage;
-                            $page += 1;
-                        } while ($page <= $lastPage);
-                        fclose($file);
+                                $lastPage =
+                                    $items instanceof AbstractPaginator ||
+                                    ($items instanceof ResourceCollection &&
+                                        $items->resource instanceof AbstractPaginator)
+                                        ? $items->lastPage()
+                                        : $lastPage;
+                                $page += 1;
+                            } while ($page <= $lastPage);
+                            fclose($file);
+                        } catch (Exception $e) {
+                            Log::error($e);
+                        }
                     },
                     $filename,
                     [
