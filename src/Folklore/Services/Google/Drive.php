@@ -17,12 +17,21 @@ class Drive implements DriveContract
     public function loadCsvFromSheetUrl($url, $sheet = null): array
     {
         $id = $this->getIdFromUrl($url);
-        $url = sprintf('https://docs.google.com/spreadsheets/d/%s/gviz/tq', $id);
-        $data = $this->requestData($url, 'GET', [
-            'tqx' => 'out:csv',
-            'sheet' => $sheet,
-            'headers' => 0,
-        ]);
+        $url = sprintf('http://docs.google.com/spreadsheets/d/%s/export', $id);
+        $data = $this->requestData(
+            $url,
+            'GET',
+            array_merge(
+                [
+                    'format' => 'csv',
+                ],
+                !empty($sheet)
+                    ? [
+                        'gid' => $sheet,
+                    ]
+                    : []
+            )
+        );
 
         $csv = new Csv();
         $csv->heading = false;
