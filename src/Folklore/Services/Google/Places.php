@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Google;
+namespace Folklore\Services\Google;
 
 use Folklore\Contracts\Services\Google\Places\Location as LocationContract;
 use Folklore\Contracts\Services\Google\Places\Bounds as BoundsContract;
