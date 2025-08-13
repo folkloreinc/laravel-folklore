@@ -8,9 +8,9 @@ use Folklore\Contracts\Services\Google\Places\Location;
 
 interface Places
 {
-    public function findPlaceById(string $id): ?Location;
+    public function findLocationById(string $id): ?Location;
 
-    public function findPlaceByName(string $name): ?Location;
+    public function findLocationByName(string $name): ?Location;
 
     public function findRegionByName(string $name): ?Region;
 
