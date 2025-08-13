@@ -7,13 +7,14 @@ use Folklore\Contracts\Services\Google\Places\Bounds as BoundsContract;
 use Folklore\Contracts\Services\Google\Places\Region as RegionContract;
 use Folklore\Contracts\Services\Google\Places as ServicesPlacesContract;
 
-use App\Services\Google\Places\Place;
-use App\Services\Google\Places\PlaceRegion;
-use App\Services\Google\Places\Bounds;
+use Folklore\Services\Google\Places\Place;
+use Folklore\Services\Google\Places\PlaceRegion;
+use Folklore\Services\Google\Places\Bounds;
 
 use Google\Client as GoogleClient;
 use Google\Service\MapsPlaces as PlacesService;
 use Google\Service\MapsPlaces\GoogleMapsPlacesV1SearchTextRequest;
+use Google\Service\MapsPlaces\GoogleMapsPlacesV1SearchTextResponse;
 
 use GuzzleHttp\Client as HttpClient;
 
@@ -62,8 +63,11 @@ class Places implements ServicesPlacesContract
             'fields' =>
                 'places.id,places.name,places.displayName,places.addressComponents,places.location,places.types',
         ]);
+        $places =
+            $places instanceof GoogleMapsPlacesV1SearchTextResponse
+                ? $places->getPlaces()
+                : $places;
         $place = count($places) > 0 ? $places[0] : null;
-
         return isset($place) ? new Place($place) : null;
     }
 
@@ -79,6 +83,10 @@ class Places implements ServicesPlacesContract
         $places = $this->service->places->searchText($request, [
             'fields' => 'places.id,places.name,places.addressComponents',
         ]);
+        $places =
+            $places instanceof GoogleMapsPlacesV1SearchTextResponse
+                ? $places->getPlaces()
+                : $places;
         $place = count($places) > 0 ? $places[0] : null;
         if (!isset($place)) {
             return null;
@@ -101,6 +109,10 @@ class Places implements ServicesPlacesContract
         $places = $this->service->places->searchText($request, [
             'fields' => 'places.viewport',
         ]);
+        $places =
+            $places instanceof GoogleMapsPlacesV1SearchTextResponse
+                ? $places->getPlaces()
+                : $places;
         $place = count($places) > 0 ? $places[0] : null;
         $viewport = isset($place) ? $place->getViewport() : null;
 

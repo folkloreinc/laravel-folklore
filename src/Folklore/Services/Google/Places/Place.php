@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services\Google\Places;
+namespace Folklore\Services\Google\Places;
 
 use Folklore\Contracts\Services\Google\Places\Location;
 use Folklore\Contracts\Services\Google\Places\LocationMetadata as LocationMetadataContract;
