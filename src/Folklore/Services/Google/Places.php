@@ -40,25 +40,35 @@ class Places implements ServicesPlacesContract
         $this->service = new PlacesService($this->client);
     }
 
-    public function findLocationById(string $id): ?LocationContract
+    public function findLocationById(string $id, ?array $options = null): ?LocationContract
     {
-        $place = $this->service->places->get('places/' . $id, [
-            'languageCode' => 'fr-CA',
-            'regionCode' => 'CA',
-            'fields' => 'id,name,displayName,addressComponents,location',
-        ]);
-
+        $place = $this->service->places->get(
+            'places/' . $id,
+            array_merge(
+                [
+                    'languageCode' => 'fr-CA',
+                    'regionCode' => 'CA',
+                    'fields' => 'id,name,displayName,addressComponents,location',
+                ],
+                $options ?? []
+            )
+        );
         return isset($place) ? new Place($place) : null;
     }
 
-    public function findLocationByName(string $name): ?LocationContract
+    public function findLocationByName(string $name, ?array $options = null): ?LocationContract
     {
-        $request = new GoogleMapsPlacesV1SearchTextRequest([
-            'textQuery' => $name,
-            'languageCode' => 'fr-CA',
-            'regionCode' => 'CA',
-            // 'strictTypeFiltering' => true
-        ]);
+        $request = new GoogleMapsPlacesV1SearchTextRequest(
+            array_merge(
+                [
+                    'textQuery' => $name,
+                    'languageCode' => 'fr-CA',
+                    'regionCode' => 'CA',
+                    // 'strictTypeFiltering' => true
+                ],
+                $options ?? []
+            )
+        );
         $places = $this->service->places->searchText($request, [
             'fields' =>
                 'places.id,places.name,places.displayName,places.addressComponents,places.location,places.types',
@@ -71,15 +81,20 @@ class Places implements ServicesPlacesContract
         return isset($place) ? new Place($place) : null;
     }
 
-    public function findRegionByName(string $name): ?RegionContract
+    public function findRegionByName(string $name, ?array $options = null): ?RegionContract
     {
-        $request = new GoogleMapsPlacesV1SearchTextRequest([
-            'textQuery' => $name,
-            'languageCode' => 'fr-CA',
-            'regionCode' => 'CA',
-            'includedType' => 'administrative_area_level_2',
-            // 'strictTypeFiltering' => true
-        ]);
+        $request = new GoogleMapsPlacesV1SearchTextRequest(
+            array_merge(
+                [
+                    'textQuery' => $name,
+                    'languageCode' => 'fr-CA',
+                    'regionCode' => 'CA',
+                    'includedType' => 'administrative_area_level_2',
+                    // 'strictTypeFiltering' => true
+                ],
+                $options ?? []
+            )
+        );
         $places = $this->service->places->searchText($request, [
             'fields' => 'places.id,places.name,places.addressComponents',
         ]);
@@ -98,14 +113,19 @@ class Places implements ServicesPlacesContract
         return isset($region) ? new PlaceRegion($region) : null;
     }
 
-    public function findRegionBoundsByName(string $name): ?BoundsContract
+    public function findRegionBoundsByName(string $name, ?array $options = null): ?BoundsContract
     {
-        $request = new GoogleMapsPlacesV1SearchTextRequest([
-            'textQuery' => $name,
-            'languageCode' => 'fr-CA',
-            'regionCode' => 'CA',
-            'includedType' => 'administrative_area_level_2',
-        ]);
+        $request = new GoogleMapsPlacesV1SearchTextRequest(
+            array_merge(
+                [
+                    'textQuery' => $name,
+                    'languageCode' => 'fr-CA',
+                    'regionCode' => 'CA',
+                    'includedType' => 'administrative_area_level_2',
+                ],
+                $options
+            )
+        );
         $places = $this->service->places->searchText($request, [
             'fields' => 'places.viewport',
         ]);
