@@ -179,7 +179,9 @@ class Place implements Arrayable, Location
         return collect($this->place->getAddressComponents())->first(function ($component) use (
             $type
         ) {
-            return in_array($type, $component->getTypes());
+            return !is_null($component) &&
+                !is_null($component->getTypes()) &&
+                in_array($type, $component->getTypes());
         });
     }
 }
