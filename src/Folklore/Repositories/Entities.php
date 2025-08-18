@@ -36,7 +36,7 @@ abstract class Entities implements EntitiesContract
     public function findById(string $id): ?Entity
     {
         $model = $this->findModelById($id);
-        return to_entity($model);
+        return $this->getEntityFromModel($model);
     }
 
     public function get(array $params = [], ?int $page = null, ?int $count = null)
@@ -126,11 +126,7 @@ abstract class Entities implements EntitiesContract
             $models = $query->take($count)->get();
         }
 
-        $collection = $models
-            ->map(function ($model) {
-                return to_entity($model);
-            })
-            ->toBase();
+        $collection = $this->getEntitiesFromModels($models);
 
         if ($models instanceof AbstractPaginator) {
             $models->setCollection($collection);
@@ -143,7 +139,7 @@ abstract class Entities implements EntitiesContract
     {
         $model = $this->newModel();
         $this->saveData($model, $data);
-        return to_entity($model);
+        return $this->getEntityFromModel($model);
     }
 
     public function update(string $id, $data): ?Entity
@@ -153,7 +149,7 @@ abstract class Entities implements EntitiesContract
             return null;
         }
         $this->saveData($model, $data);
-        return to_entity($model);
+        return $this->getEntityFromModel($model);
     }
 
     public function destroy(string $id): bool
@@ -357,6 +353,20 @@ abstract class Entities implements EntitiesContract
     protected function getJsonAttributeExclude()
     {
         return $this->jsonAttributeExclude;
+    }
+
+    public function getEntityFromModel($model)
+    {
+        return to_entity($model);
+    }
+
+    public function getEntitiesFromModels($models)
+    {
+        return $models
+            ->map(function ($model) {
+                return $this->getEntityFromModel($model);
+            })
+            ->toBase();
     }
 
     public static function getIdFromItem($item)
