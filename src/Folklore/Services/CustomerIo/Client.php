@@ -66,7 +66,8 @@ class Client implements CustomerIo
 
         $phone = $user instanceof Contact ? $user->phone() : null;
         $customer = !empty($phone) ? $this->findCustomerByPhone($phone) : null;
-        if (isset($customer)) {
+        $customerEmail = isset($customer) ? $customer->email() : null;
+        if (isset($customer) && (empty($customerEmail) || $customerEmail === $email)) {
             return $customer;
         }
 
@@ -337,10 +338,8 @@ class Client implements CustomerIo
         return $this->updateCustomer($identifier, $userData);
     }
 
-    public function getCustomerDataFromItem(
-        $item,
-        ?CustomerContract $customer = null
-    ): array {
+    public function getCustomerDataFromItem($item, ?CustomerContract $customer = null): array
+    {
         $data = [];
         if ($item instanceof Entity) {
             $data['id'] = $item->id();
@@ -426,10 +425,7 @@ class Client implements CustomerIo
                 'email' => $email,
             ];
         }
-        $id =
-            $item instanceof Entity || $item instanceof CustomerIdentifiers
-                ? $item->id()
-                : null;
+        $id = $item instanceof Entity || $item instanceof CustomerIdentifiers ? $item->id() : null;
         if (!empty($id)) {
             return [
                 'id' => $id,
