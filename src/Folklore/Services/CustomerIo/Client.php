@@ -66,7 +66,8 @@ class Client implements CustomerIo
 
         $phone = $user instanceof Contact ? $user->phone() : null;
         $customer = !empty($phone) ? $this->findCustomerByPhone($phone) : null;
-        if (isset($customer)) {
+        $customerEmail = isset($customer) ? $customer->email() : null;
+        if (isset($customer) && (empty($customerEmail) || $customerEmail === $email)) {
             return $customer;
         }
 
