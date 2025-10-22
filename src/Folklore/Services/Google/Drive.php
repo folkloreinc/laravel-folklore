@@ -56,7 +56,7 @@ class Drive implements DriveContract
                         $inner = $inner->count() > 0 ? $inner : $column;
                         $innerIsLink =
                             sizeof($inner->getChildren()) === 1 && $inner->find('a')->count() === 1;
-                        $text = $innerIsLink ? trim($inner->innerText) : trim($column->innerHtml);
+                        $text = $innerIsLink ? trim($inner->innerText) : trim($inner->innerHtml);
                     }
                     $key = $headers[$index];
                     if (!empty($text) && !empty($key)) {
