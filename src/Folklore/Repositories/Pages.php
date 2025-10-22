@@ -41,7 +41,7 @@ class Pages extends Entities implements PagesRepositoryContract
         return to_entity($model);
     }
 
-    public function findBySlug(string $slug, string $locale = null): ?PageContract
+    public function findBySlug(string $slug, ?string $locale = null): ?PageContract
     {
         if (is_null($locale)) {
             $locale = app()->getLocale();
