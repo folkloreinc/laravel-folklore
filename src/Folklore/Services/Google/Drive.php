@@ -21,12 +21,14 @@ class Drive implements DriveContract
         if (preg_match('/\/d\/e\//', $url) === 1) {
             $id = $this->getPublicationIdFromUrl($url);
             $gid = preg_match('/gid=([^&]+)/', $url, $matches) === 1 ? $matches[1] : null;
-            $url = sprintf(
-                'https://docs.google.com/spreadsheets/d/e/%s/pubhtml/sheet?headers=false&gid=%s',
-                $id,
-                $gid ?? '0'
-            );
-            $data = $this->requestData($url, 'GET');
+            $url = sprintf('https://docs.google.com/spreadsheets/d/e/%s/pubhtml/sheet', $id);
+            $data = $this->requestData($url, 'GET', [
+                'headers' => 'false',
+                'gid' => $gid ?? '0',
+            ]);
+            if (empty($data)) {
+                return null;
+            }
             $dom = new Dom();
             $dom->loadStr($data);
             $table = $dom->find('tbody');
