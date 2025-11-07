@@ -212,8 +212,8 @@ abstract class Entities implements EntitiesContract
                 data_set($newValue, $path, $fieldValue);
             }
             return $newValue;
-        }, $currentAttributeValue);
-        $model->{$jsonAttributeName} = $newAttributeValue;
+        }, $currentAttributeValue ?? []);
+        $model->{$jsonAttributeName} = !empty($newAttributeValue) ? $newAttributeValue : null;
     }
 
     protected function syncRelations($model, $data)
