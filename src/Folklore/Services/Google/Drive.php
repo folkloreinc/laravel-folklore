@@ -39,7 +39,7 @@ class Drive implements DriveContract
                 $columns = $row->getChildren();
                 if (!isset($headers)) {
                     foreach ($columns as $column) {
-                        $headers[] = trim($column->text);
+                        $headers[] = html_entity_decode(trim($column->text), ENT_QUOTES, 'UTF-8');
                     }
                     continue;
                 }
@@ -60,7 +60,7 @@ class Drive implements DriveContract
                     }
                     $key = $headers[$index];
                     if (!empty($text) && !empty($key)) {
-                        $item[$key] = $text;
+                        $item[$key] = html_entity_decode($text, ENT_QUOTES, 'UTF-8');
                     }
                 }
                 if (!empty($item)) {
