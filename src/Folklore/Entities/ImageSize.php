@@ -118,6 +118,10 @@ class ImageSize implements ImageSizeContract
             'height' => data_get($this->size, 'height', $imageHeight),
         ];
 
+        if ($imageWidth === 0 || $imageHeight === 0) {
+            return $dimension;
+        }
+
         if (isset($filterWidth) && isset($filterHeight)) {
             $maxWidth = min($filterWidth, $imageWidth);
             $maxHeight = min($filterHeight, $imageHeight);
