@@ -26,17 +26,17 @@ class MediaMetadata implements MediaMetadataContract, HasModel
 
     public function filename(): ?string
     {
-        return $this->getOriginalFile()->name;
+        return $this->getOriginalFile()?->name;
     }
 
     public function size(): ?int
     {
-        return $this->getOriginalFile()->size;
+        return $this->getOriginalFile()?->size;
     }
 
     public function mime(): ?string
     {
-        return $this->getOriginalFile()->mime;
+        return $this->getOriginalFile()?->mime;
     }
 
     public function description(): ?string
