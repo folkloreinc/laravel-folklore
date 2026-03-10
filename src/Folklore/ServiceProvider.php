@@ -139,9 +139,27 @@ class ServiceProvider extends BaseServiceProvider
     {
         $this->registerBindingsFromConfig(\Folklore\Services\Google\Drive::class, []);
 
+        $this->registerBindingsFromConfig(\Folklore\Services\Google\Maps::class, [
+            '$key' => 'services.google.key',
+        ]);
+
+        $this->registerBindingsFromConfig(\Folklore\Services\Google\Places::class, [
+            '$key' => 'services.google.key',
+        ]);
+
         $this->app->alias(
             \Folklore\Services\Google\Drive::class,
             \Folklore\Contracts\Services\Google\Drive::class
+        );
+
+        $this->app->alias(
+            \Folklore\Services\Google\Places::class,
+            \Folklore\Contracts\Services\Google\Places::class
+        );
+
+        $this->app->alias(
+            \Folklore\Services\Google\Maps::class,
+            \Folklore\Contracts\Services\Google\Maps::class
         );
     }
 

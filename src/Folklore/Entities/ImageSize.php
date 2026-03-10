@@ -133,12 +133,12 @@ class ImageSize implements ImageSizeContract
         } elseif (isset($filterWidth)) {
             $maxWidth = min($filterWidth, $imageWidth);
             $scale = $maxWidth / $imageWidth;
-            $dimension['width'] = $filterWidth;
+            $dimension['width'] = $maxWidth;
             $dimension['height'] = (int) round($imageHeight * $scale);
         } elseif (isset($filterHeight)) {
             $maxHeight = min($filterHeight, $imageHeight);
             $scale = $maxHeight / $imageHeight;
-            $dimension['height'] = $filterHeight;
+            $dimension['height'] = $maxHeight;
             $dimension['width'] = (int) round($imageWidth * $scale);
         }
 
