@@ -4,6 +4,7 @@ namespace Folklore\Entities;
 
 use Folklore\Contracts\Entities\HasModel;
 use Folklore\Contracts\Entities\Page;
+use Folklore\Contracts\Entities\Image;
 use Folklore\Contracts\Entities\PageMetadata as PageMetadataContract;
 use Folklore\Contracts\Entities\Pageable as PageableContract;
 use Illuminate\Database\Eloquent\Model;
@@ -49,7 +50,15 @@ class PageMetadata implements PageMetadataContract, HasModel
 
     public function image(string $locale): ?Image
     {
-        return once(fn() => $this->page instanceof Page ? $this->page->image() : null);
+        return once(function () {
+            if ($this->page instanceof Page) {
+                return $this->page->image();
+            }
+            if (method_exists($this->page, 'image')) {
+                return $this->page->image();
+            }
+            return null;
+        });
     }
 
     public function getModel(): Model
