@@ -237,6 +237,9 @@ class Client implements CustomerIo
     ): bool {
         $customer = $this->findCustomerFromUser($user);
         $userData = $this->getCustomerDataFromResource($user, $customer);
+        if (!isset($userData)) {
+            return false;
+        }
         $identifier = isset($customer)
             ? 'cio_' . $customer->id()
             : $this->getIdentifierFromResource($user);
@@ -341,7 +344,7 @@ class Client implements CustomerIo
     public function getCustomerDataFromResource(
         $resource,
         ?CustomerContract $customer = null
-    ): array {
+    ): ?array {
         $data = [];
         if ($resource instanceof Resource) {
             $data['id'] = $resource->id();
