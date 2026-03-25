@@ -233,8 +233,7 @@ class Client implements CustomerIo
     public function createOrUpdateCustomerFromUser(
         $user,
         $extraData = [],
-        bool $updateOnly = false,
-        $requestData = []
+        bool $updateOnly = false
     ): bool {
         $customer = $this->findCustomerFromUser($user);
         $userData = $this->getCustomerDataFromItem($user, $customer);
@@ -244,10 +243,10 @@ class Client implements CustomerIo
         $identifier = isset($customer)
             ? 'cio_' . $customer->id()
             : $this->getIdentifierFromItem($user);
-        return $this->updateCustomer($identifier, array_merge($userData, $extraData), $requestData);
+        return $this->updateCustomer($identifier, array_merge($userData, $extraData));
     }
 
-    public function updateCustomer($identifier, $data = [], $requestData = []): bool
+    public function updateCustomer($identifier, $data = []): bool
     {
         $identifiers = $this->getIdentifiersFromItem($identifier);
         $response = isset($identifiers)
@@ -257,9 +256,9 @@ class Client implements CustomerIo
                         'type' => 'person',
                         'action' => 'identify',
                         'identifiers' => $identifiers,
-                        'attributes' => $data,
+                        'attributes' => Arr::except($data, ['timestamp']),
                     ],
-                    $requestData
+                    Arr::only($data, ['timestamp'])
                 )
             )
             : null;

@@ -72,15 +72,14 @@ interface CustomerIo
     public function createOrUpdateCustomerFromUser(
         $user,
         $extraData = [],
-        bool $updateOnly = false,
-        $requestData = []
+        bool $updateOnly = false
     ): bool;
 
     public function subscribeToTopic(string $email, $topic, $data = []): bool;
 
     public function unsubscribeToTopic(string $email, $topic, $data = []): bool;
 
-    public function updateCustomer($identifier, $data = [], $requestData = []): bool;
+    public function updateCustomer($identifier, $data = []): bool;
 
     public function mergeCustomers(Customer $customer, Customer $mergeCustomer): ?Customer;
 
