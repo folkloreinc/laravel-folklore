@@ -233,7 +233,8 @@ class Client implements CustomerIo
     public function createOrUpdateCustomerFromUser(
         $user,
         $extraData = [],
-        bool $updateOnly = false
+        bool $updateOnly = false,
+        $requestData = []
     ): bool {
         $customer = $this->findCustomerFromUser($user);
         $userData = $this->getCustomerDataFromItem($user, $customer);
@@ -243,19 +244,24 @@ class Client implements CustomerIo
         $identifier = isset($customer)
             ? 'cio_' . $customer->id()
             : $this->getIdentifierFromItem($user);
-        return $this->updateCustomer($identifier, array_merge($userData, $extraData));
+        return $this->updateCustomer($identifier, array_merge($userData, $extraData), $requestData);
     }
 
-    public function updateCustomer($identifier, $data = []): bool
+    public function updateCustomer($identifier, $data = [], $requestData = []): bool
     {
         $identifiers = $this->getIdentifiersFromItem($identifier);
         $response = isset($identifiers)
-            ? $this->trackEntity([
-                'type' => 'person',
-                'action' => 'identify',
-                'identifiers' => $identifiers,
-                'attributes' => $data,
-            ])
+            ? $this->trackEntity(
+                array_merge(
+                    [
+                        'type' => 'person',
+                        'action' => 'identify',
+                        'identifiers' => $identifiers,
+                        'attributes' => $data,
+                    ],
+                    $requestData
+                )
+            )
             : null;
         return !is_null($response);
     }

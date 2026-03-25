@@ -52,7 +52,12 @@ interface CustomerIo
 
     public function findDeliveryMessageById(string $id): ?DeliveryMessage;
 
-    public function getDeliveriesForCustomer($identifier, $query = [], $count = 50, $start = null): CollectionWithCursor;
+    public function getDeliveriesForCustomer(
+        $identifier,
+        $query = [],
+        $count = 50,
+        $start = null
+    ): CollectionWithCursor;
 
     public function sendEmail($message, string $to);
 
@@ -67,14 +72,15 @@ interface CustomerIo
     public function createOrUpdateCustomerFromUser(
         $user,
         $extraData = [],
-        bool $updateOnly = false
+        bool $updateOnly = false,
+        $requestData = []
     ): bool;
 
     public function subscribeToTopic(string $email, $topic, $data = []): bool;
 
     public function unsubscribeToTopic(string $email, $topic, $data = []): bool;
 
-    public function updateCustomer($identifier, $data = []): bool;
+    public function updateCustomer($identifier, $data = [], $requestData = []): bool;
 
     public function mergeCustomers(Customer $customer, Customer $mergeCustomer): ?Customer;
 
