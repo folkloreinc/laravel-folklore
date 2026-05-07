@@ -52,7 +52,12 @@ interface CustomerIo
 
     public function findDeliveryMessageById(string $id): ?DeliveryMessage;
 
-    public function getDeliveriesForCustomer($identifier, $query = [], $count = 50, $start = null): CollectionWithCursor;
+    public function getDeliveriesForCustomer(
+        $identifier,
+        $query = [],
+        $count = 50,
+        $start = null
+    ): CollectionWithCursor;
 
     public function sendEmail($message, string $to);
 

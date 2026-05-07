@@ -237,6 +237,9 @@ class Client implements CustomerIo
     ): bool {
         $customer = $this->findCustomerFromUser($user);
         $userData = $this->getCustomerDataFromItem($user, $customer);
+        if (!isset($userData)) {
+            return false;
+        }
         $identifier = isset($customer)
             ? 'cio_' . $customer->id()
             : $this->getIdentifierFromItem($user);
@@ -247,12 +250,17 @@ class Client implements CustomerIo
     {
         $identifiers = $this->getIdentifiersFromItem($identifier);
         $response = isset($identifiers)
-            ? $this->trackEntity([
-                'type' => 'person',
-                'action' => 'identify',
-                'identifiers' => $identifiers,
-                'attributes' => $data,
-            ])
+            ? $this->trackEntity(
+                array_merge(
+                    [
+                        'type' => 'person',
+                        'action' => 'identify',
+                        'identifiers' => $identifiers,
+                        'attributes' => Arr::except($data, ['timestamp']),
+                    ],
+                    Arr::only($data, ['timestamp'])
+                )
+            )
             : null;
         return !is_null($response);
     }
@@ -338,7 +346,7 @@ class Client implements CustomerIo
         return $this->updateCustomer($identifier, $userData);
     }
 
-    public function getCustomerDataFromItem($item, ?CustomerContract $customer = null): array
+    public function getCustomerDataFromItem($item, ?CustomerContract $customer = null): ?array
     {
         $data = [];
         if ($item instanceof Entity) {
