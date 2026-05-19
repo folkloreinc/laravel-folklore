@@ -13,7 +13,6 @@ use Folklore\Contracts\Entities\Contact;
 use Folklore\Contracts\Entities\Entity;
 use Folklore\Contracts\Services\CustomerIo\Customer as CustomerContract;
 use Folklore\Contracts\Services\CustomerIo\CustomerIdentifiers;
-use Folklore\Contracts\Services\CustomerIo\CustomerObject;
 use Folklore\Contracts\Services\CustomerIo\Delivery as DeliveryContract;
 use Folklore\Contracts\Services\CustomerIo\DeliveryMessage as DeliveryMessageContract;
 use Folklore\Contracts\Services\CustomerIo\Newsletter as NewsletterContract;
@@ -491,7 +490,7 @@ class Client implements CustomerIo
         return $response;
     }
 
-    public function identifyObject(CustomerObject $object)
+    public function identifyObject(CustomerObjectContract $object)
     {
         $relationships = collect($object->relationships() ?? [])
             ->map(function ($relationship) {
@@ -522,8 +521,12 @@ class Client implements CustomerIo
         return $response;
     }
 
-    public function addRelationshipsToObject($typeId, $objectId, Collection $relationships)
-    {
+    public function addRelationshipsToObject(
+        $typeId,
+        $objectId,
+        Collection $relationships,
+        ?int $maxPerRequest = 100
+    ): ?array {
         $relationships = $relationships
             ->map(function ($relationship) {
                 return is_array($relationship)
@@ -538,17 +541,25 @@ class Client implements CustomerIo
             ->values()
             ->toArray();
 
-        $request = [
-            'identifiers' => [
-                'object_type_id' => (string) $typeId,
-                'object_id' => $objectId,
-            ],
-            'type' => 'object',
-            'action' => 'add_relationships',
-            'cio_relationships' => $relationships,
-        ];
+        $totalCount = count($relationships);
+        $step = isset($maxPerRequest) && $maxPerRequest > 0 ? $maxPerRequest : $totalCount;
+        $response = null;
+        for ($i = 0; $i < $totalCount; $i += $step) {
+            $chunk = array_slice($relationships, $i, $maxPerRequest);
 
-        $response = $this->trackEntity($request);
+            $request = [
+                'identifiers' => [
+                    'object_type_id' => (string) $typeId,
+                    'object_id' => $objectId,
+                ],
+                'type' => 'object',
+                'action' => 'add_relationships',
+                'cio_relationships' => $chunk,
+            ];
+
+            $response = $this->trackEntity($request);
+        }
+
         return $response;
     }
 
