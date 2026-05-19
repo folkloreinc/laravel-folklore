@@ -121,8 +121,14 @@ class Medias extends Entities implements MediasRepositoryContract
 
     protected function downloadFile(string $url): ?string
     {
-        $ext = pathinfo($url, PATHINFO_EXTENSION);
-        $tempPath = tempnam(sys_get_temp_dir(), 'media') . '.' . $ext;
+        // $ext = pathinfo($url, PATHINFO_EXTENSION);
+        // $tempPath = tempnam(sys_get_temp_dir(), 'media') . '.' . $ext;
+
+        $cleanPath = parse_url($url, PHP_URL_PATH) ?: $url;
+        $ext = pathinfo($cleanPath, PATHINFO_EXTENSION);
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'media') . ($ext !== '' ? '.' . $ext : '');
+
         $client = new HttpClient();
         try {
             $client->request('GET', $url, ['sink' => $tempPath, 'verify' => false]);
@@ -135,10 +141,16 @@ class Medias extends Entities implements MediasRepositoryContract
 
     protected function getNameFromPath(string $path): ?string
     {
-        $ext = pathinfo($path, PATHINFO_EXTENSION);
-        $name = filter_var($path, FILTER_VALIDATE_URL)
-            ? parse_url($path, PHP_URL_PATH)
-            : basename($path);
+        // $ext = pathinfo($path, PATHINFO_EXTENSION);
+        // $name = filter_var($path, FILTER_VALIDATE_URL)
+        //     ? parse_url($path, PHP_URL_PATH)
+        //     : basename($path);
+
+        $isUrl = (bool) filter_var($path, FILTER_VALIDATE_URL);
+        $cleanPath = $isUrl ? (parse_url($path, PHP_URL_PATH) ?: $path) : $path;
+        $ext = pathinfo($cleanPath, PATHINFO_EXTENSION);
+        $name = $isUrl ? $cleanPath : basename($path);
+
         return Str::slug(
             !empty($ext) ? preg_replace('/\.' . preg_quote($ext, '/') . '$/', '', $name) : $name
         );
