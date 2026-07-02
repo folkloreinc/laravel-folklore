@@ -64,8 +64,7 @@
         }
     },
     "suggest": {
-        "pubnub/pubnub": "Allows broadcasting events via pubnub.",
-        "paquettg/php-html-parser": "Allows to parse Google Drive HTML tables."
+        "pubnub/pubnub": "Allows broadcasting events via pubnub."
     },
     "minimum-stability": "dev",
     "prefer-stable": true

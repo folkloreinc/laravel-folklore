@@ -6,7 +6,10 @@ use Folklore\Support\Concerns\MakesRequests;
 use Folklore\Contracts\Services\Google\Drive as DriveContract;
 use Illuminate\Support\Collection;
 use ParseCsv\Csv;
-use PHPHtmlParser\Dom;
+use DOMDocument;
+use DOMElement;
+use DOMNode;
+use DOMXPath;
 
 class Drive implements DriveContract
 {
@@ -30,37 +33,57 @@ class Drive implements DriveContract
                 return null;
             }
 
-            // TODO: migrate to this native class, php 8.4
-            // https://www.php.net/manual/en/class.dom-htmldocument.php
+            // TODO: once php 8.4 is the minimum version, migrate to the native
+            // Dom\HTMLDocument class: https://www.php.net/manual/en/class.dom-htmldocument.php
 
-            $dom = new Dom();
-            $dom->loadStr($data);
-            $table = $dom->find('tbody');
-            $rows = $table->getChildren();
+            $dom = new DOMDocument();
+            libxml_use_internal_errors(true);
+            // Prepend an encoding hint so libxml parses the markup as UTF-8.
+            $dom->loadHTML('<?xml encoding="UTF-8">' . $data, LIBXML_NOERROR | LIBXML_NOWARNING);
+            libxml_clear_errors();
+
+            $xpath = new DOMXPath($dom);
+            $table = $xpath->query('//tbody')->item(0);
+            if ($table === null) {
+                return null;
+            }
+
             $headers = null;
             $items = [];
-            foreach ($rows as $row) {
-                $columns = $row->getChildren();
+            foreach ($this->getElementChildren($table) as $row) {
+                $columns = $this->getElementChildren($row);
                 if (!isset($headers)) {
                     foreach ($columns as $column) {
-                        $headers[] = html_entity_decode(trim($column->text), ENT_QUOTES, 'UTF-8');
+                        $headers[] = html_entity_decode(
+                            trim($column->textContent),
+                            ENT_QUOTES,
+                            'UTF-8'
+                        );
                     }
                     continue;
                 }
                 $item = [];
                 foreach ($columns as $index => $column) {
-                    $image = $column->find('img');
-                    if ($image->count() > 0) {
+                    $image = $xpath->query('.//img', $column)->item(0);
+                    if ($image !== null) {
                         $text = $image->getAttribute('src');
                         if (!empty($text)) {
                             $text = preg_replace('/w[0-9]+-h[0-9]+/', 'w2000-h2000', $text);
                         }
                     } else {
-                        $inner = $column->find('.softmerge-inner');
-                        $inner = $inner->count() > 0 ? $inner : $column;
+                        $inner = $xpath
+                            ->query(
+                                ".//*[contains(concat(' ', normalize-space(@class), ' '), ' softmerge-inner ')]",
+                                $column
+                            )
+                            ->item(0);
+                        $inner = $inner ?? $column;
                         $innerIsLink =
-                            sizeof($inner->getChildren()) === 1 && $inner->find('a')->count() === 1;
-                        $text = $innerIsLink ? trim($inner->innerText) : trim($inner->innerHtml);
+                            sizeof($this->getElementChildren($inner)) === 1 &&
+                            $xpath->query('.//a', $inner)->length === 1;
+                        $text = $innerIsLink
+                            ? trim($inner->textContent)
+                            : trim($this->getInnerHtml($inner));
                     }
                     $key = $headers[$index];
                     if (!empty($text) && !empty($key)) {
@@ -101,6 +124,34 @@ class Drive implements DriveContract
         $csv->heading = false;
         $csv->parse($data);
         return $csv->data;
+    }
+
+    /**
+     * Return only the element children of a node (skipping text and comment nodes).
+     *
+     * @return DOMElement[]
+     */
+    protected function getElementChildren(DOMNode $node): array
+    {
+        $children = [];
+        foreach ($node->childNodes as $child) {
+            if ($child instanceof DOMElement) {
+                $children[] = $child;
+            }
+        }
+        return $children;
+    }
+
+    /**
+     * Serialize the inner HTML markup of a node.
+     */
+    protected function getInnerHtml(DOMNode $node): string
+    {
+        $html = '';
+        foreach ($node->childNodes as $child) {
+            $html .= $node->ownerDocument->saveHTML($child);
+        }
+        return $html;
     }
 
     protected function getIdFromUrl($url)
