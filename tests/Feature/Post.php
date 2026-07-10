@@ -22,7 +22,7 @@ class Post extends Model implements HasJsonDataRelations
             'images.*' => 'medias',
             'image_hybrid' => [
                 'relation' => 'medias',
-                'set' => function ($item, $path, $relationName) {
+                'set' => function ($item, $path, $model, $relation) {
                     return [
                         'media' => $item->id,
                     ];
