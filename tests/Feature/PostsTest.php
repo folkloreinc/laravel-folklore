@@ -37,17 +37,25 @@ class PostsTest extends TestCase
         $post->data = [
             'image' => $media,
             'images' => [$media, $media],
+            'image_hybrid' => $media,
         ];
         $post->save();
         JsonDataCast::syncRelations($post);
 
         $post = Post::find($post->id);
-        $rawData = json_decode($post->getRawOriginal('data'), true);
         $this->assertEquals($post->medias->first()->id, $media->id);
         $this->assertEquals($post->data['image']->id, $media->id);
-        $this->assertEquals(data_get($rawData, 'image'), 'medias://' . $media->id);
-        $this->assertEquals(data_get($rawData, 'images'), ['medias://' . $media->id, 'medias://' . $media->id]);
+        $this->assertEquals($post->data['images'][0]->id, $media->id);
+        $this->assertEquals($post->data['images'][1]->id, $media->id);
+        $this->assertEquals($post->data['image_hybrid'], ['media' => $media->id]);
 
+        $rawData = json_decode($post->getRawOriginal('data'), true);
+        $this->assertEquals(data_get($rawData, 'image'), 'medias://' . $media->id);
+        $this->assertEquals(data_get($rawData, 'images'), [
+            'medias://' . $media->id,
+            'medias://' . $media->id,
+        ]);
+        $this->assertEquals(data_get($rawData, 'image_hybrid'), ['media' => $media->id]);
         $post->data = [];
         $post->save();
         JsonDataCast::syncRelations($post);
