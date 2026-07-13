@@ -30,6 +30,11 @@ class Medias extends Resource
     {
         return [
             'columns' => [
+                [
+                    'id' => 'thumbnail',
+                    'component' => 'image',
+                    'path' => 'thumbnail_url',
+                ],
                 'name',
                 [
                     'id' => 'actions',
