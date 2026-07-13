@@ -26,12 +26,12 @@
     ],
     "require": {
         "php": "^8.2",
-        "laravel/framework": "^11.0|^12.0",
+        "laravel/framework": "^11.0|^12.0|^13.0",
         "folklore/laravel-panneau": "v1.2.x-dev|v1.3.x-dev|v1.4.x-dev",
         "folklore/laravel-mediatheque": "v1.1.x-dev",
         "folklore/laravel-image": "v1.x-dev",
         "folklore/laravel-locale": "v8.x-dev",
-        "cviebrock/eloquent-sluggable": "^9.0|^10.0|^11.0|^12.0",
+        "cviebrock/eloquent-sluggable": "^9.0|^10.0|^11.0|^12.0|^13.0",
         "google/apiclient": "^2.18",
         "laravel/fortify": "^1.13",
         "parsecsv/php-parsecsv": "^1.3"
