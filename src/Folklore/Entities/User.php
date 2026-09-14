@@ -181,6 +181,20 @@ class User implements UserContract, HasModel
     }
 
     /**
+     * Mark the given user's email as unverified.
+     *
+     * @return bool
+     */
+    public function markEmailAsUnverified()
+    {
+        return $this->model
+            ->forceFill([
+                'email_verified_at' => null,
+            ])
+            ->save();
+    }
+
+    /**
      * Send the email verification notification.
      *
      * @return void
