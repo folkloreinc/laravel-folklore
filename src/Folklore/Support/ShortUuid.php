@@ -2,9 +2,7 @@
 
 namespace Folklore\Support;
 
-
 use Brick\Math\BigInteger;
-use Brick\Math\RoundingMode;
 use Brick\Math\Exception\MathException;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
@@ -18,10 +16,63 @@ final class ShortUuid
      * @var array
      */
     private $alphabet = [
-        '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
-        'H', 'J', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
-        'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'm', 'n',
-        'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+        '2',
+        '3',
+        '4',
+        '5',
+        '6',
+        '7',
+        '8',
+        '9',
+        'A',
+        'B',
+        'C',
+        'D',
+        'E',
+        'F',
+        'G',
+        'H',
+        'J',
+        'K',
+        'L',
+        'M',
+        'N',
+        'P',
+        'Q',
+        'R',
+        'S',
+        'T',
+        'U',
+        'V',
+        'W',
+        'X',
+        'Y',
+        'Z',
+        'a',
+        'b',
+        'c',
+        'd',
+        'e',
+        'f',
+        'g',
+        'h',
+        'i',
+        'j',
+        'k',
+        'm',
+        'n',
+        'o',
+        'p',
+        'q',
+        'r',
+        's',
+        't',
+        'u',
+        'v',
+        'w',
+        'x',
+        'y',
+        'z',
     ];
 
     /**
@@ -50,7 +101,7 @@ final class ShortUuid
      *
      * @return string
      */
-    public static function uuid1($node = null, ?int $clockSeq = null) : string
+    public static function uuid1($node = null, ?int $clockSeq = null): string
     {
         $uuid = Uuid::uuid1($node, $clockSeq);
         $shortUuid = new self();
@@ -62,7 +113,7 @@ final class ShortUuid
      *
      * @return string
      */
-    public static function uuid4() : string
+    public static function uuid4(): string
     {
         $uuid = Uuid::uuid4();
         $shortUuid = new self();
@@ -78,7 +129,7 @@ final class ShortUuid
      *
      * @return string
      */
-    public static function uuid5(string $ns, string $name) : string
+    public static function uuid5(string $ns, string $name): string
     {
         $uuid = Uuid::uuid5($ns, $name);
         $shortUuid = new self();
@@ -97,7 +148,7 @@ final class ShortUuid
      *
      * @throws MathException
      */
-    public function encode(UuidInterface $uuid) : string
+    public function encode(UuidInterface $uuid): string
     {
         $uuidInteger = BigInteger::of((string) $uuid->getInteger());
         return $this->numToString($uuidInteger);
@@ -113,7 +164,7 @@ final class ShortUuid
      *
      * @return UuidInterface
      */
-    public function decode(string $shortUuid) : UuidInterface
+    public function decode(string $shortUuid): UuidInterface
     {
         return Uuid::fromInteger($this->stringToNum($shortUuid));
     }
@@ -127,15 +178,16 @@ final class ShortUuid
      *
      * @throws MathException
      */
-    private function numToString(BigInteger $number) : string
+    private function numToString(BigInteger $number): string
     {
         $output = '';
         while ($number->isPositive()) {
-            $previousNumber = clone $number;
-            $number = $number->dividedBy($this->alphabetLength, RoundingMode::DOWN);
-            $digit = $previousNumber->mod($this->alphabetLength);
+            // $previousNumber = clone $number;
+            // $number = $number->dividedBy($this->alphabetLength, RoundingMode::DOWN);
+            // $digit = $previousNumber->mod($this->alphabetLength);
+            [$number, $digit] = $number->quotientAndRemainder($this->alphabetLength);
 
-            $output .= $this->alphabet[(int)$digit->toInt()];
+            $output .= $this->alphabet[(int) $digit->toInt()];
         }
 
         return $output;
@@ -148,11 +200,13 @@ final class ShortUuid
      *
      * @return BigInteger
      */
-    private function stringToNum(string $string) : BigInteger
+    private function stringToNum(string $string): BigInteger
     {
         $number = BigInteger::of(0);
         foreach (str_split(strrev($string)) as $char) {
-            $number = $number->multipliedBy($this->alphabetLength)->plus(array_search($char, $this->alphabet, false));
+            $number = $number
+                ->multipliedBy($this->alphabetLength)
+                ->plus(array_search($char, $this->alphabet, false));
         }
 
         return $number;
@@ -172,7 +226,7 @@ final class ShortUuid
      *
      * @return array
      */
-    public function getAlphabet() : array
+    public function getAlphabet(): array
     {
         return $this->alphabet;
     }
