@@ -13,13 +13,13 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('organisations_invitations', function (Blueprint $table) {
+        Schema::create('organisation_invitations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('organisation_id')->constrained('organisations');
-            $table->string('email')->nullable();
-            $table->foreignId('role_id', 100)->nullable();
-            $table->string('invitation_token')->nullable();
-            $table->timestamp('invited_at')->nullable();
+            $table->string('email');
+            $table->string('role', 100)->nullable()->index();
+            $table->string('token')->unique();
+            $table->timestamp('expires_at')->nullable();
             $table->timestamps();
         });
     }
@@ -31,6 +31,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('organisations_invitations');
+        Schema::dropIfExists('organisation_invitations');
     }
 };
