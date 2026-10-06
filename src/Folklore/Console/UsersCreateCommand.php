@@ -56,11 +56,13 @@ class UsersCreateCommand extends Command
         }
 
         if (empty($password)) {
-            $password = $this->ask('Enter the password');
+            $password = $this->secret('Enter the password');
         }
 
         if (empty($email) || empty($name) || empty($password)) {
-            exit('Please fill all the required fields.');
+            $this->error('Please fill all the required fields.');
+
+            return self::FAILURE;
         }
 
         $data = [
@@ -80,6 +82,7 @@ class UsersCreateCommand extends Command
         $this->info('User #'.$user->id().' created.');
         $this->line('<info>Email:</info> '.$user->email());
         $this->line('<info>Name:</info> '.$user->name());
-        $this->line('<info>Password:</info> '.$password);
+
+        return self::SUCCESS;
     }
 }
