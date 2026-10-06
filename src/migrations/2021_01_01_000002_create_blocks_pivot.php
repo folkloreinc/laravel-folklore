@@ -15,10 +15,7 @@ return new class extends Migration
     {
         Schema::create('blocks_pivot', function (Blueprint $table) {
             $table->id();
-            $table
-                ->integer('block_id')
-                ->unsigned()
-                ->index();
+            $table->foreignId('block_id')->index();
             $table->morphs('blockable');
             $table->timestamps();
         });

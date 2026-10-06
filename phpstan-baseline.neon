@@ -821,15 +821,3 @@ parameters:
 			identifier: notIdentical.alwaysTrue
 			count: 1
 			path: src/Folklore/Support/OffsetPaginator.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Schema\\ColumnDefinition\:\:nulable\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/migrations/2023_03_15_000001_create_organisations_members_table.php
-
-		-
-			message: '#^Method Illuminate\\Database\\Schema\\Blueprint\:\:foreignId\(\) invoked with 2 parameters, 1 required\.$#'
-			identifier: arguments.count
-			count: 1
-			path: src/migrations/2023_03_15_000003_create_organisations_invitations_table.php
