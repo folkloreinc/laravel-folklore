@@ -3,7 +3,6 @@
 namespace Folklore\Services\Google\Places;
 
 use Folklore\Contracts\Services\Google\Places\Bounds as BoundsContract;
-
 use Google\Service\MapsPlaces\GoogleGeoTypeViewport;
 use Illuminate\Contracts\Support\Arrayable;
 

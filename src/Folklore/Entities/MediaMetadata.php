@@ -7,7 +7,7 @@ use Folklore\Contracts\Entities\MediaMetadata as MediaMetadataContract;
 use Folklore\Models\Media as MediaModel;
 use Illuminate\Database\Eloquent\Model;
 
-class MediaMetadata implements MediaMetadataContract, HasModel
+class MediaMetadata implements HasModel, MediaMetadataContract
 {
     protected $model;
 
@@ -42,22 +42,25 @@ class MediaMetadata implements MediaMetadataContract, HasModel
     public function description(): ?string
     {
         $metadata = $this->getMetadatas()->get('description');
-        return !is_null($metadata) ? $metadata->getValue() : null;
+
+        return ! is_null($metadata) ? $metadata->getValue() : null;
     }
 
     protected function getOriginalFile()
     {
-        if (!isset($this->originalFile)) {
+        if (! isset($this->originalFile)) {
             $this->originalFile = $this->model->getFile('original');
         }
+
         return $this->originalFile;
     }
 
     protected function getMetadatas()
     {
-        if (!isset($this->metadatas)) {
+        if (! isset($this->metadatas)) {
             $this->metadatas = $this->model->getMetadatas();
         }
+
         return $this->metadatas;
     }
 

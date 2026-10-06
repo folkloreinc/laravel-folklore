@@ -2,6 +2,7 @@
 
 namespace Folklore\Http\Resources;
 
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class LocalizedResource extends JsonResource
@@ -11,13 +12,14 @@ class LocalizedResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return array
      */
     public function toArray($request)
     {
         $callback = $this->resource;
         $locales = $this->getLocales();
+
         return collect($locales)
             ->mapWithKeys(function ($locale) use ($callback) {
                 return [
@@ -35,6 +37,7 @@ class LocalizedResource extends JsonResource
     public function withLocales($locales)
     {
         $this->locales = $locales;
+
         return $this;
     }
 }

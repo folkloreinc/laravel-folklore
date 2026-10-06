@@ -3,6 +3,8 @@
 namespace Folklore\Console;
 
 use Illuminate\Console\Command;
+use Illuminate\Contracts\View\Factory;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Str;
 
 class EntityMakeCommand extends Command
@@ -24,8 +26,8 @@ class EntityMakeCommand extends Command
     /**
      * Create a new controller creator command instance.
      *
-     * @param  \Illuminate\Filesystem\Filesystem  $files
-     * @param  \Illuminate\Contracts\View\Factory  $files
+     * @param  Filesystem  $files
+     * @param  Factory  $files
      * @return void
      */
     public function __construct()
@@ -45,12 +47,12 @@ class EntityMakeCommand extends Command
         $repository = $this->option('repository') ?? Str::plural($name);
 
         $this->call('make:entity-contract', [
-            'name' => $name
+            'name' => $name,
         ]);
 
         $this->call('make:entity-model', [
             'name' => $name,
-            '--model' => $model
+            '--model' => $model,
         ]);
 
         $this->call('make:repository-contract', [

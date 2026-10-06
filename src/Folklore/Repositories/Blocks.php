@@ -2,10 +2,9 @@
 
 namespace Folklore\Repositories;
 
-use Folklore\Models\Block as BlockModel;
-use Folklore\Contracts\Repositories\Blocks as BlocksRepositoryContract;
 use Folklore\Contracts\Entities\Block as BlockContract;
-use Folklore\Contracts\Entities\ToEntity;
+use Folklore\Contracts\Repositories\Blocks as BlocksRepositoryContract;
+use Folklore\Models\Block as BlockModel;
 
 class Blocks extends Entities implements BlocksRepositoryContract
 {
@@ -13,7 +12,7 @@ class Blocks extends Entities implements BlocksRepositoryContract
 
     protected function newModel(): BlockModel
     {
-        return new BlockModel();
+        return new BlockModel;
     }
 
     protected function newQuery()
@@ -31,6 +30,7 @@ class Blocks extends Entities implements BlocksRepositoryContract
         $model = $this->newQueryWithParams()
             ->where('handle', $handle)
             ->first();
+
         return to_entity($model);
     }
 
@@ -56,10 +56,11 @@ class Blocks extends Entities implements BlocksRepositoryContract
                             ->where('handle', $item['handle'])
                             ->value('blocks.id');
                     }
-                    return !empty($id) ? $this->update($id, $item) : $this->create($item);
+
+                    return ! empty($id) ? $this->update($id, $item) : $this->create($item);
                 })
                 ->filter(function ($block) {
-                    return !is_null($block);
+                    return ! is_null($block);
                 })
                 ->values()
                 ->toArray();

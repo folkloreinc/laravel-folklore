@@ -9,6 +9,6 @@ class Video extends Media implements VideoContract
 {
     public function metadata(): VideoMetadataContract
     {
-        return once(fn() => new VideoMetadata($this->model));
+        return once(fn () => new VideoMetadata($this->model));
     }
 }

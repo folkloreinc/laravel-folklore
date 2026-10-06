@@ -2,10 +2,10 @@
 
 namespace Folklore\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Folklore\Contracts\Entities\ToEntity;
 use Folklore\Contracts\Entities\OrganisationInvitation as OrganisationInvitationContract;
+use Folklore\Contracts\Entities\ToEntity;
 use Folklore\Entities\OrganisationInvitation as OrganisationInvitationEntity;
+use Illuminate\Database\Eloquent\Model;
 
 class OrganisationInvitation extends Model implements ToEntity
 {
@@ -17,7 +17,7 @@ class OrganisationInvitation extends Model implements ToEntity
     protected $fillable = ['organisation_id', 'email', 'role', 'token', 'expires_at'];
 
     protected $casts = [
-        'expires_at' => 'datetime'
+        'expires_at' => 'datetime',
     ];
 
     public function organisation()

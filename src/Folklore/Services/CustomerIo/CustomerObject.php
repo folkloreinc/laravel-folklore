@@ -8,9 +8,7 @@ use Illuminate\Support\Collection;
 
 class CustomerObject implements CustomerObjectContract
 {
-    public function __construct(protected array $data, protected ?Collection $relationships = null)
-    {
-    }
+    public function __construct(protected array $data, protected ?Collection $relationships = null) {}
 
     public function id(): string
     {

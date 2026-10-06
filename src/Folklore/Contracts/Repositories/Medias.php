@@ -2,8 +2,8 @@
 
 namespace Folklore\Contracts\Repositories;
 
-use Symfony\Component\HttpFoundation\File\File;
 use Folklore\Contracts\Entities\Media;
+use Symfony\Component\HttpFoundation\File\File;
 
 interface Medias extends Entities
 {

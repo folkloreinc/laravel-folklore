@@ -2,20 +2,20 @@
 
 namespace Folklore\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Cviebrock\EloquentSluggable\Sluggable;
-use Folklore\Mediatheque\Support\Traits\HasMedias;
-use Folklore\Contracts\Entities\Page as PageContract;
-use Folklore\Entities\Page as PageEntity;
-use Folklore\Models\Concerns\SluggableWithFallback;
-use Folklore\Eloquent\JsonDataCast;
 use Folklore\Contracts\Eloquent\HasJsonDataRelations;
+use Folklore\Contracts\Entities\Page as PageContract;
 use Folklore\Contracts\Entities\ToEntity;
+use Folklore\Eloquent\JsonDataCast;
+use Folklore\Entities\Page as PageEntity;
+use Folklore\Mediatheque\Support\Traits\HasMedias;
+use Folklore\Models\Concerns\SluggableWithFallback;
 use Folklore\Support\Concerns\HasTypedEntity;
+use Illuminate\Database\Eloquent\Model;
 
-class Page extends Model implements ToEntity, HasJsonDataRelations
+class Page extends Model implements HasJsonDataRelations, ToEntity
 {
-    use Sluggable, SluggableWithFallback, HasMedias, HasTypedEntity;
+    use HasMedias, HasTypedEntity, Sluggable, SluggableWithFallback;
 
     protected $fillable = ['handle', 'type', 'parent_id', 'data', 'published'];
 
@@ -59,8 +59,6 @@ class Page extends Model implements ToEntity, HasJsonDataRelations
 
     /**
      * Return the sluggable configuration array for this model.
-     *
-     * @return array
      */
     public function sluggable(): array
     {
@@ -74,6 +72,7 @@ class Page extends Model implements ToEntity, HasJsonDataRelations
     public function getRouteKeyName()
     {
         $locale = app()->getLocale();
-        return 'slug_' . $locale;
+
+        return 'slug_'.$locale;
     }
 }

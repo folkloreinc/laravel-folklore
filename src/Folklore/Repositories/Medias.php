@@ -2,16 +2,16 @@
 
 namespace Folklore\Repositories;
 
-use Symfony\Component\HttpFoundation\File\File;
-use Folklore\Mediatheque\Contracts\Models\Media as MediaModelContract;
-use Illuminate\Support\Str;
-use Illuminate\Database\Eloquent\Model;
-use Folklore\Contracts\Repositories\Medias as MediasRepositoryContract;
+use Exception;
 use Folklore\Contracts\Entities\Media as MediaContract;
+use Folklore\Contracts\Repositories\Medias as MediasRepositoryContract;
+use Folklore\Mediatheque\Contracts\Models\Media as MediaModelContract;
 use Folklore\Mediatheque\Contracts\Type\Factory as TypeFactory;
 use GuzzleHttp\Client as HttpClient;
-use Exception;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\File\File;
 
 class Medias extends Entities implements MediasRepositoryContract
 {
@@ -42,12 +42,14 @@ class Medias extends Entities implements MediasRepositoryContract
         $model = $this->newQueryWithParams()
             ->where('name', $name)
             ->first();
+
         return to_entity($model);
     }
 
     public function findByPath(string $path): ?MediaContract
     {
         $name = $this->getNameFromPath($path);
+
         return $this->findByName($name);
     }
 
@@ -63,6 +65,7 @@ class Medias extends Entities implements MediasRepositoryContract
         $model->setOriginalFile($file);
         $this->saveData($model, $data);
         $model->load('files'); // @TODO
+
         return to_entity($model);
     }
 
@@ -75,14 +78,15 @@ class Medias extends Entities implements MediasRepositoryContract
         $this->saveData($model, $data);
 
         $type = $model->getType();
-        if (!is_null($type)) {
+        if (! is_null($type)) {
             $pipeline = $type->pipeline();
-            if (!is_null($pipeline) && !$model->typePipelineDisabled()) {
+            if (! is_null($pipeline) && ! $model->typePipelineDisabled()) {
                 $model->runPipeline($pipeline);
             }
         }
 
         $model->load('files');
+
         return to_entity($model);
     }
 
@@ -93,11 +97,11 @@ class Medias extends Entities implements MediasRepositoryContract
         if ($isUrl) {
             $path = $this->downloadFile($path);
         }
-        $media = !empty($path)
+        $media = ! empty($path)
             ? $this->createFromFile(
                 new File($path),
                 array_merge(
-                    !empty($name)
+                    ! empty($name)
                         ? [
                             'name' => $name,
                         ]
@@ -127,14 +131,16 @@ class Medias extends Entities implements MediasRepositoryContract
         $cleanPath = parse_url($url, PHP_URL_PATH) ?: $url;
         $ext = pathinfo($cleanPath, PATHINFO_EXTENSION);
 
-        $tempPath = tempnam(sys_get_temp_dir(), 'media') . ($ext !== '' ? '.' . $ext : '');
+        $tempPath = tempnam(sys_get_temp_dir(), 'media').($ext !== '' ? '.'.$ext : '');
 
-        $client = new HttpClient();
+        $client = new HttpClient;
         try {
             $client->request('GET', $url, ['sink' => $tempPath, 'verify' => false]);
+
             return $tempPath;
         } catch (Exception $e) {
             Log::error($e);
+
             return null;
         }
     }
@@ -152,7 +158,7 @@ class Medias extends Entities implements MediasRepositoryContract
         $name = $isUrl ? $cleanPath : basename($path);
 
         return Str::slug(
-            !empty($ext) ? preg_replace('/\.' . preg_quote($ext, '/') . '$/', '', $name) : $name
+            ! empty($ext) ? preg_replace('/\.'.preg_quote($ext, '/').'$/', '', $name) : $name
         );
     }
 
@@ -160,7 +166,7 @@ class Medias extends Entities implements MediasRepositoryContract
     {
         $query = parent::buildQueryFromParams($query, $params);
 
-        if (isset($params['search']) && !empty($params['search'])) {
+        if (isset($params['search']) && ! empty($params['search'])) {
             if (is_numeric($params['search'])) {
                 $query->where('id', $params['search']);
             } else {
@@ -168,26 +174,26 @@ class Medias extends Entities implements MediasRepositoryContract
                 foreach ($search as $term) {
                     $word = Str::slug($term);
                     $query->where(function ($q) use ($word) {
-                        $q->where('name', 'LIKE', '%' . $word . '%');
+                        $q->where('name', 'LIKE', '%'.$word.'%');
                     });
                 }
             }
         }
 
-        if (isset($params['type']) && !empty($params['type'])) {
+        if (isset($params['type']) && ! empty($params['type'])) {
             $query->whereIn('type', (array) $params['type']);
         }
 
-        if (isset($params['types']) && !empty($params['types'])) {
+        if (isset($params['types']) && ! empty($params['types'])) {
             $query->whereIn('type', (array) $params['types']);
         }
 
-        if (isset($params['exclude_type']) && !empty($params['exclude_type'])) {
+        if (isset($params['exclude_type']) && ! empty($params['exclude_type'])) {
             $query->whereNotIn('type', (array) $params['exclude_type']);
         }
 
         // If empty order defaults to page order column
-        if (!isset($params['order']) || empty($params['order'])) {
+        if (! isset($params['order']) || empty($params['order'])) {
             $query->orderBy('created_at', 'DESC');
         }
 

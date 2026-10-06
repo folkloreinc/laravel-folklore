@@ -2,7 +2,6 @@
 
 namespace Folklore\Contracts\Entities;
 
-
 interface OrganisationMember extends Entity
 {
     public function organisation(): Organisation;

@@ -2,10 +2,9 @@
 
 namespace Folklore\Support\Concerns;
 
-use Folklore\Support\Data;
 use Closure;
 use Folklore\Contracts\Repositories\Medias;
-use Folklore\Mediatheque\Contracts\Models\Media;
+use Folklore\Support\Data;
 
 trait SeedsData
 {
@@ -24,6 +23,7 @@ trait SeedsData
         while (($data = fgetcsv($handle, 5000, ',')) !== false) {
             if (is_null($columns) && $firstRowIsColumns) {
                 $columns = $data;
+
                 continue;
             }
 
@@ -35,7 +35,7 @@ trait SeedsData
             if (isset($handler)) {
                 $handler($item, $rowIndex, $data);
             }
-            if (!isset($handler)) {
+            if (! isset($handler)) {
                 $items[] = $item;
             }
             $rowIndex++;
@@ -53,6 +53,7 @@ trait SeedsData
         ) {
             $newValue = $replace($pathValue, $path, $value);
             data_set($value, $path, $newValue);
+
             return $value;
         });
     }
@@ -67,15 +68,16 @@ trait SeedsData
                 $assetsIndex !== false
                     ? array_splice($dir, $assetsIndex - 1)
                     : array_splice($dir, -2)
-            ) .
-            '/' .
+            ).
+            '/'.
             basename($path);
         $media = resolve(Medias::class)->findByName($filename);
         if (isset($media)) {
             return $media;
         }
+
         return resolve(Medias::class)->createFromPath($path, [
-            'name' => $filename
+            'name' => $filename,
         ]);
     }
 }

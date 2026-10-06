@@ -2,8 +2,8 @@
 
 namespace Folklore\Routing;
 
-use Illuminate\Routing\Router;
 use Folklore\Support\Concerns\AttachToMacroable;
+use Illuminate\Routing\Router;
 
 class UrlGeneratorMixin
 {
@@ -19,6 +19,7 @@ class UrlGeneratorMixin
     public function routeForReactRouter()
     {
         $router = $this->router;
+
         return function ($name, $opts = []) use ($router) {
             $route = is_string($name) ? $router->getRoutes()->getByName($name) : $name;
             if (is_null($route)) {
@@ -28,7 +29,7 @@ class UrlGeneratorMixin
             $patterns = $router->getPatterns();
             $parameters = $route->parameterNames();
 
-            preg_match_all('/\{(.*?)\}/', $route->getDomain() . $route->uri(), $matches);
+            preg_match_all('/\{(.*?)\}/', $route->getDomain().$route->uri(), $matches);
             $optionalParameters = array_map(
                 function ($m) {
                     return trim($m, '?');
@@ -42,24 +43,24 @@ class UrlGeneratorMixin
 
             $params = [];
             foreach ($parameters as $parameter) {
-                $params[] = ':' . $parameter;
+                $params[] = ':'.$parameter;
             }
 
             $path = url()->route($name, $params, false);
             foreach ($parameters as $parameter) {
                 if (in_array($parameter, $optionalParameters)) {
                     $path = preg_replace(
-                        '/(' . preg_quote(':' . $parameter) . ')\b/i',
+                        '/('.preg_quote(':'.$parameter).')\b/i',
                         '$1?',
                         $path
                     );
                 }
                 $pattern = data_get($route->wheres, $parameter, data_get($patterns, $parameter));
-                if (isset($pattern) && !$withoutPatterns) {
+                if (isset($pattern) && ! $withoutPatterns) {
                     $pattern = preg_replace('/^\(?(.*?)\)?$/', '$1', $pattern);
                     $path = preg_replace(
-                        '/(' . preg_quote(':' . $parameter) . ')(\?)?\b/i',
-                        '$1(' . $pattern . ')$2',
+                        '/('.preg_quote(':'.$parameter).')(\?)?\b/i',
+                        '$1('.$pattern.')$2',
                         $path
                     );
                 }

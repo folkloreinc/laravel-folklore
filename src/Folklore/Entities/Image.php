@@ -4,8 +4,8 @@ namespace Folklore\Entities;
 
 use Folklore\Contracts\Entities\Image as ImageContract;
 use Folklore\Contracts\Entities\ImageMetadata as ImageMetadataContract;
-use Illuminate\Support\Collection;
 use Folklore\Image\Facade as ImageFacade;
+use Illuminate\Support\Collection;
 
 class Image extends Media implements ImageContract
 {
@@ -18,9 +18,11 @@ class Image extends Media implements ImageContract
         $url = parent::url();
         if (isset($this->filters)) {
             $path = parse_url($url, PHP_URL_PATH);
-            return rtrim(config('app.image_url', config('app.url')), '/') .
+
+            return rtrim(config('app.image_url', config('app.url')), '/').
                 ImageFacade::url($path, $this->filters);
         }
+
         return $url;
     }
 
@@ -31,25 +33,28 @@ class Image extends Media implements ImageContract
 
     public function sizes(): Collection
     {
-        if (!isset($this->sizes)) {
+        if (! isset($this->sizes)) {
             $this->sizes = collect(config('image.sizes'))->map(function ($filter) {
                 return new ImageSize($this, $filter, null, $this->filters);
             });
         }
+
         return $this->sizes;
     }
 
     public function metadata(): ImageMetadataContract
     {
-        if (!isset($this->metadata)) {
+        if (! isset($this->metadata)) {
             $this->metadata = new ImageMetadata($this->model);
         }
+
         return $this->metadata;
     }
 
     public function setFilters($filters): ImageContract
     {
         $this->filters = $filters;
+
         return $this;
     }
 }

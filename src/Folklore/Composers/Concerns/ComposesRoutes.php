@@ -2,9 +2,9 @@
 
 namespace Folklore\Composers\Concerns;
 
+use Illuminate\Contracts\Routing\UrlGenerator;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Arr;
-use Illuminate\Contracts\Routing\UrlGenerator;
 
 trait ComposesRoutes
 {
@@ -16,9 +16,10 @@ trait ComposesRoutes
                 return $routesCollection->getByName($name);
             })
             ->filter(function ($route) {
-                return !is_null($route);
+                return ! is_null($route);
             })
             ->values();
+
         return $this->composeRoutes($routes, $options);
     }
 
@@ -30,6 +31,7 @@ trait ComposesRoutes
             ]
             : $options;
         $namespaceToRemove = Arr::get($options, 'namespaceToRemove');
+
         return collect($routes)
             ->mapWithKeys(function ($route) use ($namespaceToRemove, $options) {
                 $path = $this->getPathFromRoute($route, $options);
@@ -38,10 +40,11 @@ trait ComposesRoutes
                 }
                 $map = [];
                 $name = $route->getName();
-                $key = !is_null($namespaceToRemove)
-                    ? preg_replace('/^' . preg_quote($namespaceToRemove, '/') . '\./', '$1', $name)
+                $key = ! is_null($namespaceToRemove)
+                    ? preg_replace('/^'.preg_quote($namespaceToRemove, '/').'\./', '$1', $name)
                     : $name;
                 $map[$key] = $path;
+
                 return $map;
             })
             ->toArray();
@@ -50,10 +53,11 @@ trait ComposesRoutes
     protected function getRoutesNamesWithLocales($names)
     {
         $locales = collect(config('locale.locales'));
+
         return collect($names)->reduce(function ($localizedRoutes, $routeName) use ($locales) {
             return $localizedRoutes->merge(
                 $locales->map(function ($locale) use ($routeName) {
-                    return $locale . '.' . $routeName;
+                    return $locale.'.'.$routeName;
                 })
             );
         }, collect());
@@ -69,11 +73,11 @@ trait ComposesRoutes
         $patterns = array_merge(resolve(Router::class)->getPatterns(), $route->wheres ?? []);
         $parameters = $route->parameterNames();
 
-        preg_match_all('/\{(.*?)\}/', $route->getDomain() . $route->uri(), $matches);
+        preg_match_all('/\{(.*?)\}/', $route->getDomain().$route->uri(), $matches);
 
         $params = [];
         foreach ($parameters as $parameter) {
-            $params[] = ':' . $parameter;
+            $params[] = ':'.$parameter;
         }
 
         $path = resolve(UrlGenerator::class)->route($name, $params, false);
@@ -90,13 +94,13 @@ trait ComposesRoutes
         );
         foreach ($parameters as $parameter) {
             if (in_array($parameter, $optionalParameters)) {
-                $path = preg_replace('/(' . preg_quote(':' . $parameter) . ')\b/i', '$1?', $path);
+                $path = preg_replace('/('.preg_quote(':'.$parameter).')\b/i', '$1?', $path);
             }
-            if (isset($patterns[$parameter]) && !$withoutParametersPatterns) {
+            if (isset($patterns[$parameter]) && ! $withoutParametersPatterns) {
                 $pattern = preg_replace('/^\(?(.*?)\)?$/', '$1', $patterns[$parameter]);
                 $path = preg_replace(
-                    '/(' . preg_quote(':' . $parameter) . ')(\?)?\b/i',
-                    '$1(' . $pattern . ')$2',
+                    '/('.preg_quote(':'.$parameter).')(\?)?\b/i',
+                    '$1('.$pattern.')$2',
                     $path
                 );
             }

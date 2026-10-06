@@ -2,20 +2,22 @@
 
 namespace Folklore\Services\PubSubHubbub;
 
-use Illuminate\Foundation\Application;
-use Illuminate\Support\Str;
+use App\Contracts\Dialog\Service;
 use Closure;
 use Folklore\Contracts\Services\PubSubHubbub\Client;
-use InvalidArgumentException;
 use Folklore\Contracts\Services\PubSubHubbub\Factory;
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+use InvalidArgumentException;
+use Urbania\AppleNews\Contracts\Parser;
 
 class PubSubHubbubManager implements Factory
 {
     /**
      * The container instance.
      *
-     * @var \Illuminate\Foundation\Application
+     * @var Application
      */
     protected $container;
 
@@ -36,7 +38,7 @@ class PubSubHubbubManager implements Factory
     /**
      * Create a new manager instance.
      *
-     * @param  \Illuminate\Foundation\Application  $container
+     * @param  Application  $container
      * @return void
      */
     public function __construct($container)
@@ -58,13 +60,14 @@ class PubSubHubbubManager implements Factory
      * Create the default driver
      *
      * @param  array  $config
-     * @return \Urbania\AppleNews\Contracts\Parser
+     * @return Parser
      */
     protected function createDefaultDriver($config)
     {
         $url = is_string($config) ? $config : $config['url'];
         $secret = is_array($config) ? data_get($config, 'secret') : null;
         $opts = is_array($config) ? Arr::except($config, ['url', 'secret']) : [];
+
         return new PubSubHubbubClient($url, $secret, $opts);
     }
 
@@ -72,9 +75,9 @@ class PubSubHubbubManager implements Factory
      * Get a parser instance.
      *
      * @param  string  $parser
-     * @return \App\Contracts\Dialog\Service
+     * @return Service
      *
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     public function hub($hub = null): Client
     {
@@ -92,7 +95,7 @@ class PubSubHubbubManager implements Factory
         // If the given driver has not been created before, we will create the instances
         // here and cache it so we can return it next time very quickly. If there is
         // already a driver created by this name, we'll just return that instance.
-        if (!isset($this->hubs[$hub])) {
+        if (! isset($this->hubs[$hub])) {
             $this->hubs[$hub] = $this->createHub($hub);
         }
 
@@ -105,7 +108,7 @@ class PubSubHubbubManager implements Factory
      * @param  string  $parser
      * @return mixed
      *
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     protected function createHub($parser)
     {
@@ -120,7 +123,7 @@ class PubSubHubbubManager implements Factory
         } elseif (isset($this->customCreators[$driver])) {
             return $this->callCustomCreator($driver, $config, $parser);
         } else {
-            $method = 'create' . Str::studly($driver) . 'Driver';
+            $method = 'create'.Str::studly($driver).'Driver';
 
             if (method_exists($this, $method)) {
                 return $this->$method($config, $parser);
@@ -145,8 +148,7 @@ class PubSubHubbubManager implements Factory
     /**
      * Register a custom driver creator Closure.
      *
-     * @param  string    $driver
-     * @param  \Closure  $callback
+     * @param  string  $driver
      * @return $this
      */
     public function extend($driver, Closure $callback)
@@ -170,7 +172,7 @@ class PubSubHubbubManager implements Factory
      * Dynamically call the default driver instance.
      *
      * @param  string  $method
-     * @param  array   $parameters
+     * @param  array  $parameters
      * @return mixed
      */
     public function __call($method, $parameters)
@@ -186,11 +188,11 @@ class PubSubHubbubManager implements Factory
      */
     protected function getConfig($name)
     {
-        return !is_null($name) ? $this->container['config']->get(
+        return ! is_null($name) ? $this->container['config']->get(
             "pubsubhubbub.hubs.{$name}",
             []
         ) : [
-            'driver' => null
+            'driver' => null,
         ];
     }
 }

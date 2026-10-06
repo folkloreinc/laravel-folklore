@@ -1,9 +1,8 @@
 <?php
+
 namespace Folklore\Services\CustomerIo;
 
 use Folklore\Contracts\Services\CustomerIo;
-use MailchimpTransactional\ApiClient;
-use stdClass;
 use Symfony\Component\Mailer\SentMessage;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
 use Symfony\Component\Mime\Address;
@@ -65,7 +64,7 @@ class MailTransport extends AbstractTransport
             $data['bcc'] = $bcc->join(',');
         }
 
-        if (!empty($messageData)) {
+        if (! empty($messageData)) {
             $data['message_data'] = is_string($messageData)
                 ? json_decode($messageData, true)
                 : $messageData;

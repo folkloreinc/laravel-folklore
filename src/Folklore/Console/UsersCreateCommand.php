@@ -2,8 +2,8 @@
 
 namespace Folklore\Console;
 
-use Illuminate\Console\Command;
 use Folklore\Contracts\Repositories\Users;
+use Illuminate\Console\Command;
 
 class UsersCreateCommand extends Command
 {
@@ -69,7 +69,7 @@ class UsersCreateCommand extends Command
             'password' => $password,
         ];
 
-        if (!$withoutRole) {
+        if (! $withoutRole) {
             $data = array_merge($data, ['role' => $role]);
         }
 
@@ -77,9 +77,9 @@ class UsersCreateCommand extends Command
 
         $user->markEmailAsVerified();
 
-        $this->info('User #' . $user->id() . ' created.');
-        $this->line('<info>Email:</info> ' . $user->email());
-        $this->line('<info>Name:</info> ' . $user->name());
-        $this->line('<info>Password:</info> ' . $password);
+        $this->info('User #'.$user->id().' created.');
+        $this->line('<info>Email:</info> '.$user->email());
+        $this->line('<info>Name:</info> '.$user->name());
+        $this->line('<info>Password:</info> '.$password);
     }
 }

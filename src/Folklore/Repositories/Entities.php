@@ -2,15 +2,15 @@
 
 namespace Folklore\Repositories;
 
-use Folklore\Contracts\Repositories\Entities as EntitiesContract;
-use Folklore\Contracts\Entities\Entity;
-use Illuminate\Database\Eloquent\Model;
 use Folklore\Contracts\Eloquent\HasJsonDataRelations;
+use Folklore\Contracts\Entities\Entity;
+use Folklore\Contracts\Repositories\Entities as EntitiesContract;
 use Folklore\Eloquent\JsonDataCast;
 use Folklore\Support\OffsetPaginator;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\AbstractPaginator;
-use Laravel\Scout\Builder as ScoutBuilder;
 use Illuminate\Support\Str;
+use Laravel\Scout\Builder as ScoutBuilder;
 
 abstract class Entities implements EntitiesContract
 {
@@ -36,24 +36,28 @@ abstract class Entities implements EntitiesContract
     public function findById(string $id): ?Entity
     {
         $model = $this->findModelById($id);
+
         return $this->getEntityFromModel($model);
     }
 
     public function get(array $params = [], ?int $page = null, ?int $count = null)
     {
         $query = $this->newQueryWithParams($params);
+
         return $this->getFromQuery($query, $page, $count, $params);
     }
 
     public function count(array $params = []): int
     {
         $query = $this->newQueryWithParams($params);
+
         return $query->count();
     }
 
     public function has(array $params = []): bool
     {
         $query = $this->newQueryWithParams($params);
+
         return $query->exists();
     }
 
@@ -61,7 +65,7 @@ abstract class Entities implements EntitiesContract
     {
         $query = $this->newQueryWithParams($params);
         if (
-            !is_null($page) &&
+            ! is_null($page) &&
             isset($params['offset_paginator']) &&
             $params['offset_paginator'] === true
         ) {
@@ -73,7 +77,7 @@ abstract class Entities implements EntitiesContract
                 $query->toBase()->getCountForPagination(),
                 $page
             );
-        } elseif (!is_null($page)) {
+        } elseif (! is_null($page)) {
             $models =
                 $query instanceof ScoutBuilder
                     ? $query->paginate($count, 'page', $page)
@@ -105,7 +109,7 @@ abstract class Entities implements EntitiesContract
         array $params = []
     ) {
         if (
-            !is_null($page) &&
+            ! is_null($page) &&
             isset($params['offset_paginator']) &&
             $params['offset_paginator'] === true
         ) {
@@ -117,7 +121,7 @@ abstract class Entities implements EntitiesContract
                 $query->toBase()->getCountForPagination(),
                 $page
             );
-        } elseif (!is_null($page)) {
+        } elseif (! is_null($page)) {
             $models =
                 $query instanceof ScoutBuilder
                     ? $query->paginate($count, 'page', $page)
@@ -130,8 +134,10 @@ abstract class Entities implements EntitiesContract
 
         if ($models instanceof AbstractPaginator) {
             $models->setCollection($collection);
+
             return $models;
         }
+
         return $collection;
     }
 
@@ -139,6 +145,7 @@ abstract class Entities implements EntitiesContract
     {
         $model = $this->newModel();
         $this->saveData($model, $data);
+
         return $this->getEntityFromModel($model);
     }
 
@@ -149,6 +156,7 @@ abstract class Entities implements EntitiesContract
             return null;
         }
         $this->saveData($model, $data);
+
         return $this->getEntityFromModel($model);
     }
 
@@ -159,6 +167,7 @@ abstract class Entities implements EntitiesContract
             return false;
         }
         $model->delete();
+
         return true;
     }
 
@@ -211,16 +220,17 @@ abstract class Entities implements EntitiesContract
                 $fieldValue = data_get($data, $field, data_get($newValue, $path));
                 data_set($newValue, $path, $fieldValue);
             }
+
             return $newValue;
         }, $currentAttributeValue ?? []);
-        $model->{$jsonAttributeName} = !empty($newAttributeValue) ? $newAttributeValue : null;
+        $model->{$jsonAttributeName} = ! empty($newAttributeValue) ? $newAttributeValue : null;
     }
 
     protected function syncRelations($model, $data)
     {
         if ($model instanceof HasJsonDataRelations) {
             $ids = JsonDataCast::syncRelations($model);
-            if (!is_null($ids) && count($ids) > 0) {
+            if (! is_null($ids) && count($ids) > 0) {
                 $model->refresh();
             }
         }
@@ -244,6 +254,7 @@ abstract class Entities implements EntitiesContract
     public function setGlobalQuery(array $query)
     {
         $this->globalQuery = $query;
+
         return $this;
     }
 
@@ -259,11 +270,12 @@ abstract class Entities implements EntitiesContract
             if (is_numeric($param)) {
                 $param = $column;
             }
+
             return collect([
                 $param,
-                'or_' . $param,
-                'exclude_' . $param,
-                'or_exclude_' . $param,
+                'or_'.$param,
+                'exclude_'.$param,
+                'or_exclude_'.$param,
             ])->reduce(function ($query, $paramName) use ($params, $column) {
                 $value = data_get($params, $paramName);
                 if (empty($value)) {
@@ -273,12 +285,13 @@ abstract class Entities implements EntitiesContract
                 $or = preg_match('/^or_/', $paramName) === 1;
                 $exclude = preg_match('/^(or_)?exclude_/', $paramName) === 1;
                 $methodName = Str::camel(
-                    ($or ? 'or-' : '') . 'where-' . ($exclude ? 'not-in' : 'in')
+                    ($or ? 'or-' : '').'where-'.($exclude ? 'not-in' : 'in')
                 );
+
                 return $query->{$methodName}($column, $values);
             }, $query);
         },
-        $query);
+            $query);
 
         if (isset($params['identifier'])) {
             $identifier = $params['identifier'];
@@ -290,18 +303,18 @@ abstract class Entities implements EntitiesContract
         if (isset($params['order'])) {
             if (is_array($params['order'])) {
                 $order = $params['order'];
-                if (isset($order[0]) && !empty($order[0]) && is_string($order[0])) {
-                    if (isset($order[1]) && !empty($order[1])) {
+                if (isset($order[0]) && ! empty($order[0]) && is_string($order[0])) {
+                    if (isset($order[1]) && ! empty($order[1])) {
                         $query->orderBy($order[0], $order[1]);
                     } else {
                         $query->orderBy($order[0], 'ASC');
                     }
-                } elseif (isset($order[0]) && !empty($order[0]) && is_array($order[0])) {
+                } elseif (isset($order[0]) && ! empty($order[0]) && is_array($order[0])) {
                     foreach ($order as $subOrder) {
                         $query->orderBy($subOrder[0], $subOrder[1]);
                     }
                 }
-            } elseif (isset($params['order_direction']) && !empty($params['order_direction'])) {
+            } elseif (isset($params['order_direction']) && ! empty($params['order_direction'])) {
                 $query->orderBy($params['order'], $params['order_direction']);
             } else {
                 $query->orderBy($params['order'], 'ASC');
@@ -327,16 +340,17 @@ abstract class Entities implements EntitiesContract
             ->toArray();
         $handles = collect($identifiers)
             ->filter(function ($value) {
-                return !is_numeric($value);
+                return ! is_numeric($value);
             })
             ->values()
             ->toArray();
-        if (sizeof($ids) > 0) {
+        if (count($ids) > 0) {
             $query->whereIn($idColumn, $ids);
         }
-        if (sizeof($handles) > 0) {
-            $query->{sizeof($ids) > 0 ? 'orWhereIn' : 'whereIn'}($handleColumn, $handles);
+        if (count($handles) > 0) {
+            $query->{count($ids) > 0 ? 'orWhereIn' : 'whereIn'}($handleColumn, $handles);
         }
+
         return $query;
     }
 
@@ -381,7 +395,7 @@ abstract class Entities implements EntitiesContract
                 return self::getIdFromItem($item);
             })
             ->filter(function ($item) {
-                return !empty($item);
+                return ! empty($item);
             })
             ->toArray();
     }

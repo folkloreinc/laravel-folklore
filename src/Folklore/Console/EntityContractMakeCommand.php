@@ -3,8 +3,6 @@
 namespace Folklore\Console;
 
 use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Input\InputOption;
-use Illuminate\Support\Str;
 
 #[AsCommand(name: 'make:entity-contract')]
 class EntityContractMakeCommand extends GeneratorCommand
@@ -75,7 +73,7 @@ class EntityContractMakeCommand extends GeneratorCommand
     {
         return file_exists($customPath = $this->laravel->basePath(trim($stub, '/')))
             ? $customPath
-            : __DIR__ . '/../..' . $stub;
+            : __DIR__.'/../..'.$stub;
     }
 
     /**
@@ -86,7 +84,7 @@ class EntityContractMakeCommand extends GeneratorCommand
      */
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace . '\Contracts\Entities';
+        return $rootNamespace.'\Contracts\Entities';
     }
 
     /**

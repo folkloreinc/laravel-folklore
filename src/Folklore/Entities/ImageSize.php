@@ -36,7 +36,7 @@ class ImageSize implements ImageSizeContract
 
     public function url(): string
     {
-        if (!isset($this->url)) {
+        if (! isset($this->url)) {
             // $imageUrl = (
             //     $this->image->files()->first(function ($file) {
             //         return $file->handle() === 'original';
@@ -44,41 +44,44 @@ class ImageSize implements ImageSizeContract
             // )->url();
             $imageUrl = $this->image->urlWithoutFilters();
             $metadata = $this->image->metadata();
-            $mime = !is_null($metadata) ? $metadata->mime() : null;
+            $mime = ! is_null($metadata) ? $metadata->mime() : null;
             $isSVG = $mime === 'image/svg' || $mime === 'image/svg+xml';
             $path = parse_url($imageUrl, PHP_URL_PATH);
             $filters = $this->filters ?? [];
-            if ($this->size['id'] !== 'original' && !$isSVG) {
+            if ($this->size['id'] !== 'original' && ! $isSVG) {
                 $filters[] = $this->size['id'];
             }
             if (
                 isset($this->format) &&
-                !$isSVG &&
-                preg_match('/\.' . preg_quote($this->format, '/') . '$/', $imageUrl) === 0
+                ! $isSVG &&
+                preg_match('/\.'.preg_quote($this->format, '/').'$/', $imageUrl) === 0
             ) {
                 $filters['format'] = $this->format;
             }
-            $this->url = sizeof($filters)
-                ? rtrim(config('app.image_url', config('app.url')), '/') .
+            $this->url = count($filters)
+                ? rtrim(config('app.image_url', config('app.url')), '/').
                     ImageFacade::url($path, $filters)
                 : $imageUrl;
         }
+
         return $this->url;
     }
 
     public function width(): int
     {
-        if (!isset($this->dimension)) {
+        if (! isset($this->dimension)) {
             $this->dimension = $this->getDimension();
         }
+
         return data_get($this->dimension, 'width', 0);
     }
 
     public function height(): int
     {
-        if (!isset($this->dimension)) {
+        if (! isset($this->dimension)) {
             $this->dimension = $this->getDimension();
         }
+
         return data_get($this->dimension, 'height', 0);
     }
 
@@ -102,7 +105,8 @@ class ImageSize implements ImageSizeContract
                 break;
         }
         $metadata = $this->image->metadata();
-        return !is_null($metadata) ? $metadata->mime() : null;
+
+        return ! is_null($metadata) ? $metadata->mime() : null;
     }
 
     protected function getDimension()

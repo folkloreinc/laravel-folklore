@@ -1,14 +1,13 @@
 <?php
 
-namespace  Folklore\Entities;
+namespace Folklore\Entities;
 
 use Folklore\Contracts\Entities\HasModel;
-use Illuminate\Support\Collection;
 use Folklore\Contracts\Entities\MediaFile as MediaFileContract;
 use Folklore\Models\MediaFile as MediaFileModel;
 use Illuminate\Database\Eloquent\Model;
 
-class MediaFile implements MediaFileContract, HasModel
+class MediaFile implements HasModel, MediaFileContract
 {
     protected $model;
 

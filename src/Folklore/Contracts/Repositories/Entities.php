@@ -2,8 +2,8 @@
 
 namespace Folklore\Contracts\Repositories;
 
-use Panneau\Contracts\Repository;
 use Folklore\Contracts\Entities\Entity;
+use Panneau\Contracts\Repository;
 
 interface Entities extends Repository
 {

@@ -2,9 +2,6 @@
 
 namespace Folklore\Contracts\Entities;
 
-use Panneau\Contracts\ResourceItem;
-use Illuminate\Support\Collection;
-
 interface ImageSize
 {
     public function id(): string;

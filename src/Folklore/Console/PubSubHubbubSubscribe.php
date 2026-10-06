@@ -2,9 +2,8 @@
 
 namespace Folklore\Console;
 
-use Illuminate\Console\Command;
-
 use Folklore\Contracts\Services\PubSubHubbub\Factory;
+use Illuminate\Console\Command;
 
 class PubSubHubbubSubscribe extends Command
 {
@@ -48,15 +47,15 @@ class PubSubHubbubSubscribe extends Command
         $callback = $this->argument('callback');
         $client = $this->manager->hub($hub);
         $callback = filter_var($callback, FILTER_VALIDATE_URL) === false ? route($callback) : $callback;
-        $this->line('<comment>Subscribing:</comment> '.$callback.' to topic ' . $topic . '...');
+        $this->line('<comment>Subscribing:</comment> '.$callback.' to topic '.$topic.'...');
         $response = $client->subscribe(
             $callback,
             $topic
         );
         if ($response !== true) {
-            $this->line('<error>Error:</error> ' . $response);
+            $this->line('<error>Error:</error> '.$response);
         } else {
-            $this->line('<info>Subscribed:</info> Topic ' . $topic . '.');
+            $this->line('<info>Subscribed:</info> Topic '.$topic.'.');
         }
     }
 }

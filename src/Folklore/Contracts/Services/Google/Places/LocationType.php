@@ -2,6 +2,4 @@
 
 namespace Folklore\Contracts\Services\Google\Places;
 
-interface LocationType
-{
-}
+interface LocationType {}

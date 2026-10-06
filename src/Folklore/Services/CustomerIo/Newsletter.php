@@ -3,9 +3,9 @@
 namespace Folklore\Services\CustomerIo;
 
 use Carbon\Carbon;
-use Folklore\Contracts\Services\CustomerIo\NewsletterContent as NewsletterContentContract;
-use Folklore\Contracts\Services\CustomerIo\Newsletter as NewsletterContract;
 use Folklore\Contracts\Services\CustomerIo;
+use Folklore\Contracts\Services\CustomerIo\Newsletter as NewsletterContract;
+use Folklore\Contracts\Services\CustomerIo\NewsletterContent as NewsletterContentContract;
 use Illuminate\Support\Collection;
 
 class Newsletter implements NewsletterContract
@@ -37,6 +37,7 @@ class Newsletter implements NewsletterContract
         if ($this->type() === 'twilio') {
             return 'sms';
         }
+
         return 'email';
     }
 
@@ -52,30 +53,34 @@ class Newsletter implements NewsletterContract
 
     public function content(): NewsletterContentContract
     {
-        if (!isset($this->content)) {
+        if (! isset($this->content)) {
             $this->content = $this->service->findNewsletterContentById(
                 $this->id(),
                 data_get($this->data, 'content_ids.0')
             );
         }
+
         return $this->content;
     }
 
     public function sentAt(): ?Carbon
     {
         $timestamp = data_get($this->data, 'sent_at');
-        return !empty($timestamp) ? Carbon::createFromTimestampUTC($timestamp) : null;
+
+        return ! empty($timestamp) ? Carbon::createFromTimestampUTC($timestamp) : null;
     }
 
     public function createdAt(): ?Carbon
     {
         $timestamp = data_get($this->data, 'created');
-        return !empty($timestamp) ? Carbon::createFromTimestampUTC($timestamp) : null;
+
+        return ! empty($timestamp) ? Carbon::createFromTimestampUTC($timestamp) : null;
     }
 
     public function updatedAt(): ?Carbon
     {
         $timestamp = data_get($this->data, 'updated');
-        return !empty($timestamp) ? Carbon::createFromTimestampUTC($timestamp) : null;
+
+        return ! empty($timestamp) ? Carbon::createFromTimestampUTC($timestamp) : null;
     }
 }

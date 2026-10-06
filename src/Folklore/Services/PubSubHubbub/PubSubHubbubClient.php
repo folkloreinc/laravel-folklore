@@ -2,17 +2,17 @@
 
 namespace Folklore\Services\PubSubHubbub;
 
-use GuzzleHttp\Client as HttpClient;
 use Folklore\Contracts\Services\PubSubHubbub\Client as PubSubHubbubClientContract;
 use Folklore\Support\Concerns\MakesRequests;
-use Illuminate\Support\Facades\Log;
 
 class PubSubHubbubClient implements PubSubHubbubClientContract
 {
     use MakesRequests;
 
     protected $hub;
+
     protected $secret;
+
     protected $options;
 
     public function __construct($hub, $secret = null, $opts = [])
@@ -37,6 +37,7 @@ class PubSubHubbubClient implements PubSubHubbubClientContract
         if (isset($response) && $response->successful()) {
             return true;
         }
+
         return isset($response) ? $response->body() : false;
     }
 
@@ -55,6 +56,7 @@ class PubSubHubbubClient implements PubSubHubbubClientContract
         if (isset($response) && $response->successful()) {
             return true;
         }
+
         return isset($response) ? $response->body() : false;
     }
 }

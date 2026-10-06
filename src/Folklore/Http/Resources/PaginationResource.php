@@ -3,6 +3,7 @@
 namespace Folklore\Http\Resources;
 
 use Folklore\Support\OffsetPaginator;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class PaginationResource extends JsonResource
@@ -10,7 +11,7 @@ class PaginationResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return array
      */
     public function toArray($request)
@@ -20,14 +21,14 @@ class PaginationResource extends JsonResource
             'next_offset' => $this->nextOffset(),
             'count' => $this->count(),
             'total' => $this->total(),
-            'is_last' => $this->total() === $this->nextOffset()
+            'is_last' => $this->total() === $this->nextOffset(),
         ] : [
             'page' => $this->currentPage(),
             'last_page' => $this->lastPage(),
             'per_page' => $this->perPage(),
             'count' => $this->count(),
             'total' => $this->total(),
-            'is_last' => $this->currentPage() === $this->lastPage()
+            'is_last' => $this->currentPage() === $this->lastPage(),
         ];
     }
 }

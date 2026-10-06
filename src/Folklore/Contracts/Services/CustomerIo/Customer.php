@@ -2,12 +2,12 @@
 
 namespace Folklore\Contracts\Services\CustomerIo;
 
+use Carbon\Carbon;
 use Folklore\Contracts\Entities\Contact;
 use Folklore\Contracts\Entities\Entity;
-use Carbon\Carbon;
 use Illuminate\Contracts\Translation\HasLocalePreference;
 
-interface Customer extends Contact, Entity, HasSubscriptionPreferences, HasLocalePreference
+interface Customer extends Contact, Entity, HasLocalePreference, HasSubscriptionPreferences
 {
     public function externalId(): string;
 

@@ -2,22 +2,20 @@
 
 namespace Folklore\Services\Google;
 
-use Folklore\Support\Concerns\MakesRequests;
-use Folklore\Contracts\Services\Google\Drive as DriveContract;
-use Illuminate\Support\Collection;
-use ParseCsv\Csv;
 use DOMDocument;
 use DOMElement;
 use DOMNode;
 use DOMXPath;
+use Folklore\Contracts\Services\Google\Drive as DriveContract;
+use Folklore\Support\Concerns\MakesRequests;
+use Illuminate\Support\Collection;
+use ParseCsv\Csv;
 
 class Drive implements DriveContract
 {
     use MakesRequests;
 
-    public function __construct()
-    {
-    }
+    public function __construct() {}
 
     public function loadItemsFromSheetUrl($url): ?Collection
     {
@@ -36,10 +34,10 @@ class Drive implements DriveContract
             // TODO: once php 8.4 is the minimum version, migrate to the native
             // Dom\HTMLDocument class: https://www.php.net/manual/en/class.dom-htmldocument.php
 
-            $dom = new DOMDocument();
+            $dom = new DOMDocument;
             libxml_use_internal_errors(true);
             // Prepend an encoding hint so libxml parses the markup as UTF-8.
-            $dom->loadHTML('<?xml encoding="UTF-8">' . $data, LIBXML_NOERROR | LIBXML_NOWARNING);
+            $dom->loadHTML('<?xml encoding="UTF-8">'.$data, LIBXML_NOERROR | LIBXML_NOWARNING);
             libxml_clear_errors();
 
             $xpath = new DOMXPath($dom);
@@ -52,7 +50,7 @@ class Drive implements DriveContract
             $items = [];
             foreach ($this->getElementChildren($table) as $row) {
                 $columns = $this->getElementChildren($row);
-                if (!isset($headers)) {
+                if (! isset($headers)) {
                     foreach ($columns as $column) {
                         $headers[] = html_entity_decode(
                             trim($column->textContent),
@@ -60,6 +58,7 @@ class Drive implements DriveContract
                             'UTF-8'
                         );
                     }
+
                     continue;
                 }
                 $item = [];
@@ -67,7 +66,7 @@ class Drive implements DriveContract
                     $image = $xpath->query('.//img', $column)->item(0);
                     if ($image !== null) {
                         $text = $image->getAttribute('src');
-                        if (!empty($text)) {
+                        if (! empty($text)) {
                             $text = preg_replace('/w[0-9]+-h[0-9]+/', 'w2000-h2000', $text);
                         }
                     } else {
@@ -79,26 +78,28 @@ class Drive implements DriveContract
                             ->item(0);
                         $inner = $inner ?? $column;
                         $innerIsLink =
-                            sizeof($this->getElementChildren($inner)) === 1 &&
+                            count($this->getElementChildren($inner)) === 1 &&
                             $xpath->query('.//a', $inner)->length === 1;
                         $text = $innerIsLink
                             ? trim($inner->textContent)
                             : trim($this->getInnerHtml($inner));
                     }
                     $key = $headers[$index];
-                    if (!empty($text) && !empty($key)) {
+                    if (! empty($text) && ! empty($key)) {
                         $item[$key] = html_entity_decode($text, ENT_QUOTES, 'UTF-8');
                     }
                 }
-                if (!empty($item)) {
+                if (! empty($item)) {
                     $items[] = $item;
                 }
             }
-            return !empty($items) ? collect($items) : null;
+
+            return ! empty($items) ? collect($items) : null;
         }
         $gid = preg_match('/gid=([^&]+)/', $url, $matches) === 1 ? $matches[1] : null;
         $items = $this->loadCsvFromSheetUrl($url, $gid);
-        return !empty($items) ? collect($items) : null;
+
+        return ! empty($items) ? collect($items) : null;
     }
 
     public function loadCsvFromSheetUrl($url, $sheet = null): array
@@ -112,7 +113,7 @@ class Drive implements DriveContract
                 [
                     'format' => 'csv',
                 ],
-                !empty($sheet)
+                ! empty($sheet)
                     ? [
                         'gid' => $sheet,
                     ]
@@ -120,9 +121,10 @@ class Drive implements DriveContract
             )
         );
 
-        $csv = new Csv();
+        $csv = new Csv;
         $csv->heading = false;
         $csv->parse($data);
+
         return $csv->data;
     }
 
@@ -139,6 +141,7 @@ class Drive implements DriveContract
                 $children[] = $child;
             }
         }
+
         return $children;
     }
 
@@ -151,18 +154,21 @@ class Drive implements DriveContract
         foreach ($node->childNodes as $child) {
             $html .= $node->ownerDocument->saveHTML($child);
         }
+
         return $html;
     }
 
     protected function getIdFromUrl($url)
     {
         $path = parse_url($url, PHP_URL_PATH);
+
         return preg_match('/\/d\/([^\/]+)(\/.*)?$/', $path, $matches) === 1 ? $matches[1] : null;
     }
 
     protected function getPublicationIdFromUrl($url)
     {
         $path = parse_url($url, PHP_URL_PATH);
+
         return preg_match('/\/d\/e\/([^\/]+)(\/.*)?$/', $path, $matches) === 1 ? $matches[1] : null;
     }
 }

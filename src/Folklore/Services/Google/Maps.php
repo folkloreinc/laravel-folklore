@@ -11,9 +11,7 @@ class Maps implements ServicesMapsContract
 {
     use MakesRequests;
 
-    public function __construct(protected string $key)
-    {
-    }
+    public function __construct(protected string $key) {}
 
     public function findPositionFromAddress(string $address): ?PositionContract
     {
@@ -22,6 +20,7 @@ class Maps implements ServicesMapsContract
             'key' => $this->key,
         ]);
         $position = data_get($response, 'results.0.geometry.location');
+
         return isset($position) ? new Position($position) : null;
     }
 
@@ -31,11 +30,12 @@ class Maps implements ServicesMapsContract
             'https://maps.googleapis.com/maps/api/timezone/json',
             'GET',
             [
-                'location' => $latitude . ',' . $longitude,
+                'location' => $latitude.','.$longitude,
                 'timestamp' => time(),
                 'key' => $this->key,
             ]
         );
+
         return data_get($response, 'timeZoneId');
     }
 }

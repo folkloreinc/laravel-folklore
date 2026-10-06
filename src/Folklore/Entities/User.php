@@ -3,12 +3,12 @@
 namespace Folklore\Entities;
 
 use Folklore\Contracts\Entities\HasModel;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Auth\Notifications\VerifyEmail;
 use Folklore\Contracts\Entities\User as UserContract;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class User implements UserContract, HasModel
+class User implements HasModel, UserContract
 {
     protected $model;
 
@@ -163,7 +163,7 @@ class User implements UserContract, HasModel
      */
     public function hasVerifiedEmail()
     {
-        return !is_null($this->model->email_verified_at);
+        return ! is_null($this->model->email_verified_at);
     }
 
     /**
@@ -201,7 +201,7 @@ class User implements UserContract, HasModel
      */
     public function sendEmailVerificationNotification()
     {
-        $this->model->notify(new VerifyEmail());
+        $this->model->notify(new VerifyEmail);
     }
 
     /**

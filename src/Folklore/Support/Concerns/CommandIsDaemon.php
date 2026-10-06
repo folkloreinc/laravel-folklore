@@ -3,6 +3,7 @@
 namespace Folklore\Support\Concerns;
 
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
+use Illuminate\Queue\WorkerOptions;
 
 trait CommandIsDaemon
 {
@@ -29,18 +30,18 @@ trait CommandIsDaemon
                 $endTime = time();
                 $wait = max(0, $interval - ($endTime - $startTime));
                 if ($this->daemonShouldStop($lastRestart)) {
-                    if (!$silent) {
-                        $this->line('[Daemon ' . $className . '] <info>Restarting daemon.</info>');
+                    if (! $silent) {
+                        $this->line('[Daemon '.$className.'] <info>Restarting daemon.</info>');
                     }
 
                     return;
                 }
-                if (!$silent) {
+                if (! $silent) {
                     $this->line(
-                        '[Daemon ' .
-                            $className .
-                            '] <comment>Waiting:</comment> ' .
-                            $wait .
+                        '[Daemon '.
+                            $className.
+                            '] <comment>Waiting:</comment> '.
+                            $wait.
                             ' second(s)'
                     );
                 }
@@ -54,7 +55,7 @@ trait CommandIsDaemon
     /**
      * Stop the process if necessary.
      *
-     * @param  \Illuminate\Queue\WorkerOptions  $options
+     * @param  WorkerOptions  $options
      * @param  int  $lastRestart
      * @param  mixed  $job
      */
@@ -67,13 +68,14 @@ trait CommandIsDaemon
         } elseif ($this->daemonShouldRestart($lastRestart)) {
             return true;
         }
+
         return false;
     }
 
     /**
      * Determine if the memory limit has been exceeded.
      *
-     * @param  int   $memoryLimit
+     * @param  int  $memoryLimit
      * @return bool
      */
     protected function memoryExceeded($memoryLimit)

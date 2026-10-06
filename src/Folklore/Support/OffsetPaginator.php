@@ -140,8 +140,6 @@ class OffsetPaginator extends AbstractPaginator
 
     /**
      * Convert the object into something JSON serializable.
-     *
-     * @return array
      */
     public function jsonSerialize(): array
     {

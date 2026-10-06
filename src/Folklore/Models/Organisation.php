@@ -2,10 +2,10 @@
 
 namespace Folklore\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Folklore\Contracts\Entities\Organisation as OrganisationContract;
 use Folklore\Contracts\Entities\ToEntity;
 use Folklore\Entities\Organisation as OrganisationEntity;
+use Illuminate\Database\Eloquent\Model;
 
 class Organisation extends Model implements ToEntity
 {

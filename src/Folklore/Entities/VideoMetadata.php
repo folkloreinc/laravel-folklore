@@ -10,7 +10,8 @@ class VideoMetadata extends MediaMetadata implements VideoMetadataContract
     {
         return once(function () {
             $metadata = $this->getMetadatas()->get('width');
-            return !is_null($metadata) ? $metadata->getValue() : 0;
+
+            return ! is_null($metadata) ? $metadata->getValue() : 0;
         });
     }
 
@@ -18,7 +19,8 @@ class VideoMetadata extends MediaMetadata implements VideoMetadataContract
     {
         return once(function () {
             $metadata = $this->getMetadatas()->get('height');
-            return !is_null($metadata) ? $metadata->getValue() : 0;
+
+            return ! is_null($metadata) ? $metadata->getValue() : 0;
         });
     }
 
@@ -26,7 +28,8 @@ class VideoMetadata extends MediaMetadata implements VideoMetadataContract
     {
         return once(function () {
             $metadata = $this->getMetadatas()->get('duration');
-            return !is_null($metadata) ? $metadata->getValue() : 0;
+
+            return ! is_null($metadata) ? $metadata->getValue() : 0;
         });
     }
 }

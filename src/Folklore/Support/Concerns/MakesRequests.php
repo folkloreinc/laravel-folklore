@@ -2,11 +2,11 @@
 
 namespace Folklore\Support\Concerns;
 
-use Illuminate\Support\Arr;
 use Exception;
 use GuzzleHttp\Exception\RequestException;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 trait MakesRequests
 {
@@ -34,12 +34,12 @@ trait MakesRequests
                 'headers' => $headers,
             ])
         );
-        $isSuccess = !is_null($response) && $response->successful();
+        $isSuccess = ! is_null($response) && $response->successful();
 
         $logErrors = method_exists($this, 'getRequestLogErrors')
             ? $this->getRequestLogErrors()
             : false;
-        if ($logErrors && !$isSuccess) {
+        if ($logErrors && ! $isSuccess) {
             Log::error(sprintf('[%s] Request failed', get_class($this)), [
                 'url' => $url,
                 'method' => $method,
@@ -53,7 +53,7 @@ trait MakesRequests
             : false;
         $returnErrors = data_get($opts, 'return_errors', $defaultReturnErrors);
 
-        return !is_null($response) && ($returnErrors || $isSuccess) ? $response->json() : null;
+        return ! is_null($response) && ($returnErrors || $isSuccess) ? $response->json() : null;
     }
 
     protected function requestWebpage(
@@ -67,6 +67,7 @@ trait MakesRequests
             ],
             data_get($opts, 'headers', [])
         );
+
         return $this->requestData(
             $url,
             'GET',
@@ -85,13 +86,14 @@ trait MakesRequests
             $params,
             Arr::except($opts, ['return_errors'])
         );
-        $isSuccess = !is_null($response) && $response->successful();
+        $isSuccess = ! is_null($response) && $response->successful();
 
         $defaultReturnErrors = method_exists($this, 'getRequestReturnErrors')
             ? $this->getRequestReturnErrors()
             : false;
         $returnErrors = data_get($opts, 'return_errors', $defaultReturnErrors);
-        return !is_null($response) && ($returnErrors || $isSuccess) ? $response->body() : null;
+
+        return ! is_null($response) && ($returnErrors || $isSuccess) ? $response->body() : null;
     }
 
     protected function makeRequest($url, $method, $params = [], $opts = [])
@@ -100,7 +102,7 @@ trait MakesRequests
             ? $this->getAuthorizationHeader($url, $method, $params, $opts)
             : null;
         $headers = array_merge(
-            !empty($authorizationHeader)
+            ! empty($authorizationHeader)
                 ? [
                     'Authorization' => $authorizationHeader,
                 ]
@@ -118,11 +120,13 @@ trait MakesRequests
                 ->withHeaders($headers)
                 ->withOptions($options)
                 ->{strtolower($method)}($url, $params);
+
             return $response;
         } catch (RequestException $e) {
             return $e->getResponse();
         } catch (Exception $e) {
             Log::error($e);
+
             return null;
         }
     }

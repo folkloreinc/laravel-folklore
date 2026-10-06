@@ -2,8 +2,8 @@
 
 namespace Folklore\Composers;
 
-use Illuminate\View\View;
 use Folklore\Composers\Concerns\ComposesRoutes;
+use Illuminate\View\View;
 
 abstract class RoutesComposer
 {

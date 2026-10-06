@@ -14,25 +14,26 @@ class CustomerIoObject
 
     public bool $includeRelationships = false;
 
-    public function __construct(public string $type, public string $id)
-    {
-    }
+    public function __construct(public string $type, public string $id) {}
 
     public function data(array $data)
     {
         $this->data = array_merge($this->data, $data);
+
         return $this;
     }
 
     public function relationships($relationships)
     {
         $this->relationships = isset($relationships) ? collect($relationships) : null;
+
         return $this;
     }
 
     public function includeRelationships()
     {
         $this->includeRelationships = true;
+
         return $this;
     }
 

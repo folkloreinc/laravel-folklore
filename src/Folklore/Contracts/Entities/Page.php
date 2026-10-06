@@ -5,7 +5,7 @@ namespace Folklore\Contracts\Entities;
 use Illuminate\Support\Collection;
 use Panneau\Contracts\ResourceItem;
 
-interface Page extends Entity, ResourceItem, Pageable, HasBlocks
+interface Page extends Entity, HasBlocks, Pageable, ResourceItem
 {
     public function handle(): ?string;
 

@@ -11,6 +11,7 @@ class CollectionWithCursor extends Collection
     public function setCursor($cursor)
     {
         $this->cursor = $cursor;
+
         return $this;
     }
 

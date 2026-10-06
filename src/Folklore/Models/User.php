@@ -2,11 +2,11 @@
 
 namespace Folklore\Models;
 
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 use Folklore\Contracts\Entities\ToEntity;
 use Folklore\Contracts\Entities\User as UserContract;
 use Folklore\Entities\User as UserEntity;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable implements ToEntity
 {

@@ -25,7 +25,7 @@ class Page extends ResourceItem
     public function attributes(): ?array
     {
         $query = $this->query;
-        if (isset($this->pageTypes) && sizeof($this->pageTypes) > 0) {
+        if (isset($this->pageTypes) && count($this->pageTypes) > 0) {
             $query['type'] = $this->pageTypes;
         }
 
@@ -40,12 +40,14 @@ class Page extends ResourceItem
     public function withQuery($query)
     {
         $this->query = $query;
+
         return $this;
     }
 
     public function withTypes($types)
     {
         $this->pageTypes = is_array($types) ? $types : func_get_args();
+
         return $this;
     }
 }

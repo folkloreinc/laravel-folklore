@@ -4,7 +4,7 @@ namespace Folklore\Contracts\Entities;
 
 use Illuminate\Contracts\Translation\HasLocalePreference;
 
-interface Contact extends Person, HasLocalePreference
+interface Contact extends HasLocalePreference, Person
 {
     public function email(): ?string;
 

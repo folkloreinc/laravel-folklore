@@ -2,9 +2,10 @@
 
 namespace Folklore\Console;
 
-use Illuminate\Filesystem\Filesystem;
 use Illuminate\Console\Command;
+use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\Factory as FactoryContract;
+use Illuminate\Filesystem\Filesystem;
 
 class AssetsViewCommand extends Command
 {
@@ -25,22 +26,21 @@ class AssetsViewCommand extends Command
     /**
      * The filesystem instance.
      *
-     * @var \Illuminate\Filesystem\Filesystem
+     * @var Filesystem
      */
     protected $files;
 
     /**
      * The view factory
      *
-     * @var \Illuminate\Contracts\View\Factory
+     * @var Factory
      */
     protected $view;
 
     /**
      * Create a new controller creator command instance.
      *
-     * @param  \Illuminate\Filesystem\Filesystem  $files
-     * @param  \Illuminate\Contracts\View\Factory  $files
+     * @param  Factory  $files
      * @return void
      */
     public function __construct(Filesystem $files, FactoryContract $view)
@@ -59,12 +59,12 @@ class AssetsViewCommand extends Command
     public function handle()
     {
         $assetManifest = $this->option('manifest-path') ?? public_path('asset-manifest.json');
-        $stubsPath = __DIR__ . '/../../stubs';
-        $headStubPath = $stubsPath . '/assets-head.blade.php';
-        $bodyStubPath = $stubsPath . '/assets-body.blade.php';
+        $stubsPath = __DIR__.'/../../stubs';
+        $headStubPath = $stubsPath.'/assets-head.blade.php';
+        $bodyStubPath = $stubsPath.'/assets-body.blade.php';
 
         $outputPath = rtrim(
-            resource_path('views/' . ltrim($this->option('output_path'), '/')),
+            resource_path('views/'.ltrim($this->option('output_path'), '/')),
             '/'
         );
         $manifest = json_decode($this->files->get($assetManifest), true);
@@ -72,7 +72,7 @@ class AssetsViewCommand extends Command
         $head = $this->view->file($headStubPath, $manifest)->render();
         $body = $this->view->file($bodyStubPath, $manifest)->render();
 
-        $this->files->put($outputPath . '/head.blade.php', $head);
-        $this->files->put($outputPath . '/body.blade.php', $body);
+        $this->files->put($outputPath.'/head.blade.php', $head);
+        $this->files->put($outputPath.'/body.blade.php', $body);
     }
 }

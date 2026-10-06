@@ -2,6 +2,8 @@
 
 namespace Folklore\Tests;
 
+use Folklore\ServiceProvider;
+use Illuminate\Foundation\Application;
 use Orchestra\Testbench\TestCase as BaseTestCase;
 
 class TestCase extends BaseTestCase
@@ -9,7 +11,7 @@ class TestCase extends BaseTestCase
     /**
      * Define environment setup.
      *
-     * @param  \Illuminate\Foundation\Application  $app
+     * @param  Application  $app
      * @return void
      */
     protected function getEnvironmentSetUp($app)
@@ -22,12 +24,12 @@ class TestCase extends BaseTestCase
             'prefix' => '',
         ]);
 
-        $app->usePublicPath(__DIR__ . '/fixture');
+        $app->usePublicPath(__DIR__.'/fixture');
     }
 
     protected function getPackageProviders($app)
     {
-        return [\Folklore\ServiceProvider::class, \Folklore\Mediatheque\ServiceProvider::class];
+        return [ServiceProvider::class, \Folklore\Mediatheque\ServiceProvider::class];
     }
 
     protected function getPackageAliases($app)

@@ -30,6 +30,7 @@ class PageSlug extends Text
         if (isset(self::$routesResolver)) {
             return call_user_func(self::$routesResolver, $locale);
         }
+
         return [];
     }
 

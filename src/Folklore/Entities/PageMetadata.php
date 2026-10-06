@@ -3,13 +3,13 @@
 namespace Folklore\Entities;
 
 use Folklore\Contracts\Entities\HasModel;
-use Folklore\Contracts\Entities\Page;
 use Folklore\Contracts\Entities\Image;
-use Folklore\Contracts\Entities\PageMetadata as PageMetadataContract;
+use Folklore\Contracts\Entities\Page;
 use Folklore\Contracts\Entities\Pageable as PageableContract;
+use Folklore\Contracts\Entities\PageMetadata as PageMetadataContract;
 use Illuminate\Database\Eloquent\Model;
 
-class PageMetadata implements PageMetadataContract, HasModel
+class PageMetadata implements HasModel, PageMetadataContract
 {
     protected $page;
 
@@ -40,12 +40,12 @@ class PageMetadata implements PageMetadataContract, HasModel
 
     public function title(string $locale): ?string
     {
-        return data_get($this->data, 'title.' . $locale);
+        return data_get($this->data, 'title.'.$locale);
     }
 
     public function description(string $locale): ?string
     {
-        return data_get($this->data, 'description.' . $locale);
+        return data_get($this->data, 'description.'.$locale);
     }
 
     public function image(string $locale): ?Image
@@ -57,6 +57,7 @@ class PageMetadata implements PageMetadataContract, HasModel
             if (method_exists($this->page, 'image')) {
                 return $this->page->image();
             }
+
             return null;
         });
     }

@@ -14,7 +14,7 @@ class PostsTest extends TestCase
         $this->artisan('migrate', ['--database' => 'testbench']);
         $this->artisan('migrate', [
             '--database' => 'testbench',
-            '--path' => __DIR__ . '/../migrations',
+            '--path' => __DIR__.'/../migrations',
             '--realpath' => true,
         ]);
     }
@@ -29,11 +29,11 @@ class PostsTest extends TestCase
         parent::tearDown();
     }
 
-    public function testCreatePost()
+    public function test_create_post()
     {
         $media = media(public_path('folklore.png'));
         $media->save();
-        $post = new Post();
+        $post = new Post;
         $post->data = [
             'image' => $media,
             'images' => [$media, $media],
@@ -50,10 +50,10 @@ class PostsTest extends TestCase
         $this->assertEquals($post->data['image_hybrid'], ['media' => $media->id]);
 
         $rawData = json_decode($post->getRawOriginal('data'), true);
-        $this->assertEquals(data_get($rawData, 'image'), 'medias://' . $media->id);
+        $this->assertEquals(data_get($rawData, 'image'), 'medias://'.$media->id);
         $this->assertEquals(data_get($rawData, 'images'), [
-            'medias://' . $media->id,
-            'medias://' . $media->id,
+            'medias://'.$media->id,
+            'medias://'.$media->id,
         ]);
         $this->assertEquals(data_get($rawData, 'image_hybrid'), ['media' => $media->id]);
         $post->data = [];

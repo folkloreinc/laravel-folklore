@@ -2,16 +2,16 @@
 
 namespace Folklore\Panneau\Resources;
 
-use Panneau\Contracts\ResourceType;
+use Folklore\Panneau\Fields\Blocks;
+use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Contracts\Support\Jsonable;
+use JsonSerializable;
 use Panneau\Contracts\Repository;
 use Panneau\Contracts\Resource;
 use Panneau\Contracts\ResourceItem;
-use Folklore\Panneau\Fields\Blocks;
-use JsonSerializable;
-use Illuminate\Contracts\Support\Arrayable;
-use Illuminate\Contracts\Support\Jsonable;
+use Panneau\Contracts\ResourceType;
 
-class BlockWithBlocks implements ResourceType, Arrayable, Jsonable
+class BlockWithBlocks implements Arrayable, Jsonable, ResourceType
 {
     protected $type;
 
@@ -82,7 +82,8 @@ class BlockWithBlocks implements ResourceType, Arrayable, Jsonable
                 ->filter(function ($field) use ($id) {
                     $excepTypes = $field->exceptTypes();
                     $onlyTypes = $field->onlyTypes();
-                    return (is_null($excepTypes) || !in_array($id, $excepTypes)) &&
+
+                    return (is_null($excepTypes) || ! in_array($id, $excepTypes)) &&
                         (is_null($onlyTypes) || in_array($id, $onlyTypes));
                 })
                 ->merge($this->fields())

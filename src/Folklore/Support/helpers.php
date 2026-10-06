@@ -4,27 +4,29 @@ use Folklore\Contracts\Entities\Entity;
 use Folklore\Contracts\Entities\ToEntity;
 use Illuminate\Database\Eloquent\Model;
 
-if (!function_exists('array_is_list')) {
+if (! function_exists('array_is_list')) {
     function array_is_list(array $arr)
     {
         if ($arr === []) {
             return true;
         }
+
         return array_keys($arr) === range(0, count($arr) - 1);
     }
 }
 
-if (!function_exists('to_entity')) {
+if (! function_exists('to_entity')) {
     function to_entity($entity)
     {
         if ($entity instanceof ToEntity) {
             return $entity->toEntity();
         }
+
         return $entity;
     }
 }
 
-if (!function_exists('to_id')) {
+if (! function_exists('to_id')) {
     function to_id($item)
     {
         if (is_numeric($item) || is_string($item)) {
@@ -38,6 +40,7 @@ if (!function_exists('to_id')) {
         } elseif ($item instanceof ToEntity) {
             return $item->toEntity()->id();
         }
+
         return null;
     }
 }

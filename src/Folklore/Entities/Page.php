@@ -3,14 +3,14 @@
 namespace Folklore\Entities;
 
 use Folklore\Contracts\Entities\HasModel;
-use Illuminate\Support\Collection;
+use Folklore\Contracts\Entities\Image as ImageContract;
 use Folklore\Contracts\Entities\Page as PageContract;
 use Folklore\Contracts\Entities\PageMetadata as PageMetadataContract;
-use Folklore\Contracts\Entities\Image as ImageContract;
 use Folklore\Models\Page as PageModel;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
-class Page implements PageContract, HasModel
+class Page implements HasModel, PageContract
 {
     protected $model;
 
@@ -49,17 +49,17 @@ class Page implements PageContract, HasModel
 
     public function slug(string $locale): ?string
     {
-        return $this->model->{'slug_' . $locale};
+        return $this->model->{'slug_'.$locale};
     }
 
     public function title(string $locale): string
     {
-        return data_get($this->data, 'title.' . $locale) ?? '';
+        return data_get($this->data, 'title.'.$locale) ?? '';
     }
 
     public function description(string $locale): ?string
     {
-        return data_get($this->data, 'description.' . $locale);
+        return data_get($this->data, 'description.'.$locale);
     }
 
     public function url(string $locale, bool $absolute = false): string
@@ -69,7 +69,7 @@ class Page implements PageContract, HasModel
         }
 
         $parent = $this->parent();
-        if (!is_null($parent)) {
+        if (! is_null($parent)) {
             return route_with_locale(
                 'page_with_parent',
                 $locale,
@@ -93,23 +93,23 @@ class Page implements PageContract, HasModel
 
     public function image(): ?ImageContract
     {
-        return once(fn() => to_entity(data_get($this->data, 'image')));
+        return once(fn () => to_entity(data_get($this->data, 'image')));
     }
 
     public function metadata(): PageMetadataContract
     {
-        return once(fn() => new PageMetadata($this, $this->model));
+        return once(fn () => new PageMetadata($this, $this->model));
     }
 
     public function parent(): ?PageContract
     {
-        return once(fn() => to_entity($this->model->parent));
+        return once(fn () => to_entity($this->model->parent));
     }
 
     public function children(): Collection
     {
         return once(
-            fn() => $this->model->children->toBase()->map(function ($model) {
+            fn () => $this->model->children->toBase()->map(function ($model) {
                 return to_entity($model);
             })
         );
@@ -118,7 +118,7 @@ class Page implements PageContract, HasModel
     public function blocks(): Collection
     {
         return once(
-            fn() => collect(data_get($this->data, 'blocks', []))->map(function ($block) {
+            fn () => collect(data_get($this->data, 'blocks', []))->map(function ($block) {
                 return to_entity($block);
             })
         );

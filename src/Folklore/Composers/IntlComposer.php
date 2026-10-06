@@ -2,9 +2,9 @@
 
 namespace Folklore\Composers;
 
+use Folklore\Composers\Concerns\ComposesIntl;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use Folklore\Composers\Concerns\ComposesIntl;
 
 class IntlComposer
 {
@@ -15,14 +15,13 @@ class IntlComposer
     /**
      * The request
      *
-     * @var \Illuminate\Http\Request
+     * @var Request
      */
     protected $request;
 
     /**
      * Create a new profile composer.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @return void
      */
     public function __construct(Request $request)
@@ -33,7 +32,6 @@ class IntlComposer
     /**
      * Bind data to the view.
      *
-     * @param  View  $view
      * @return void
      */
     public function compose(View $view)

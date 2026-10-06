@@ -8,7 +8,7 @@ use Folklore\Models\Organisation as OrganisationModel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
-class Organisation implements OrganisationContract, HasModel
+class Organisation implements HasModel, OrganisationContract
 {
     protected $model;
 
@@ -38,21 +38,23 @@ class Organisation implements OrganisationContract, HasModel
 
     public function members(): Collection
     {
-        if (!isset($this->members)) {
+        if (! isset($this->members)) {
             $this->members = $this->model->members->toBase()->map(function ($item) {
                 return to_entity($item);
             });
         }
+
         return $this->members;
     }
 
     public function invitations(): Collection
     {
-        if (!isset($this->invitations)) {
+        if (! isset($this->invitations)) {
             $this->invitations = $this->model->invitations->toBase()->map(function ($item) {
                 return to_entity($item);
             });
         }
+
         return $this->invitations;
     }
 

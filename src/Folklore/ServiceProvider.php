@@ -2,25 +2,54 @@
 
 namespace Folklore;
 
-use Closure;
 use Exception;
-use Illuminate\Support\ServiceProvider as BaseServiceProvider;
-use Laravel\Fortify\Fortify;
-use Illuminate\Contracts\Auth\StatefulGuard;
-use Illuminate\Http\Request;
-use PubNub\PubNub;
-use PubNub\PNConfiguration;
 use Folklore\Broadcasters\PubNubBroadcaster;
+use Folklore\Console\AssetsViewCommand;
+use Folklore\Console\DaemonRestartCommand;
+use Folklore\Console\EntityContractMakeCommand;
+use Folklore\Console\EntityMakeCommand;
+use Folklore\Console\EntityModelMakeCommand;
+use Folklore\Console\PubSubHubbubSubscribe;
+use Folklore\Console\PubSubHubbubUnsubscribe;
+use Folklore\Console\RepositoryContractMakeCommand;
+use Folklore\Console\RepositoryMakeCommand;
+use Folklore\Console\UsersCreateCommand;
+use Folklore\Contracts\Services\CustomerIo;
+use Folklore\Contracts\Services\PubSubHubbub\Factory;
+use Folklore\Http\Middleware\LocalMiddleware;
+use Folklore\Mediatheque\Contracts\Models\File;
+use Folklore\Models\Media;
+use Folklore\Models\MediaFile;
+use Folklore\Repositories\Blocks;
+use Folklore\Repositories\Medias;
+use Folklore\Repositories\Organisations;
+use Folklore\Repositories\Pages;
+use Folklore\Repositories\Users;
+use Folklore\Routing\UrlGeneratorMixin;
+use Folklore\Services\CustomerIo\Client;
 use Folklore\Services\CustomerIo\MailTransport;
+use Folklore\Services\Google\Drive;
+use Folklore\Services\Google\Maps;
+use Folklore\Services\Google\Places;
+use Folklore\Services\PubSubHubbub\PubSubHubbubManager;
 use Folklore\Support\Concerns\RegistersBindings;
 use Folklore\Support\OffsetPaginator;
+use Illuminate\Broadcasting\BroadcastManager;
+use Illuminate\Contracts\Auth\StatefulGuard;
+use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Pagination\AbstractPaginator;
+use Illuminate\Routing\UrlGenerator;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\ServiceProvider as BaseServiceProvider;
+use Laravel\Fortify\Fortify;
+use PubNub\PNConfiguration;
+use PubNub\PubNub;
 use Ramsey\Uuid\Uuid;
 
 class ServiceProvider extends BaseServiceProvider
@@ -52,28 +81,28 @@ class ServiceProvider extends BaseServiceProvider
     protected function registerRepositories()
     {
         $this->app->bind(
-            \Folklore\Contracts\Repositories\Users::class,
-            \Folklore\Repositories\Users::class
+            Contracts\Repositories\Users::class,
+            Users::class
         );
 
         $this->app->bind(
-            \Folklore\Contracts\Repositories\Medias::class,
-            \Folklore\Repositories\Medias::class
+            Contracts\Repositories\Medias::class,
+            Medias::class
         );
 
         $this->app->bind(
-            \Folklore\Contracts\Repositories\Pages::class,
-            \Folklore\Repositories\Pages::class
+            Contracts\Repositories\Pages::class,
+            Pages::class
         );
 
         $this->app->bind(
-            \Folklore\Contracts\Repositories\Blocks::class,
-            \Folklore\Repositories\Blocks::class
+            Contracts\Repositories\Blocks::class,
+            Blocks::class
         );
 
         $this->app->bind(
-            \Folklore\Contracts\Repositories\Organisations::class,
-            \Folklore\Repositories\Organisations::class
+            Contracts\Repositories\Organisations::class,
+            Organisations::class
         );
 
         $repositories = $this->app['config']->get('app.repositories', []);
@@ -85,13 +114,13 @@ class ServiceProvider extends BaseServiceProvider
     protected function registerMediatheque()
     {
         $this->app->bind(
-            \Folklore\Mediatheque\Contracts\Models\Media::class,
-            \Folklore\Models\Media::class
+            Mediatheque\Contracts\Models\Media::class,
+            Media::class
         );
 
         $this->app->bind(
-            \Folklore\Mediatheque\Contracts\Models\File::class,
-            \Folklore\Models\MediaFile::class
+            File::class,
+            MediaFile::class
         );
     }
 
@@ -102,7 +131,7 @@ class ServiceProvider extends BaseServiceProvider
      */
     protected function registerCustomerIo()
     {
-        $this->registerBindingsFromConfig(\Folklore\Services\CustomerIo\Client::class, [
+        $this->registerBindingsFromConfig(Client::class, [
             '$key' => 'services.customerio.key',
             '$siteId' => 'services.customerio.site_id',
             '$trackingKey' => 'services.customerio.tracking_key',
@@ -112,20 +141,20 @@ class ServiceProvider extends BaseServiceProvider
         ]);
 
         $this->app->singleton('services.customerio', function () {
-            return $this->app->make(\Folklore\Services\CustomerIo\Client::class);
+            return $this->app->make(Client::class);
         });
 
-        $this->app->alias('services.customerio', \Folklore\Contracts\Services\CustomerIo::class);
+        $this->app->alias('services.customerio', CustomerIo::class);
     }
 
     protected function registerPubsubHubbub()
     {
         $this->app->singleton('services.pubsubhubbub.manager', function ($app) {
-            return new \Folklore\Services\PubSubHubbub\PubSubHubbubManager($app);
+            return new PubSubHubbubManager($app);
         });
 
         $this->app->bind(
-            \Folklore\Contracts\Services\PubSubHubbub\Factory::class,
+            Factory::class,
             'services.pubsubhubbub.manager'
         );
     }
@@ -137,29 +166,29 @@ class ServiceProvider extends BaseServiceProvider
      */
     protected function registerGoogle()
     {
-        $this->registerBindingsFromConfig(\Folklore\Services\Google\Drive::class, []);
+        $this->registerBindingsFromConfig(Drive::class, []);
 
-        $this->registerBindingsFromConfig(\Folklore\Services\Google\Maps::class, [
+        $this->registerBindingsFromConfig(Maps::class, [
             '$key' => 'services.google.key',
         ]);
 
-        $this->registerBindingsFromConfig(\Folklore\Services\Google\Places::class, [
+        $this->registerBindingsFromConfig(Places::class, [
             '$key' => 'services.google.key',
         ]);
 
         $this->app->alias(
-            \Folklore\Services\Google\Drive::class,
-            \Folklore\Contracts\Services\Google\Drive::class
+            Drive::class,
+            Contracts\Services\Google\Drive::class
         );
 
         $this->app->alias(
-            \Folklore\Services\Google\Places::class,
-            \Folklore\Contracts\Services\Google\Places::class
+            Places::class,
+            Contracts\Services\Google\Places::class
         );
 
         $this->app->alias(
-            \Folklore\Services\Google\Maps::class,
-            \Folklore\Contracts\Services\Google\Maps::class
+            Maps::class,
+            Contracts\Services\Google\Maps::class
         );
     }
 
@@ -181,15 +210,15 @@ class ServiceProvider extends BaseServiceProvider
         // Console
         if ($this->app->runningInConsole()) {
             $this->commands([
-                \Folklore\Console\UsersCreateCommand::class,
-                \Folklore\Console\DaemonRestartCommand::class,
+                UsersCreateCommand::class,
+                DaemonRestartCommand::class,
             ]);
         }
 
         if ($this->app['config']->get('pubsubhubbub') !== null && $this->app->runningInConsole()) {
             $this->commands([
-                \Folklore\Console\PubSubHubbubSubscribe::class,
-                \Folklore\Console\PubSubHubbubUnsubscribe::class,
+                PubSubHubbubSubscribe::class,
+                PubSubHubbubUnsubscribe::class,
             ]);
         }
 
@@ -204,7 +233,7 @@ class ServiceProvider extends BaseServiceProvider
         if ($this->app['config']->get('services.customerio') !== null) {
             Mail::extend('customerio', function (array $config = []) {
                 return new MailTransport(
-                    $this->app[\Folklore\Contracts\Services\CustomerIo::class],
+                    $this->app[CustomerIo::class],
                     $config
                 );
             });
@@ -214,9 +243,9 @@ class ServiceProvider extends BaseServiceProvider
     public function bootHttp()
     {
         // Routing
-        \Illuminate\Routing\UrlGenerator::macro(
+        UrlGenerator::macro(
             'routeForReactRouter',
-            $this->app->make(\Folklore\Routing\UrlGeneratorMixin::class)->routeForReactRouter()
+            $this->app->make(UrlGeneratorMixin::class)->routeForReactRouter()
         );
 
         // Paginator resolver
@@ -287,15 +316,16 @@ class ServiceProvider extends BaseServiceProvider
                     $filename,
                     [
                         'Content-type' => 'text/csv; charset="utf-8"',
-                        'Content-Disposition' => 'attachment; filename=' . $filename,
+                        'Content-Disposition' => 'attachment; filename='.$filename,
                     ]
                 );
 
                 return $response;
             } catch (Exception $e) {
                 Log::error($e);
+
                 return response()->json(
-                    ['error' => 'Failed to export CSV.' . $e->getMessage()],
+                    ['error' => 'Failed to export CSV.'.$e->getMessage()],
                     500
                 );
             }
@@ -307,7 +337,7 @@ class ServiceProvider extends BaseServiceProvider
         // Auth
         $this->app['auth']->provider('repository', function ($app, $config) {
             return $this->app->make(
-                $config['repository'] ?? \Folklore\Contracts\Repositories\Users::class
+                $config['repository'] ?? Contracts\Repositories\Users::class
             );
         });
 
@@ -329,9 +359,9 @@ class ServiceProvider extends BaseServiceProvider
     public function bootPubNubBroadcaster()
     {
         $this->app
-            ->make(\Illuminate\Broadcasting\BroadcastManager::class)
+            ->make(BroadcastManager::class)
             ->extend('pubnub', function ($app, $config) {
-                $conf = new PNConfiguration();
+                $conf = new PNConfiguration;
                 $conf->setUuid(Uuid::uuid4()->toString());
                 $conf->setSubscribeKey(
                     data_get(
@@ -348,6 +378,7 @@ class ServiceProvider extends BaseServiceProvider
                     )
                 );
                 $pubnub = new PubNub($conf);
+
                 return new PubNubBroadcaster(
                     $pubnub,
                     data_get(
@@ -365,23 +396,23 @@ class ServiceProvider extends BaseServiceProvider
         // Publishes
         $this->publishes(
             [
-                __DIR__ . '/../migrations/' => database_path('migrations'),
+                __DIR__.'/../migrations/' => database_path('migrations'),
             ],
             'migrations'
         );
 
-        $this->app[\Illuminate\Contracts\Http\Kernel::class]->pushMiddleware(
-            \Folklore\Http\Middleware\LocalMiddleware::class
+        $this->app[Kernel::class]->pushMiddleware(
+            LocalMiddleware::class
         );
 
         if ($this->app->runningInConsole()) {
             $this->commands([
-                \Folklore\Console\AssetsViewCommand::class,
-                \Folklore\Console\EntityMakeCommand::class,
-                \Folklore\Console\RepositoryContractMakeCommand::class,
-                \Folklore\Console\RepositoryMakeCommand::class,
-                \Folklore\Console\EntityContractMakeCommand::class,
-                \Folklore\Console\EntityModelMakeCommand::class,
+                AssetsViewCommand::class,
+                EntityMakeCommand::class,
+                RepositoryContractMakeCommand::class,
+                RepositoryMakeCommand::class,
+                EntityContractMakeCommand::class,
+                EntityModelMakeCommand::class,
             ]);
         }
     }

@@ -10,7 +10,7 @@ interface Pages extends Entities
 
     public function findByHandle(string $handle): ?Page;
 
-    public function findBySlug(string $slug, string $locale = null): ?Page;
+    public function findBySlug(string $slug, ?string $locale = null): ?Page;
 
     public function create($data): Page;
 

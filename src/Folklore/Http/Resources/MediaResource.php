@@ -2,9 +2,9 @@
 
 namespace Folklore\Http\Resources;
 
-use Illuminate\Http\Resources\Json\JsonResource;
-
 use Folklore\Contracts\Entities\Image;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
 
 class MediaResource extends JsonResource
 {
@@ -19,7 +19,7 @@ class MediaResource extends JsonResource
     /**
      * Transform the resource into an array.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return array
      */
     public function toArray($request)
@@ -47,6 +47,7 @@ class MediaResource extends JsonResource
                         ];
                     });
                 }
+
                 return MediaFileResource::collection($this->files());
             }),
         ];
@@ -55,42 +56,49 @@ class MediaResource extends JsonResource
     public function withoutMetadata()
     {
         $this->withMetadata = false;
+
         return $this;
     }
 
     public function withMetadata()
     {
         $this->withMetadata = true;
+
         return $this;
     }
 
     public function withoutFiles()
     {
         $this->withFiles = false;
+
         return $this;
     }
 
     public function withFiles()
     {
         $this->withFiles = true;
+
         return $this;
     }
 
     public function withFilesAsMap()
     {
         $this->withFilesAsMap = true;
+
         return $this;
     }
 
     public function withoutImageSizes()
     {
         $this->withImageSizes = false;
+
         return $this;
     }
 
     public function withImageSizes()
     {
         $this->withImageSizes = true;
+
         return $this;
     }
 }

@@ -2,29 +2,29 @@
 
 namespace Folklore\Services\CustomerIo;
 
-use Folklore\Support\Concerns\MakesRequests;
-use Folklore\Contracts\Services\CustomerIo;
-use Illuminate\Contracts\Support\Arrayable;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Str;
-use Illuminate\Support\Arr;
-use Folklore\Contracts\Entities\User;
 use Folklore\Contracts\Entities\Contact;
 use Folklore\Contracts\Entities\Entity;
+use Folklore\Contracts\Entities\User;
+use Folklore\Contracts\Services\CustomerIo;
+use Folklore\Contracts\Services\CustomerIo\Campaign as CampaignContract;
+use Folklore\Contracts\Services\CustomerIo\CampaignAction as CampaignActionContract;
 use Folklore\Contracts\Services\CustomerIo\Customer as CustomerContract;
 use Folklore\Contracts\Services\CustomerIo\CustomerIdentifiers;
+use Folklore\Contracts\Services\CustomerIo\CustomerObject as CustomerObjectContract;
 use Folklore\Contracts\Services\CustomerIo\Delivery as DeliveryContract;
 use Folklore\Contracts\Services\CustomerIo\DeliveryMessage as DeliveryMessageContract;
-use Folklore\Contracts\Services\CustomerIo\Newsletter as NewsletterContract;
-use Folklore\Contracts\Services\CustomerIo\NewsletterContent as NewsletterContentContract;
-use Folklore\Contracts\Services\CustomerIo\CampaignAction as CampaignActionContract;
-use Folklore\Contracts\Services\CustomerIo\TransactionalMessage as TransactionalMessageContract;
-use Folklore\Contracts\Services\CustomerIo\Campaign as CampaignContract;
 use Folklore\Contracts\Services\CustomerIo\HasCustomerData;
 use Folklore\Contracts\Services\CustomerIo\HasIdentifier;
 use Folklore\Contracts\Services\CustomerIo\HasSubscriptionPreferences;
+use Folklore\Contracts\Services\CustomerIo\Newsletter as NewsletterContract;
+use Folklore\Contracts\Services\CustomerIo\NewsletterContent as NewsletterContentContract;
+use Folklore\Contracts\Services\CustomerIo\TransactionalMessage as TransactionalMessageContract;
+use Folklore\Support\Concerns\MakesRequests;
+use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Translation\HasLocalePreference;
-use Folklore\Contracts\Services\CustomerIo\CustomerObject as CustomerObjectContract;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 class Client implements CustomerIo
 {
@@ -42,10 +42,10 @@ class Client implements CustomerIo
         ?string $trackBaseUrl = null,
         protected bool $debug = false
     ) {
-        if (!empty($apiBaseUrl)) {
+        if (! empty($apiBaseUrl)) {
             $this->apiBaseUrl = rtrim($apiBaseUrl, '/');
         }
-        if (!empty($trackBaseUrl)) {
+        if (! empty($trackBaseUrl)) {
             $this->trackBaseUrl = rtrim($trackBaseUrl, '/');
         }
     }
@@ -53,7 +53,7 @@ class Client implements CustomerIo
     public function findCustomerFromUser($user): ?CustomerContract
     {
         $email = $user instanceof User || $user instanceof Contact ? $user->email() : null;
-        $customer = !empty($email) ? $this->findCustomerByEmail($email) : null;
+        $customer = ! empty($email) ? $this->findCustomerByEmail($email) : null;
         if (isset($customer)) {
             return $customer;
         }
@@ -64,7 +64,7 @@ class Client implements CustomerIo
         }
 
         $phone = $user instanceof Contact ? $user->phone() : null;
-        $customer = !empty($phone) ? $this->findCustomerByPhone($phone) : null;
+        $customer = ! empty($phone) ? $this->findCustomerByPhone($phone) : null;
         $customerEmail = isset($customer) ? $customer->email() : null;
         if (isset($customer) && (empty($customerEmail) || $customerEmail === $email)) {
             return $customer;
@@ -76,9 +76,10 @@ class Client implements CustomerIo
     public function findCustomerByIdentifier($identifier): ?CustomerContract
     {
         $identifiers = $this->getIdentifiersFromItem($identifier);
-        if (!isset($identifiers)) {
+        if (! isset($identifiers)) {
             return null;
         }
+
         return $this->findCustomerById(array_values($identifiers)[0], array_keys($identifiers)[0]);
     }
 
@@ -88,6 +89,7 @@ class Client implements CustomerIo
             'id_type' => $type,
         ]);
         $data = data_get($response, 'customer');
+
         return isset($data) ? new Customer($data) : null;
     }
 
@@ -97,7 +99,8 @@ class Client implements CustomerIo
             'email' => $email,
         ]);
         $id = data_get($response, 'results.0.cio_id');
-        return !is_null($id) ? $this->findCustomerById($id) : null;
+
+        return ! is_null($id) ? $this->findCustomerById($id) : null;
     }
 
     public function findCustomerByPhone(string $phone): ?CustomerContract
@@ -116,13 +119,15 @@ class Client implements CustomerIo
             ],
         ]);
         $id = data_get($response, 'identifiers.0.cio_id');
-        return !is_null($id) ? $this->findCustomerById($id) : null;
+
+        return ! is_null($id) ? $this->findCustomerById($id) : null;
     }
 
     public function findDeliveryById(string $id): ?DeliveryContract
     {
         $response = $this->requestJson(sprintf('/v1/messages/%s', $id), 'GET');
         $data = data_get($response, 'message');
+
         return isset($data) ? new Delivery($data, $this) : null;
     }
 
@@ -130,6 +135,7 @@ class Client implements CustomerIo
     {
         $response = $this->requestJson(sprintf('/v1/messages/%s/archived_message', $id), 'GET');
         $data = data_get($response, 'archived_message');
+
         return isset($data) ? new DeliveryMessage($data, $this) : null;
     }
 
@@ -146,13 +152,14 @@ class Client implements CustomerIo
         $response = $this->requestJson(
             sprintf('/v1/customers/%s/messages', array_values($identifiers)[0]),
             'GET',
-            array_merge(!empty($cursor) ? ['start' => $cursor] : [], $query, [
+            array_merge(! empty($cursor) ? ['start' => $cursor] : [], $query, [
                 'id_type' => array_keys($identifiers)[0],
                 'limit' => $count,
             ])
         );
         $data = data_get($response, 'messages', []);
         $next = data_get($response, 'next');
+
         return (new CollectionWithCursor($data))->setCursor($next)->map(function ($item) {
             return new Delivery($item, $this);
         });
@@ -162,6 +169,7 @@ class Client implements CustomerIo
     {
         $response = $this->requestJson(sprintf('/v1/newsletters/%s', $id), 'GET');
         $data = data_get($response, 'newsletter');
+
         return isset($data) ? new Newsletter($data, $this) : null;
     }
 
@@ -174,6 +182,7 @@ class Client implements CustomerIo
             'GET'
         );
         $data = data_get($response, 'content');
+
         return isset($data) ? new NewsletterContent($data) : null;
     }
 
@@ -182,12 +191,13 @@ class Client implements CustomerIo
         $response = $this->requestJson(
             '/v1/newsletters',
             'GET',
-            array_merge(!empty($cursor) ? ['start' => $cursor] : [], $query, [
+            array_merge(! empty($cursor) ? ['start' => $cursor] : [], $query, [
                 'limit' => $count,
             ])
         );
         $data = data_get($response, 'newsletters', []);
         $next = data_get($response, 'next');
+
         return (new CollectionWithCursor($data))
             ->map(function ($item) {
                 return new Newsletter($item, $this);
@@ -199,6 +209,7 @@ class Client implements CustomerIo
     {
         $response = $this->requestJson(sprintf('/v1/campaigns/%s', $id), 'GET');
         $data = data_get($response, 'campaign');
+
         return isset($data) ? new Campaign($data) : null;
     }
 
@@ -211,6 +222,7 @@ class Client implements CustomerIo
             'GET'
         );
         $data = data_get($response, 'action');
+
         return isset($data) ? new CampaignAction($data) : null;
     }
 
@@ -218,12 +230,14 @@ class Client implements CustomerIo
     {
         $response = $this->requestJson(sprintf('/v1/transactional/%s', $id), 'GET');
         $data = data_get($response, 'message');
+
         return isset($data) ? new TransactionalMessage($data) : null;
     }
 
     public function findTransactionalMessageByName(string $name): ?TransactionalMessageContract
     {
         $slug = Str::slug($name);
+
         return $this->getTransactionalMessages()->first(function ($item) use ($slug) {
             return Str::slug($item->name()) == $slug;
         });
@@ -236,12 +250,13 @@ class Client implements CustomerIo
     ): bool {
         $customer = $this->findCustomerFromUser($user);
         $userData = $this->getCustomerDataFromItem($user, $customer);
-        if (!isset($userData)) {
+        if (! isset($userData)) {
             return false;
         }
         $identifier = isset($customer)
-            ? 'cio_' . $customer->id()
+            ? 'cio_'.$customer->id()
             : $this->getIdentifierFromItem($user);
+
         return $this->updateCustomer($identifier, array_merge($userData, $extraData));
     }
 
@@ -261,7 +276,8 @@ class Client implements CustomerIo
                 )
             )
             : null;
-        return !is_null($response);
+
+        return ! is_null($response);
     }
 
     public function deleteCustomer($identifier): bool
@@ -274,15 +290,17 @@ class Client implements CustomerIo
                 'identifiers' => $identifiers,
             ])
             : null;
-        return !is_null($response);
+
+        return ! is_null($response);
     }
 
     public function deleteCustomerFromUser($user): bool
     {
         $customer = $this->findCustomerFromUser($user);
         $identifier = isset($customer)
-            ? 'cio_' . $customer->id()
+            ? 'cio_'.$customer->id()
             : $this->getIdentifierFromItem($user);
+
         return $this->deleteCustomer($identifier);
     }
 
@@ -300,6 +318,7 @@ class Client implements CustomerIo
                 'cio_id' => $mergeCustomer->id(),
             ],
         ]);
+
         return $this->findCustomerById($customer->id());
     }
 
@@ -307,9 +326,10 @@ class Client implements CustomerIo
     {
         $customer = $this->findCustomerFromUser($user);
         $mergeCustomer = $this->findCustomerFromUser($mergeUser);
-        if (!isset($customer) || !isset($mergeCustomer)) {
+        if (! isset($customer) || ! isset($mergeCustomer)) {
             return $customer;
         }
+
         return $this->mergeCustomers($customer, $mergeCustomer);
     }
 
@@ -318,14 +338,15 @@ class Client implements CustomerIo
         $customer = $this->findCustomerByEmail($email);
         $userData = array_merge(
             [
-                'cio_subscription_preferences.topics.' . $topic => true,
+                'cio_subscription_preferences.topics.'.$topic => true,
             ],
             $data
         );
         $identifier = $email;
         if (isset($customer)) {
-            $identifier = 'cio_' . $customer->id();
+            $identifier = 'cio_'.$customer->id();
         }
+
         return $this->updateCustomer($identifier, $userData);
     }
 
@@ -334,14 +355,15 @@ class Client implements CustomerIo
         $customer = $this->findCustomerByEmail($email);
         $userData = array_merge(
             [
-                'cio_subscription_preferences.topics.' . $topic => false,
+                'cio_subscription_preferences.topics.'.$topic => false,
             ],
             $data
         );
         $identifier = $email;
         if (isset($customer)) {
-            $identifier = 'cio_' . $customer->id();
+            $identifier = 'cio_'.$customer->id();
         }
+
         return $this->updateCustomer($identifier, $userData);
     }
 
@@ -376,8 +398,9 @@ class Client implements CustomerIo
                         ->subscriptionPreferences()
                         ->reduce(function ($currentData, $preference) {
                             $currentData[
-                                'cio_subscription_preferences.topics.' . $preference->topic()
+                                'cio_subscription_preferences.topics.'.$preference->topic()
                             ] = $preference->subscribed();
+
                             return $currentData;
                         }, $data)
                     : $data;
@@ -385,12 +408,14 @@ class Client implements CustomerIo
         if ($item instanceof HasCustomerData) {
             return $item->getCustomerData($data, $customer);
         }
+
         return $data;
     }
 
     protected function getIdentifierFromItem($item)
     {
         $identifiers = $this->getIdentifiersFromItem($item);
+
         return data_get(
             $identifiers,
             'cio_id',
@@ -416,7 +441,7 @@ class Client implements CustomerIo
         }
 
         $cioId = $item instanceof CustomerIdentifiers ? $item->cioId() : null;
-        if (!empty($cioId)) {
+        if (! empty($cioId)) {
             return [
                 'cio_id' => $cioId,
             ];
@@ -427,17 +452,18 @@ class Client implements CustomerIo
             $item instanceof CustomerIdentifiers
                 ? $item->email()
                 : null;
-        if (!empty($email)) {
+        if (! empty($email)) {
             return [
                 'email' => $email,
             ];
         }
         $id = $item instanceof Entity || $item instanceof CustomerIdentifiers ? $item->id() : null;
-        if (!empty($id)) {
+        if (! empty($id)) {
             return [
                 'id' => $id,
             ];
         }
+
         return null;
     }
 
@@ -456,6 +482,7 @@ class Client implements CustomerIo
                 'email' => $identifier,
             ];
         }
+
         return is_numeric($identifier)
             ? [
                 'id' => $identifier,
@@ -466,6 +493,7 @@ class Client implements CustomerIo
     public function getTransactionalMessages(): Collection
     {
         $response = $this->requestJson('/v1/transactional', 'GET');
+
         return collect(data_get($response, 'messages', []))->map(function ($item) {
             return new TransactionalMessage($item);
         });
@@ -474,19 +502,21 @@ class Client implements CustomerIo
     public function sendEmail($message, string $to)
     {
         $data = $message instanceof Arrayable ? $message->toArray() : $message;
-        if (!isset($data['to'])) {
+        if (! isset($data['to'])) {
             $data['to'] = $to;
         }
         $data['identifiers'] = [
             'email' => $to,
         ];
         $response = $this->requestJson('/v1/send/email', 'POST', $data);
+
         return $response;
     }
 
     public function triggerWebhook(string $url, array $data)
     {
         $response = $this->requestJson($url, 'POST', $data);
+
         return $response;
     }
 
@@ -499,7 +529,7 @@ class Client implements CustomerIo
                 ];
             })
             ->filter(function ($relationship) {
-                return !is_null($relationship);
+                return ! is_null($relationship);
             })
             ->values();
 
@@ -518,6 +548,7 @@ class Client implements CustomerIo
         }
 
         $response = $this->trackEntity($request);
+
         return $response;
     }
 
@@ -536,7 +567,7 @@ class Client implements CustomerIo
                     ];
             })
             ->filter(function ($relationship) {
-                return !is_null($relationship);
+                return ! is_null($relationship);
             })
             ->values()
             ->toArray();
@@ -570,18 +601,21 @@ class Client implements CustomerIo
             'GET'
         );
         $data = data_get($response, 'object');
+
         return isset($data) ? new CustomerObject($data) : null;
     }
 
     public function trackUserPageview($user, string $url, $data): bool
     {
         $identifier = $this->getIdentifierFromItem($user);
+
         return $this->trackCustomerEventBase($identifier, 'page', $url, $data) !== null;
     }
 
     public function trackUserEvent($user, string $name, $data): bool
     {
         $identifier = $this->getIdentifierFromItem($user);
+
         return $this->trackCustomerEventBase($identifier, 'event', $name, $data) !== null;
     }
 
@@ -598,6 +632,7 @@ class Client implements CustomerIo
     protected function trackCustomerEventBase($identifier, $action, $name, $data): ?array
     {
         $identifiers = $this->getIdentifiersFromIdentifier($identifier);
+
         return $this->trackEntity(
             array_merge(
                 [
@@ -642,8 +677,9 @@ class Client implements CustomerIo
     protected function getAuthorizationHeader($url)
     {
         if (in_array($url, ['/api/v2/entity', '/api/v1/events'])) {
-            return sprintf('Basic %s', base64_encode($this->siteId . ':' . $this->trackingKey));
+            return sprintf('Basic %s', base64_encode($this->siteId.':'.$this->trackingKey));
         }
+
         return sprintf('Bearer %s', $this->key);
     }
 

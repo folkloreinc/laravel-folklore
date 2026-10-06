@@ -14,9 +14,10 @@ trait HasTypedEntity
     {
         $column = isset($this->entityTypeColumn) ? $this->entityTypeColumn : 'type';
         $type = $this->{$column};
-        $entity = !empty($type)
+        $entity = ! empty($type)
             ? data_get($this->entitiesByType, $type, null)
             : null;
+
         return isset($entity) ? new $entity($this) : null;
     }
 }

@@ -2,9 +2,8 @@
 
 namespace Folklore\Console;
 
-use Illuminate\Console\Command;
-
 use Folklore\Contracts\Services\PubSubHubbub\Factory;
+use Illuminate\Console\Command;
 
 class PubSubHubbubUnsubscribe extends Command
 {
@@ -50,16 +49,16 @@ class PubSubHubbubUnsubscribe extends Command
         $callback =
             filter_var($callback, FILTER_VALIDATE_URL) === false ? route($callback) : $callback;
         $this->line(
-            '<comment>Unsubscribing:</comment> ' . $callback . ' to topic ' . $topic . '...'
+            '<comment>Unsubscribing:</comment> '.$callback.' to topic '.$topic.'...'
         );
         $response = $client->unsubscribe(
             filter_var($callback, FILTER_VALIDATE_URL) === false ? route($callback) : $callback,
             $topic
         );
         if ($response !== true) {
-            $this->line('<error>Error:</error> ' . $response);
+            $this->line('<error>Error:</error> '.$response);
         } else {
-            $this->line('<info>Unsubscribed:</info> Topic ' . $topic . '.');
+            $this->line('<info>Unsubscribed:</info> Topic '.$topic.'.');
         }
     }
 }

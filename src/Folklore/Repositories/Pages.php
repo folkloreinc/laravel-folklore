@@ -2,10 +2,10 @@
 
 namespace Folklore\Repositories;
 
-use Folklore\Models\Page as PageModel;
+use Folklore\Contracts\Entities\Page as PageContract;
 use Folklore\Contracts\Repositories\Blocks as BlocksRepositoryContract;
 use Folklore\Contracts\Repositories\Pages as PagesRepositoryContract;
-use Folklore\Contracts\Entities\Page as PageContract;
+use Folklore\Models\Page as PageModel;
 
 class Pages extends Entities implements PagesRepositoryContract
 {
@@ -20,7 +20,7 @@ class Pages extends Entities implements PagesRepositoryContract
 
     protected function newModel(): PageModel
     {
-        return new PageModel();
+        return new PageModel;
     }
 
     protected function newQuery()
@@ -38,6 +38,7 @@ class Pages extends Entities implements PagesRepositoryContract
         $model = $this->newQueryWithParams()
             ->where('handle', $handle)
             ->first();
+
         return to_entity($model);
     }
 
@@ -48,8 +49,9 @@ class Pages extends Entities implements PagesRepositoryContract
         }
 
         $model = $this->newQueryWithParams()
-            ->where('slug_' . $locale, $slug)
+            ->where('slug_'.$locale, $slug)
             ->first();
+
         return to_entity($model);
     }
 
@@ -75,12 +77,13 @@ class Pages extends Entities implements PagesRepositoryContract
                             ->where('handle', $item['handle'])
                             ->value('blocks.id');
                     }
-                    return !empty($id)
+
+                    return ! empty($id)
                         ? $this->blocks->update($id, $item)
                         : $this->blocks->create($item);
                 })
                 ->filter(function ($block) {
-                    return !is_null($block);
+                    return ! is_null($block);
                 })
                 ->values()
                 ->toArray();

@@ -24,9 +24,9 @@ trait SluggableWithFallback
 
         foreach ($locales as $locale) {
             $title = data_get($this, sprintf($source, $locale));
-            $slugs['slug_' . $locale] = array_merge(
+            $slugs['slug_'.$locale] = array_merge(
                 [
-                    'source' => sprintf($source, !empty($title) ? $locale : $fallbackLocale),
+                    'source' => sprintf($source, ! empty($title) ? $locale : $fallbackLocale),
                 ],
                 $options
             );
@@ -45,11 +45,11 @@ trait SluggableWithFallback
 
             $slugs[sprintf($column, $locale)] = array_merge(
                 [
-                    'source' =>
-                        $localesKey->first(function ($key) {
-                            $value = data_get($this, $key);
-                            return !empty($value);
-                        }) ?? 'id',
+                    'source' => $localesKey->first(function ($key) {
+                        $value = data_get($this, $key);
+
+                        return ! empty($value);
+                    }) ?? 'id',
                 ],
                 $options
             );
@@ -58,8 +58,8 @@ trait SluggableWithFallback
         if ($previousSource !== null) {
             foreach ($locales as $locale) {
                 $previousValue = data_get($this, sprintf($previousSource, $locale));
-                if (!is_null($previousValue)) {
-                    $slugs['slug_' . $locale] = array_merge($options, [
+                if (! is_null($previousValue)) {
+                    $slugs['slug_'.$locale] = array_merge($options, [
                         'source' => sprintf($previousSource, $locale),
                     ]);
                 }

@@ -2,8 +2,8 @@
 
 namespace Folklore\Services\CustomerIo;
 
-use Folklore\Contracts\Services\CustomerIo\Customer as CustomerContract;
 use Carbon\Carbon;
+use Folklore\Contracts\Services\CustomerIo\Customer as CustomerContract;
 use Illuminate\Support\Collection;
 
 class Customer implements CustomerContract
@@ -53,7 +53,8 @@ class Customer implements CustomerContract
     public function birthdate(): ?Carbon
     {
         $date = data_get($this->data, 'birthdate', data_get($this->data, 'attributes.birthdate'));
-        return !empty($date) ? Carbon::parse($date) : null;
+
+        return ! empty($date) ? Carbon::parse($date) : null;
     }
 
     public function preferredLocale()
@@ -69,13 +70,15 @@ class Customer implements CustomerContract
     public function createdAt(): ?Carbon
     {
         $date = data_get($this->data, 'created_at', data_get($this->data, 'attributes.created_at'));
-        return !empty($date) ? Carbon::parse($date) : null;
+
+        return ! empty($date) ? Carbon::parse($date) : null;
     }
 
     public function subscriptionPreferences(): Collection
     {
         $data = data_get($this->data, 'attributes._cio_subscription_preferences_computed', null);
-        $data = !empty($data) && is_string($data) ? json_decode($data, true) : $data;
+        $data = ! empty($data) && is_string($data) ? json_decode($data, true) : $data;
+
         return collect(data_get($data, 'topics', []))
             ->map(function ($value, $key) {
                 return new SubscriptionPreference($key, $value);

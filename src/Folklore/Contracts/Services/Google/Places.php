@@ -2,9 +2,9 @@
 
 namespace Folklore\Contracts\Services\Google;
 
-use Folklore\Contracts\Services\Google\Places\Region;
 use Folklore\Contracts\Services\Google\Places\Bounds;
 use Folklore\Contracts\Services\Google\Places\Location;
+use Folklore\Contracts\Services\Google\Places\Region;
 
 interface Places
 {

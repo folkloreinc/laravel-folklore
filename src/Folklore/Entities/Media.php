@@ -4,14 +4,14 @@ namespace Folklore\Entities;
 
 use Carbon\Carbon;
 use Folklore\Contracts\Entities\HasModel;
-use Illuminate\Support\Collection;
 use Folklore\Contracts\Entities\Media as MediaContract;
 use Folklore\Contracts\Entities\MediaFile as MediaFileContract;
 use Folklore\Contracts\Entities\MediaMetadata as MediaMetadataContract;
 use Folklore\Models\Media as MediaModel;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
-class Media implements MediaContract, HasModel
+class Media implements HasModel, MediaContract
 {
     protected $model;
 
@@ -44,16 +44,17 @@ class Media implements MediaContract, HasModel
     public function url(): string
     {
         $originalFile = $this->getOriginalFile();
+
         return $originalFile->url();
     }
 
     public function thumbnailUrl(): ?string
     {
-        if (!isset($this->thumbnailUrl)) {
+        if (! isset($this->thumbnailUrl)) {
             $thumbnailFile = $this->files()->first(function ($file) {
                 return preg_match('/^thumbnail/', $file->handle()) === 1;
             });
-            if (!is_null($thumbnailFile)) {
+            if (! is_null($thumbnailFile)) {
                 $this->thumbnailUrl = $thumbnailFile->url();
             } elseif ($this->type() === 'image') {
                 $this->thumbnailUrl = $this->url();
@@ -65,19 +66,21 @@ class Media implements MediaContract, HasModel
 
     public function files(): Collection
     {
-        if (!isset($this->files)) {
+        if (! isset($this->files)) {
             $this->files = $this->model->files->toBase()->map(function ($item) {
                 return to_entity($item);
             });
         }
+
         return $this->files;
     }
 
     public function metadata(): MediaMetadataContract
     {
-        if (!isset($this->metadata)) {
+        if (! isset($this->metadata)) {
             $this->metadata = new MediaMetadata($this->model);
         }
+
         return $this->metadata;
     }
 

@@ -2,13 +2,13 @@
 
 namespace Folklore\Repositories;
 
-use Folklore\Contracts\Repositories\Users as UsersContract;
 use Folklore\Contracts\Entities\User as UserContract;
+use Folklore\Contracts\Repositories\Users as UsersContract;
+use Folklore\Models\User as UserModel;
+use Illuminate\Auth\EloquentUserProvider;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Hashing\Hasher;
-use Illuminate\Auth\EloquentUserProvider;
 use Illuminate\Database\Eloquent\Model;
-use Folklore\Models\User as UserModel;
 use Illuminate\Support\Facades\Hash;
 
 class Users extends Entities implements UsersContract
@@ -22,7 +22,7 @@ class Users extends Entities implements UsersContract
 
     protected function newModel(): Model
     {
-        return new UserModel();
+        return new UserModel;
     }
 
     public function findById(string $id): ?UserContract
@@ -35,6 +35,7 @@ class Users extends Entities implements UsersContract
         $model = $this->newQuery()
             ->where('email', 'LIKE', $email)
             ->first();
+
         return to_entity($model);
     }
 
@@ -52,7 +53,7 @@ class Users extends Entities implements UsersContract
     {
         parent::fillModel($model, $data);
 
-        if (isset($data['password']) && !empty($data['password'])) {
+        if (isset($data['password']) && ! empty($data['password'])) {
             $model->password = Hash::make($data['password']);
         }
     }
@@ -61,11 +62,12 @@ class Users extends Entities implements UsersContract
      * Retrieve a user by their unique identifier.
      *
      * @param  mixed  $identifier
-     * @return \Illuminate\Contracts\Auth\Authenticatable|null
+     * @return Authenticatable|null
      */
     public function retrieveById($identifier)
     {
         $model = $this->userProvider->retrieveById($identifier);
+
         return to_entity($model);
     }
 
@@ -74,26 +76,27 @@ class Users extends Entities implements UsersContract
      *
      * @param  mixed  $identifier
      * @param  string  $token
-     * @return \Illuminate\Contracts\Auth\Authenticatable|null
+     * @return Authenticatable|null
      */
     public function retrieveByToken($identifier, $token)
     {
         $model = $this->userProvider->retrieveByToken($identifier, $token);
+
         return to_entity($model);
     }
 
     /**
      * Update the "remember me" token for the given user in storage.
      *
-     * @param  \Illuminate\Contracts\Auth\Authenticatable  $user
      * @param  string  $token
      * @return void
      */
     public function updateRememberToken(Authenticatable $user, $token)
     {
-        if (!is_null($user)) {
+        if (! is_null($user)) {
             $id = $user instanceof UserContract ? $user->id() : $user->id;
             $model = $this->findModelById($id);
+
             return $this->userProvider->updateRememberToken($model, $token);
         }
     }
@@ -101,8 +104,7 @@ class Users extends Entities implements UsersContract
     /**
      * Retrieve a user by the given credentials.
      *
-     * @param  array  $credentials
-     * @return \Illuminate\Contracts\Auth\Authenticatable|null
+     * @return Authenticatable|null
      */
     public function retrieveByCredentials(array $credentials)
     {
@@ -114,8 +116,6 @@ class Users extends Entities implements UsersContract
     /**
      * Validate a user against the given credentials.
      *
-     * @param  \Illuminate\Contracts\Auth\Authenticatable  $user
-     * @param  array  $credentials
      * @return bool
      */
     public function validateCredentials(Authenticatable $user, array $credentials)

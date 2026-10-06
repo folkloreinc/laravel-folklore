@@ -2,16 +2,16 @@
 
 namespace Folklore\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Folklore\Mediatheque\Support\Traits\HasMedias;
+use Folklore\Contracts\Eloquent\HasJsonDataRelations;
 use Folklore\Contracts\Entities\Block as BlockContract;
 use Folklore\Contracts\Entities\ToEntity;
-use Folklore\Entities\Block as BlockEntity;
 use Folklore\Eloquent\JsonDataCast;
-use Folklore\Contracts\Eloquent\HasJsonDataRelations;
+use Folklore\Entities\Block as BlockEntity;
+use Folklore\Mediatheque\Support\Traits\HasMedias;
 use Folklore\Support\Concerns\HasTypedEntity;
+use Illuminate\Database\Eloquent\Model;
 
-class Block extends Model implements ToEntity, HasJsonDataRelations
+class Block extends Model implements HasJsonDataRelations, ToEntity
 {
     use HasMedias, HasTypedEntity;
 

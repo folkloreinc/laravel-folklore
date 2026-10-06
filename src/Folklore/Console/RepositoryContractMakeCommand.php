@@ -2,9 +2,9 @@
 
 namespace Folklore\Console;
 
+use Illuminate\Support\Str;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputOption;
-use Illuminate\Support\Str;
 
 #[AsCommand(name: 'make:repository-contract')]
 class RepositoryContractMakeCommand extends GeneratorCommand
@@ -80,7 +80,7 @@ class RepositoryContractMakeCommand extends GeneratorCommand
     {
         return file_exists($customPath = $this->laravel->basePath(trim($stub, '/')))
             ? $customPath
-            : __DIR__ . '/../..' . $stub;
+            : __DIR__.'/../..'.$stub;
     }
 
     /**
@@ -91,7 +91,7 @@ class RepositoryContractMakeCommand extends GeneratorCommand
      */
     protected function getDefaultNamespace($rootNamespace)
     {
-        return $rootNamespace . '\Contracts\Repositories';
+        return $rootNamespace.'\Contracts\Repositories';
     }
 
     /**

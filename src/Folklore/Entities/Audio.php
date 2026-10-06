@@ -1,6 +1,6 @@
 <?php
 
-namespace  Folklore\Entities;
+namespace Folklore\Entities;
 
 use Folklore\Contracts\Entities\Audio as AudioContract;
 use Folklore\Contracts\Entities\AudioMetadata as AudioMetadataContract;

@@ -2,8 +2,8 @@
 
 namespace Folklore\Support\Concerns;
 
-use Folklore\Contracts\Entities\HasModel;
 use Folklore\Contracts\Entities\Entity;
+use Folklore\Contracts\Entities\HasModel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
 
@@ -23,9 +23,9 @@ trait SyncRelations
                 $keyName = $related->getKeyName();
                 $existing = isset($item[$key])
                     ? $related
-                    ->newQuery()
-                    ->where($key, $item[$key])
-                    ->first()
+                        ->newQuery()
+                        ->where($key, $item[$key])
+                        ->first()
                     : null;
                 // Fix this
                 if ($keyName === $key || isset($item[$keyName])) {
@@ -34,6 +34,7 @@ trait SyncRelations
 
                 return isset($existing) ? $existing->fill($item) : $related->newInstance($item);
             }
+
             return $item;
         });
         $keys = $items
@@ -47,13 +48,14 @@ trait SyncRelations
             })
             ->values()
             ->merge(
-                !$keys->isEmpty()
+                ! $keys->isEmpty()
                     ? $related
-                    ->newQuery()
-                    ->whereIn($key, $keys->toArray())
-                    ->get()
+                        ->newQuery()
+                        ->whereIn($key, $keys->toArray())
+                        ->get()
                     : []
             );
+
         return $relation->saveMany($models);
     }
 
@@ -64,6 +66,7 @@ trait SyncRelations
             return $model->{$key};
         });
         $relation->whereNotIn($key, $keys)->delete();
+
         return $models;
     }
 }

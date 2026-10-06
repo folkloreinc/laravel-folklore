@@ -5,8 +5,8 @@ namespace Folklore\Site;
 use Folklore\Contracts\Site\Factory;
 use Folklore\Contracts\Site\Site;
 use Illuminate\Contracts\Container\Container;
-use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use InvalidArgumentException;
 
 class Manager implements Factory
@@ -28,6 +28,7 @@ class Manager implements Factory
         if (is_null($site)) {
             throw new InvalidArgumentException('Invalid site');
         }
+
         return $site;
     }
 
@@ -40,12 +41,13 @@ class Manager implements Factory
 
     public function sites(): Collection
     {
-        if (!isset($this->sites)) {
+        if (! isset($this->sites)) {
             $sites = $this->container['config']->get('site.sites', []);
             $this->sites = collect($sites)->map(function ($site, $id) {
                 return $this->makeSite($site, $id);
             });
         }
+
         return $this->sites;
     }
 
@@ -57,6 +59,7 @@ class Manager implements Factory
         if (is_string($site)) {
             return $this->container->make($site);
         }
+
         return $site;
     }
 

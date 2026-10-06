@@ -2,18 +2,19 @@
 
 namespace Folklore\Http\Resources;
 
-use Illuminate\Http\Resources\Json\JsonResource;
 use Folklore\Contracts\Entities\AudioMetadata;
+use Folklore\Contracts\Entities\DocumentMetadata;
 use Folklore\Contracts\Entities\ImageMetadata;
 use Folklore\Contracts\Entities\VideoMetadata;
-use Folklore\Contracts\Entities\DocumentMetadata;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
 
 class MediaMetadataResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return array
      */
     public function toArray($request)
@@ -23,6 +24,7 @@ class MediaMetadataResource extends JsonResource
         $hasSize =
             $this->resource instanceof VideoMetadata || $this->resource instanceof ImageMetadata;
         $hasPagesCount = $this->resource instanceof DocumentMetadata;
+
         return [
             'filename' => $this->filename(),
             'size' => $this->size(),

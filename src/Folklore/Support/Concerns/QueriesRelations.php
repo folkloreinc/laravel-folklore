@@ -13,13 +13,13 @@ trait QueriesRelations
         return collect($belongsTo)->reduce(function ($query, $key) use ($params) {
             return collect([
                 $key,
-                'or_' . $key,
-                'exclude_' . $key,
-                'or_exclude_' . $key,
-                $key . '_id',
-                'or_' . $key . '_id',
-                'exclude_' . $key . '_id',
-                'or_exclude_' . $key . '_id',
+                'or_'.$key,
+                'exclude_'.$key,
+                'or_exclude_'.$key,
+                $key.'_id',
+                'or_'.$key.'_id',
+                'exclude_'.$key.'_id',
+                'or_exclude_'.$key.'_id',
             ])->reduce(function ($query, $paramName) use ($key, $params) {
                 $paramValue = data_get($params, $paramName);
                 if (empty($paramValue)) {
@@ -29,9 +29,10 @@ trait QueriesRelations
                 $or = preg_match('/^or_/', $paramName) === 1;
                 $exclude = preg_match('/^(or_)?exclude_/', $paramName) === 1;
                 $methodName = Str::camel(
-                    ($or ? 'or-' : '') . 'where-' . ($exclude ? 'not-in' : 'in')
+                    ($or ? 'or-' : '').'where-'.($exclude ? 'not-in' : 'in')
                 );
-                return $query->{$methodName}($key . '_id', $ids);
+
+                return $query->{$methodName}($key.'_id', $ids);
             }, $query);
         }, $query);
     }
@@ -45,11 +46,12 @@ trait QueriesRelations
                 if (is_numeric($paramName)) {
                     $paramName = $relation;
                 }
+
                 return collect([
                     $paramName,
-                    'or_' . $paramName,
-                    'exclude_' . $paramName,
-                    'or_exclude_' . $paramName,
+                    'or_'.$paramName,
+                    'exclude_'.$paramName,
+                    'or_exclude_'.$paramName,
                 ])->reduce(function ($query, $realParamName) use ($params, $relation) {
                     $paramValue = data_get($params, $realParamName);
                     if (empty($paramValue)) {
@@ -59,10 +61,11 @@ trait QueriesRelations
                     $or = preg_match('/^or_/', $realParamName) === 1;
                     $exclude = preg_match('/^(or_)?exclude_/', $realParamName) === 1;
                     $methodName = Str::camel(
-                        ($or ? 'or-' : '') . 'where-' . ($exclude ? 'doesnt-have' : 'has')
+                        ($or ? 'or-' : '').'where-'.($exclude ? 'doesnt-have' : 'has')
                     );
                     $relationName = is_array($relation) ? $relation[0] : $relation;
                     $column = is_array($relation) ? $relation[1] : 'id';
+
                     return $query->{$methodName}($relationName, function ($query) use (
                         $relationName,
                         $ids,
@@ -74,12 +77,13 @@ trait QueriesRelations
                                 $column($query, $ids, $relationName);
                             });
                         } else {
-                            $query->whereIn($table . '.' . $column, $ids);
+                            $query->whereIn($table.'.'.$column, $ids);
                         }
                     });
                 }, $query);
             },
-            $query);
+                $query);
+
             return $query;
         });
     }

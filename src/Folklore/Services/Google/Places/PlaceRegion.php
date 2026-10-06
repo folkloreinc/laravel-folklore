@@ -2,11 +2,10 @@
 
 namespace Folklore\Services\Google\Places;
 
+use Carbon\Carbon;
+use Folklore\Contracts\Services\Google\Places;
 use Folklore\Contracts\Services\Google\Places\Bounds as BoundsContract;
 use Folklore\Contracts\Services\Google\Places\Region;
-use Folklore\Contracts\Services\Google\Places;
-
-use Carbon\Carbon;
 use Google\Service\MapsPlaces\GoogleMapsPlacesV1PlaceAddressComponent;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Collection;
@@ -72,7 +71,7 @@ class PlaceRegion implements Arrayable, Region
 
     public function bounds(): ?BoundsContract
     {
-        if (!isset($this->bounds)) {
+        if (! isset($this->bounds)) {
             $this->bounds = resolve(Places::class)->findRegionBoundsByName(
                 $this->component->getLongText()
             );
@@ -83,7 +82,7 @@ class PlaceRegion implements Arrayable, Region
 
     public function handle(): string
     {
-        return Str::slug('level' . ($this->level() ?? '') . '-' . $this->label());
+        return Str::slug('level'.($this->level() ?? '').'-'.$this->label());
     }
 
     public function label(): string
@@ -108,7 +107,7 @@ class PlaceRegion implements Arrayable, Region
 
     public function uris(): Collection
     {
-        if (!isset($this->uris)) {
+        if (! isset($this->uris)) {
             $this->uris = collect([
                 [
                     'type' => 'slug',
@@ -116,10 +115,10 @@ class PlaceRegion implements Arrayable, Region
                 ],
             ])
                 ->filter(function ($item) {
-                    return !empty($item['uri']);
+                    return ! empty($item['uri']);
                 })
                 ->unique(function ($item) {
-                    return $item['type'] . '_' . $item['uri'];
+                    return $item['type'].'_'.$item['uri'];
                 })
                 ->values();
         }

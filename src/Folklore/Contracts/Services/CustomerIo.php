@@ -2,9 +2,6 @@
 
 namespace Folklore\Contracts\Services;
 
-use Folklore\Contracts\Entities\Contact;
-use Illuminate\Support\Collection;
-use Folklore\Contracts\Entities\User;
 use Folklore\Contracts\Services\CustomerIo\Campaign;
 use Folklore\Contracts\Services\CustomerIo\CampaignAction;
 use Folklore\Contracts\Services\CustomerIo\Customer;
@@ -15,7 +12,7 @@ use Folklore\Contracts\Services\CustomerIo\Newsletter;
 use Folklore\Contracts\Services\CustomerIo\NewsletterContent;
 use Folklore\Contracts\Services\CustomerIo\TransactionalMessage;
 use Folklore\Services\CustomerIo\CollectionWithCursor;
-use Illuminate\Contracts\Pagination\CursorPaginator;
+use Illuminate\Support\Collection;
 
 interface CustomerIo
 {

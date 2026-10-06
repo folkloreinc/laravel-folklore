@@ -2,18 +2,19 @@
 
 namespace Folklore\Broadcasters;
 
-use PubNub\PubNub;
-use Illuminate\Broadcasting\Broadcasters\Broadcaster;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
 use Exception;
+use Illuminate\Broadcasting\Broadcasters\Broadcaster;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use PubNub\PubNub;
 
 class PubNubBroadcaster extends Broadcaster
 {
     /**
      * The PubNub SDK instance.
      *
-     * @var \PubNub\PubNub
+     * @var PubNub
      */
     protected $pubnub;
 
@@ -47,14 +48,14 @@ class PubNubBroadcaster extends Broadcaster
     /**
      * Authenticate the incoming request for a given channel.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @return mixed
      */
     public function auth($request)
     {
         if (
             Str::startsWith($request->channel_name, ['private-', 'presence-']) &&
-            !$request->user()
+            ! $request->user()
         ) {
             throw new HttpException(403);
         }
@@ -69,7 +70,7 @@ class PubNubBroadcaster extends Broadcaster
     /**
      * Return the valid authentication response.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @param  mixed  $result
      * @return mixed
      */
@@ -101,7 +102,7 @@ class PubNubBroadcaster extends Broadcaster
         foreach ($channels as $channel) {
             $channel = $this->getChannelWithNamespace($channel);
             $hasPresence = data_get($presence, $channel, true);
-            if (!$hasPresence) {
+            if (! $hasPresence) {
                 continue;
             }
             try {
@@ -130,6 +131,7 @@ class PubNubBroadcaster extends Broadcaster
                         ->toArray()
                 )
                 ->sync();
+
             return collect($result->getChannels())
                 ->mapWithKeys(function ($channel) {
                     return [
@@ -140,19 +142,20 @@ class PubNubBroadcaster extends Broadcaster
         } catch (Exception $e) {
             Log::error($e);
         }
+
         return null;
     }
 
     /**
      * Get the channel with namespace
      *
-     * @param string $channel The name of the channel
+     * @param  string  $channel  The name of the channel
      * @return string
      */
     protected function getChannelWithNamespace($channel)
     {
         $parts = [];
-        if (!empty($this->namespace)) {
+        if (! empty($this->namespace)) {
             $parts[] = $this->namespace;
         }
         $parts[] = $channel;
@@ -163,7 +166,7 @@ class PubNubBroadcaster extends Broadcaster
     /**
      * Get the PubNub SDK instance.
      *
-     * @return \PubNub\PubNub
+     * @return PubNub
      */
     public function getPubNub()
     {

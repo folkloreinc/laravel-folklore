@@ -26,8 +26,8 @@ abstract class GeneratorCommand extends BaseGeneratorCommand
             'DummyModelClass' => class_basename($modelClass),
             '{{ model }}' => class_basename($modelClass),
             '{{model}}' => class_basename($modelClass),
-            '{{ modelAlias }}' => class_basename($modelClass) . 'Model',
-            '{{modelAlias}}' => class_basename($modelClass) . 'Model',
+            '{{ modelAlias }}' => class_basename($modelClass).'Model',
+            '{{modelAlias}}' => class_basename($modelClass).'Model',
             'DummyModelVariable' => lcfirst(class_basename($modelClass)),
             '{{ modelVariable }}' => lcfirst(class_basename($modelClass)),
             '{{modelVariable}}' => lcfirst(class_basename($modelClass)),
@@ -54,8 +54,8 @@ abstract class GeneratorCommand extends BaseGeneratorCommand
             'DummyEntityClass' => class_basename($entityClass),
             '{{ entity }}' => class_basename($entityClass),
             '{{entity}}' => class_basename($entityClass),
-            '{{ entityAlias }}' => class_basename($entityClass) . 'EntityContract',
-            '{{entityAlias}}' => class_basename($entityClass) . 'EntityContract',
+            '{{ entityAlias }}' => class_basename($entityClass).'EntityContract',
+            '{{entityAlias}}' => class_basename($entityClass).'EntityContract',
         ];
 
         return str_replace(array_keys($replace), array_values($replace), $stub);
@@ -67,7 +67,7 @@ abstract class GeneratorCommand extends BaseGeneratorCommand
      * @param  string  $model
      * @return string
      *
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     protected function parseModel($model)
     {

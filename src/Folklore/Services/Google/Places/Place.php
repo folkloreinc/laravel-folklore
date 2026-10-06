@@ -2,10 +2,9 @@
 
 namespace Folklore\Services\Google\Places;
 
+use Carbon\Carbon;
 use Folklore\Contracts\Services\Google\Places\Location;
 use Folklore\Contracts\Services\Google\Places\LocationMetadata as LocationMetadataContract;
-
-use Carbon\Carbon;
 use Google\Service\MapsPlaces\GoogleMapsPlacesV1Place;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Support\Collection;
@@ -48,6 +47,7 @@ class Place implements Arrayable, Location
     {
         $streetNumber = $this->getAddressComponent('street_number');
         $route = $this->getAddressComponent('route');
+
         return collect([$streetNumber, $route])
             ->filter(function ($component) {
                 return isset($component);
@@ -61,36 +61,42 @@ class Place implements Arrayable, Location
     public function city(): ?string
     {
         $component = $this->getAddressComponent('locality');
+
         return isset($component) ? $component->getLongText() : null;
     }
 
     public function postalCode(): ?string
     {
         $component = $this->getAddressComponent('postal_code');
+
         return isset($component) ? $component->getLongText() : null;
     }
 
     public function region(): ?string
     {
         $component = $this->getAddressComponent('administrative_area_level_1');
+
         return isset($component) ? $component->getLongText() : null;
     }
 
     public function country(): ?string
     {
         $component = $this->getAddressComponent('country');
+
         return isset($component) ? $component->getShortText() : null;
     }
 
     public function latitude(): ?float
     {
         $location = $this->place->getLocation();
+
         return isset($location) ? $location->getLatitude() : null;
     }
 
     public function longitude(): ?float
     {
         $location = $this->place->getLocation();
+
         return isset($location) ? $location->getLongitude() : null;
     }
 
@@ -111,7 +117,7 @@ class Place implements Arrayable, Location
 
     public function uris(): Collection
     {
-        if (!isset($this->uris)) {
+        if (! isset($this->uris)) {
             $this->uris = collect([
                 [
                     'type' => 'slug',
@@ -119,10 +125,10 @@ class Place implements Arrayable, Location
                 ],
             ])
                 ->filter(function ($item) {
-                    return !empty($item['uri']);
+                    return ! empty($item['uri']);
                 })
                 ->unique(function ($item) {
-                    return $item['type'] . '_' . $item['uri'];
+                    return $item['type'].'_'.$item['uri'];
                 })
                 ->values();
         }
@@ -132,9 +138,10 @@ class Place implements Arrayable, Location
 
     public function metadata(): LocationMetadataContract
     {
-        if (!isset($this->metadata)) {
+        if (! isset($this->metadata)) {
             $this->metadata = new PlaceMetadata($this->place, $this);
         }
+
         return $this->metadata;
     }
 
@@ -179,8 +186,8 @@ class Place implements Arrayable, Location
         return collect($this->place->getAddressComponents())->first(function ($component) use (
             $type
         ) {
-            return !is_null($component) &&
-                !is_null($component->getTypes()) &&
+            return ! is_null($component) &&
+                ! is_null($component->getTypes()) &&
                 in_array($type, $component->getTypes());
         });
     }

@@ -2,24 +2,24 @@
 
 namespace Folklore\Repositories;
 
-use Folklore\Contracts\Repositories\Organisations as OrganisationsContract;
 use Folklore\Contracts\Entities\Organisation as OrganisationContract;
 use Folklore\Contracts\Entities\OrganisationMember as OrganisationMemberContract;
 use Folklore\Contracts\Entities\User as UserContract;
-use Illuminate\Database\Eloquent\Model;
+use Folklore\Contracts\Repositories\Organisations as OrganisationsContract;
 use Folklore\Models\Organisation as OrganisationModel;
 use Folklore\Models\OrganisationMember as OrganisationMemberModel;
+use Illuminate\Database\Eloquent\Model;
 
 class Organisations extends Entities implements OrganisationsContract
 {
     protected function newModel(): Model
     {
-        return new OrganisationModel();
+        return new OrganisationModel;
     }
 
     protected function newMemberModel(): Model
     {
-        return new OrganisationMemberModel();
+        return new OrganisationMemberModel;
     }
 
     public function findById(string $id): ?OrganisationContract
@@ -32,6 +32,7 @@ class Organisations extends Entities implements OrganisationsContract
         $model = $this->newQueryWithParams()
             ->where('slug', 'LIKE', $slug)
             ->first();
+
         return to_entity($model);
     }
 
@@ -59,7 +60,7 @@ class Organisations extends Entities implements OrganisationsContract
             ->members()
             ->where('user_id', $user->id())
             ->first();
-        if (!isset($member)) {
+        if (! isset($member)) {
             $member = $this->newMemberModel();
             $member->organisation_id = $model->id;
             $member->user_id = $user->id();

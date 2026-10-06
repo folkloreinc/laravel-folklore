@@ -2,6 +2,4 @@
 
 namespace Folklore\Contracts\Services\CustomerIo;
 
-interface DeliveryMessage extends MessageContent
-{
-}
+interface DeliveryMessage extends MessageContent {}
