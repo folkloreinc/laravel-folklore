@@ -99,7 +99,7 @@ class BlockWithBlocks implements Arrayable, Jsonable, ResourceType
         return $data;
     }
 
-    public function jsonSerialize()
+    public function jsonSerialize(): mixed
     {
         return $this->type->jsonSerialize();
     }
