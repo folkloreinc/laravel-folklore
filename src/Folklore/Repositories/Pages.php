@@ -65,7 +65,21 @@ class Pages extends Entities implements PagesRepositoryContract
         return parent::update($id, $data);
     }
 
+    /**
+     * Save the page and its blocks in a single transaction.
+     */
     protected function saveData($model, $data)
+    {
+        $model->getConnection()->transaction(function () use ($model, $data) {
+            $this->saveBlocksAndData($model, $data);
+        });
+
+        if (isset($data['blocks'])) {
+            $model->load('blocks');
+        }
+    }
+
+    protected function saveBlocksAndData($model, $data)
     {
         if (isset($data['blocks'])) {
             $data['blocks'] = collect($data['blocks'])
@@ -90,9 +104,5 @@ class Pages extends Entities implements PagesRepositoryContract
         }
 
         parent::saveData($model, $data);
-
-        if (isset($data['blocks'])) {
-            $model->load('blocks');
-        }
     }
 }

@@ -44,7 +44,17 @@ class Blocks extends Entities implements BlocksRepositoryContract
         return parent::update($id, $data);
     }
 
+    /**
+     * Save the block and its nested blocks in a single transaction.
+     */
     protected function saveData($model, $data)
+    {
+        $model->getConnection()->transaction(function () use ($model, $data) {
+            $this->saveBlocksAndData($model, $data);
+        });
+    }
+
+    protected function saveBlocksAndData($model, $data)
     {
         if (isset($data['blocks'])) {
             $data['blocks'] = collect($data['blocks'])
