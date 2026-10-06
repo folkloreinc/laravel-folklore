@@ -210,6 +210,7 @@ class ServiceProvider extends BaseServiceProvider
         // Console
         if ($this->app->runningInConsole()) {
             $this->commands([
+                AssetsViewCommand::class,
                 UsersCreateCommand::class,
                 DaemonRestartCommand::class,
             ]);
@@ -413,7 +414,6 @@ class ServiceProvider extends BaseServiceProvider
 
         if ($this->app->runningInConsole()) {
             $this->commands([
-                AssetsViewCommand::class,
                 EntityMakeCommand::class,
                 RepositoryContractMakeCommand::class,
                 RepositoryMakeCommand::class,
