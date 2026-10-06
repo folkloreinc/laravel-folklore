@@ -43,9 +43,9 @@ class Media implements HasModel, MediaContract
 
     public function url(): string
     {
-        $originalFile = $this->getOriginalFile();
+        $file = $this->getOriginalFile() ?? $this->files()->first();
 
-        return $originalFile->url();
+        return ! is_null($file) ? $file->url() : '';
     }
 
     public function thumbnailUrl(): ?string
@@ -84,7 +84,7 @@ class Media implements HasModel, MediaContract
         return $this->metadata;
     }
 
-    protected function getOriginalFile(): MediaFileContract
+    protected function getOriginalFile(): ?MediaFileContract
     {
         return $this->files()->first(function ($file) {
             return $file->handle() === 'original';
