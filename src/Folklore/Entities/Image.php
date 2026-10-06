@@ -16,7 +16,7 @@ class Image extends Media implements ImageContract
     public function url(): string
     {
         $url = parent::url();
-        if (isset($this->filters)) {
+        if (isset($this->filters) && $url !== '') {
             $path = parse_url($url, PHP_URL_PATH);
 
             return rtrim(config('app.image_url', config('app.url')), '/').

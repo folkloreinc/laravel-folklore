@@ -43,6 +43,9 @@ class ImageSize implements ImageSizeContract
             //     }) ?? $this->image->files()->first()
             // )->url();
             $imageUrl = $this->image->urlWithoutFilters();
+            if ($imageUrl === '') {
+                return $this->url = '';
+            }
             $metadata = $this->image->metadata();
             $mime = ! is_null($metadata) ? $metadata->mime() : null;
             $isSVG = $mime === 'image/svg' || $mime === 'image/svg+xml';
