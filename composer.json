@@ -28,7 +28,7 @@
         "php": "^8.3",
         "laravel/framework": "^11.0|^12.0|^13.0",
         "folklore/laravel-panneau": "v1.2.x-dev|v1.3.x-dev|v1.4.x-dev",
-        "folklore/laravel-mediatheque": "v1.1.x-dev",
+        "folklore/laravel-mediatheque": "^1.1",
         "folklore/laravel-image": "v1.x-dev",
         "folklore/laravel-locale": "v8.x-dev",
         "cviebrock/eloquent-sluggable": "^11.0|^12.0|^13.0",
