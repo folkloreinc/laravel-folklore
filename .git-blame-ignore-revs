@@ -1,0 +1,5 @@
+# Formatting-only commits, skipped by `git blame` with:
+# git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# Replace Prettier and PHP_CodeSniffer with Laravel Pint
+223ee9d72045fa58b7905322183ba95281294153

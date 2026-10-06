@@ -1,0 +1,865 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Call to method hereNow\(\) on an unknown class PubNub\\PubNub\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Folklore/Broadcasters/PubNubBroadcaster.php
+
+		-
+			message: '#^Call to method publish\(\) on an unknown class PubNub\\PubNub\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Folklore/Broadcasters/PubNubBroadcaster.php
+
+		-
+			message: '#^Instantiated class Folklore\\Broadcasters\\HttpException not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Folklore/Broadcasters/PubNubBroadcaster.php
+
+		-
+			message: '#^Method Folklore\\Broadcasters\\PubNubBroadcaster\:\:getPubNub\(\) has invalid return type PubNub\\PubNub\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Folklore/Broadcasters/PubNubBroadcaster.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$pusher$#'
+			identifier: parameter.notFound
+			count: 1
+			path: src/Folklore/Broadcasters/PubNubBroadcaster.php
+
+		-
+			message: '#^Parameter \$pubnub of method Folklore\\Broadcasters\\PubNubBroadcaster\:\:__construct\(\) has invalid type PubNub\\PubNub\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Folklore/Broadcasters/PubNubBroadcaster.php
+
+		-
+			message: '#^Property Folklore\\Broadcasters\\PubNubBroadcaster\:\:\$config \(string\) does not accept default value of type array\.$#'
+			identifier: property.defaultValue
+			count: 1
+			path: src/Folklore/Broadcasters/PubNubBroadcaster.php
+
+		-
+			message: '#^Property Folklore\\Broadcasters\\PubNubBroadcaster\:\:\$pubnub has unknown class PubNub\\PubNub as its type\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Folklore/Broadcasters/PubNubBroadcaster.php
+
+		-
+			message: '#^Throwing object of an unknown class Folklore\\Broadcasters\\HttpException\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Folklore/Broadcasters/PubNubBroadcaster.php
+
+		-
+			message: '#^Call to function is_null\(\) with \(array\|string\) will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: src/Folklore/Composers/Concerns/ComposesIntl.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\View\\View\:\:\$intl\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Folklore/Composers/IntlComposer.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\View\\View\:\:\$routes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Folklore/Composers/RoutesComposer.php
+
+		-
+			message: '#^Call to preg_quote\(\) is missing delimiter / to be effective\.$#'
+			identifier: argument.invalidPregQuote
+			count: 2
+			path: src/Folklore/Composers/RoutesComposer.php
+
+		-
+			message: '#^PHPDoc tag @param for parameter \$files with type Illuminate\\Contracts\\View\\Factory is not subtype of native type Illuminate\\Filesystem\\Filesystem\.$#'
+			identifier: parameter.phpDocType
+			count: 1
+			path: src/Folklore/Console/AssetsViewCommand.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$files$#'
+			identifier: parameter.notFound
+			count: 1
+			path: src/Folklore/Console/EntityMakeCommand.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$model$#'
+			identifier: parameter.notFound
+			count: 2
+			path: src/Folklore/Console/GeneratorCommand.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$model$#'
+			identifier: parameter.notFound
+			count: 1
+			path: src/Folklore/Console/RepositoryMakeCommand.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Contracts\\Eloquent\\HasJsonDataRelations\:\:getAttributes\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Eloquent/JsonDataCast.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Contracts\\Eloquent\\HasJsonDataRelations\:\:getCasts\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Eloquent/JsonDataCast.php
+
+		-
+			message: '#^Call to function is_null\(\) with array will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 2
+			path: src/Folklore/Eloquent/JsonDataCast.php
+
+		-
+			message: '#^Method Folklore\\Eloquent\\JsonDataCast\:\:set\(\) should return string but returns array\<mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Folklore/Eloquent/JsonDataCast.php
+
+		-
+			message: '#^Call to an undefined static method Folklore\\Image\\Facade\:\:url\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: src/Folklore/Entities/Image.php
+
+		-
+			message: '#^Call to an undefined static method Folklore\\Image\\Facade\:\:url\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: src/Folklore/Entities/ImageSize.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 4
+			path: src/Folklore/Entities/ImageSize.php
+
+		-
+			message: '#^Access to an undefined property Folklore\\Models\\Page\:\:\$data\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Folklore/Entities/Page.php
+
+		-
+			message: '#^Access to an undefined property Folklore\\Entities\\User\:\:\$two_factor_recovery_codes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Folklore/Entities/User.php
+
+		-
+			message: '#^Method Folklore\\Entities\\User\:\:sendPasswordResetNotification\(\) with return type void returns mixed but should not return anything\.$#'
+			identifier: return.void
+			count: 1
+			path: src/Folklore/Entities/User.php
+
+		-
+			message: '#^Method Folklore\\Entities\\User\:\:setRememberToken\(\) with return type void returns mixed but should not return anything\.$#'
+			identifier: return.void
+			count: 1
+			path: src/Folklore/Entities/User.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\ImageSizeResource\:\:height\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/ImageSizeResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\ImageSizeResource\:\:id\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/ImageSizeResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\ImageSizeResource\:\:mime\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/ImageSizeResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\ImageSizeResource\:\:url\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/ImageSizeResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\ImageSizeResource\:\:width\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/ImageSizeResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\MediaFileResource\:\:handle\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/MediaFileResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\MediaFileResource\:\:id\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/MediaFileResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\MediaFileResource\:\:mime\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/MediaFileResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\MediaFileResource\:\:name\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/MediaFileResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\MediaFileResource\:\:size\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/MediaFileResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\MediaFileResource\:\:url\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/MediaFileResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\MediaMetadataResource\:\:duration\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/MediaMetadataResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\MediaMetadataResource\:\:filename\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/MediaMetadataResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\MediaMetadataResource\:\:height\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/MediaMetadataResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\MediaMetadataResource\:\:mime\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/MediaMetadataResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\MediaMetadataResource\:\:pagesCount\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/MediaMetadataResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\MediaMetadataResource\:\:size\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/MediaMetadataResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\MediaMetadataResource\:\:width\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/MediaMetadataResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\MediaResource\:\:files\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: src/Folklore/Http/Resources/MediaResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\MediaResource\:\:id\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/MediaResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\MediaResource\:\:metadata\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/MediaResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\MediaResource\:\:name\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/MediaResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\MediaResource\:\:sizes\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/MediaResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\MediaResource\:\:thumbnailUrl\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/MediaResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\MediaResource\:\:type\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/MediaResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\MediaResource\:\:url\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/MediaResource.php
+
+		-
+			message: '#^Calling the helper function ''with\(\)'' with only one argument simply returns the value itself\. If you want to chain methods on a construct, use ''\(new ClassName\(\)\)\-\>foo\(\)'' instead$#'
+			identifier: larastan.uselessConstructs.with
+			count: 1
+			path: src/Folklore/Http/Resources/MediaResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\PaginationResource\:\:count\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: src/Folklore/Http/Resources/PaginationResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\PaginationResource\:\:currentOffset\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/PaginationResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\PaginationResource\:\:currentPage\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: src/Folklore/Http/Resources/PaginationResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\PaginationResource\:\:lastPage\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: src/Folklore/Http/Resources/PaginationResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\PaginationResource\:\:nextOffset\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: src/Folklore/Http/Resources/PaginationResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\PaginationResource\:\:perPage\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Http/Resources/PaginationResource.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Http\\Resources\\PaginationResource\:\:total\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: src/Folklore/Http/Resources/PaginationResource.php
+
+		-
+			message: '#^Method Folklore\\Models\\Block\:\:toEntity\(\) should return Folklore\\Contracts\\Entities\\Block but returns Folklore\\Contracts\\Entities\\Entity\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Folklore/Models/Block.php
+
+		-
+			message: '#^Method Folklore\\Models\\Media\:\:toEntity\(\) should return Folklore\\Contracts\\Entities\\Media but returns Folklore\\Contracts\\Entities\\Entity\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Folklore/Models/Media.php
+
+		-
+			message: '#^PHPDoc type array of property Folklore\\Models\\Organisation\:\:\$fillable is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$fillable\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: src/Folklore/Models/Organisation.php
+
+		-
+			message: '#^PHPDoc type array of property Folklore\\Models\\OrganisationInvitation\:\:\$fillable is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$fillable\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: src/Folklore/Models/OrganisationInvitation.php
+
+		-
+			message: '#^PHPDoc type array of property Folklore\\Models\\OrganisationMember\:\:\$fillable is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$fillable\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: src/Folklore/Models/OrganisationMember.php
+
+		-
+			message: '#^Access to an undefined property Folklore\\Models\\Page\:\:\$handle\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Folklore/Models/Page.php
+
+		-
+			message: '#^Method Folklore\\Models\\Page\:\:toEntity\(\) should return Folklore\\Contracts\\Entities\\Page but returns Folklore\\Contracts\\Entities\\Entity\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Folklore/Models/Page.php
+
+		-
+			message: '#^PHPDoc type array of property Folklore\\Models\\User\:\:\$casts is not covariant with PHPDoc type array\<string, string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$casts\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: src/Folklore/Models/User.php
+
+		-
+			message: '#^PHPDoc type array of property Folklore\\Models\\User\:\:\$fillable is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$fillable\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: src/Folklore/Models/User.php
+
+		-
+			message: '#^PHPDoc type array of property Folklore\\Models\\User\:\:\$hidden is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$hidden\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: src/Folklore/Models/User.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Notifications\\Notification\:\:toCustomerIo\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Notifications/CustomerIoChannel.php
+
+		-
+			message: '#^Method Folklore\\Repositories\\Blocks\:\:create\(\) should return Folklore\\Contracts\\Entities\\Block but returns Folklore\\Contracts\\Entities\\Entity\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Folklore/Repositories/Blocks.php
+
+		-
+			message: '#^Method Folklore\\Repositories\\Blocks\:\:findById\(\) should return Folklore\\Contracts\\Entities\\Block\|null but returns Folklore\\Contracts\\Entities\\Entity\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Folklore/Repositories/Blocks.php
+
+		-
+			message: '#^Method Folklore\\Repositories\\Blocks\:\:update\(\) should return Folklore\\Contracts\\Entities\\Block\|null but returns Folklore\\Contracts\\Entities\\Entity\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Folklore/Repositories/Blocks.php
+
+		-
+			message: '#^Call to an undefined method Folklore\\Contracts\\Eloquent\\HasJsonDataRelations\:\:refresh\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Repositories/Entities.php
+
+		-
+			message: '#^Call to function is_numeric\(\) with int will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Folklore/Repositories/Entities.php
+
+		-
+			message: '#^Call to method paginate\(\) on an unknown class Laravel\\Scout\\Builder\.$#'
+			identifier: class.notFound
+			count: 2
+			path: src/Folklore/Repositories/Entities.php
+
+		-
+			message: '#^Class Laravel\\Scout\\Builder not found\.$#'
+			identifier: class.notFound
+			count: 2
+			path: src/Folklore/Repositories/Entities.php
+
+		-
+			message: '#^Method Folklore\\Repositories\\Entities\:\:newQuery\(\) invoked with 1 parameter, 0 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: src/Folklore/Repositories/Entities.php
+
+		-
+			message: '#^Variable \$fieldValue on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: src/Folklore/Repositories/Entities.php
+
+		-
+			message: '#^Method Folklore\\Repositories\\Medias\:\:create\(\) should return Folklore\\Contracts\\Entities\\Media but returns Folklore\\Contracts\\Entities\\Entity\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Folklore/Repositories/Medias.php
+
+		-
+			message: '#^Method Folklore\\Repositories\\Medias\:\:findById\(\) should return Folklore\\Contracts\\Entities\\Media\|null but returns Folklore\\Contracts\\Entities\\Entity\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Folklore/Repositories/Medias.php
+
+		-
+			message: '#^Method Folklore\\Repositories\\Medias\:\:newModel\(\) should return Illuminate\\Database\\Eloquent\\Model but returns Folklore\\Mediatheque\\Contracts\\Models\\Media\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Folklore/Repositories/Medias.php
+
+		-
+			message: '#^Method Folklore\\Repositories\\Medias\:\:update\(\) should return Folklore\\Contracts\\Entities\\Media\|null but returns Folklore\\Contracts\\Entities\\Entity\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Folklore/Repositories/Medias.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$organisation_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Folklore/Repositories/Organisations.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Folklore/Repositories/Organisations.php
+
+		-
+			message: '#^Method Folklore\\Repositories\\Organisations\:\:create\(\) should return Folklore\\Contracts\\Entities\\Organisation but returns Folklore\\Contracts\\Entities\\Entity\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Folklore/Repositories/Organisations.php
+
+		-
+			message: '#^Method Folklore\\Repositories\\Organisations\:\:findById\(\) should return Folklore\\Contracts\\Entities\\Organisation\|null but returns Folklore\\Contracts\\Entities\\Entity\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Folklore/Repositories/Organisations.php
+
+		-
+			message: '#^Method Folklore\\Repositories\\Organisations\:\:update\(\) should return Folklore\\Contracts\\Entities\\Organisation\|null but returns Folklore\\Contracts\\Entities\\Entity\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Folklore/Repositories/Organisations.php
+
+		-
+			message: '#^Method Folklore\\Repositories\\Pages\:\:create\(\) should return Folklore\\Contracts\\Entities\\Page but returns Folklore\\Contracts\\Entities\\Entity\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Folklore/Repositories/Pages.php
+
+		-
+			message: '#^Method Folklore\\Repositories\\Pages\:\:findById\(\) should return Folklore\\Contracts\\Entities\\Page\|null but returns Folklore\\Contracts\\Entities\\Entity\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Folklore/Repositories/Pages.php
+
+		-
+			message: '#^Method Folklore\\Repositories\\Pages\:\:update\(\) should return Folklore\\Contracts\\Entities\\Page\|null but returns Folklore\\Contracts\\Entities\\Entity\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Folklore/Repositories/Pages.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Contracts\\Auth\\Authenticatable\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Folklore/Repositories/Users.php
+
+		-
+			message: '#^Call to function is_null\(\) with Illuminate\\Contracts\\Auth\\Authenticatable will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: src/Folklore/Repositories/Users.php
+
+		-
+			message: '#^Method Folklore\\Repositories\\Users\:\:create\(\) should return Folklore\\Contracts\\Entities\\User but returns Folklore\\Contracts\\Entities\\Entity\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Folklore/Repositories/Users.php
+
+		-
+			message: '#^Method Folklore\\Repositories\\Users\:\:findById\(\) should return Folklore\\Contracts\\Entities\\User\|null but returns Folklore\\Contracts\\Entities\\Entity\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Folklore/Repositories/Users.php
+
+		-
+			message: '#^Method Folklore\\Repositories\\Users\:\:update\(\) should return Folklore\\Contracts\\Entities\\User\|null but returns Folklore\\Contracts\\Entities\\Entity\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Folklore/Repositories/Users.php
+
+		-
+			message: '#^Method Folklore\\Repositories\\Users\:\:updateRememberToken\(\) with return type void returns mixed but should not return anything\.$#'
+			identifier: return.void
+			count: 1
+			path: src/Folklore/Repositories/Users.php
+
+		-
+			message: '#^Call to preg_quote\(\) is missing delimiter / to be effective\.$#'
+			identifier: argument.invalidPregQuote
+			count: 2
+			path: src/Folklore/Routing/UrlGeneratorMixin.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Http\\Resources\\Json\\ResourceCollection\|Illuminate\\Pagination\\AbstractPaginator\:\:lastPage\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/ServiceProvider.php
+
+		-
+			message: '#^Call to method setPublishKey\(\) on an unknown class PubNub\\PNConfiguration\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Folklore/ServiceProvider.php
+
+		-
+			message: '#^Call to method setSubscribeKey\(\) on an unknown class PubNub\\PNConfiguration\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Folklore/ServiceProvider.php
+
+		-
+			message: '#^Call to method setUuid\(\) on an unknown class PubNub\\PNConfiguration\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Folklore/ServiceProvider.php
+
+		-
+			message: '#^Instantiated class PubNub\\PNConfiguration not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Folklore/ServiceProvider.php
+
+		-
+			message: '#^Instantiated class PubNub\\PubNub not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Folklore/ServiceProvider.php
+
+		-
+			message: '#^Call to function is_null\(\) with array will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: src/Folklore/Services/CustomerIo/Client.php
+
+		-
+			message: '#^Call to function is_null\(\) with array\{identifiers\: mixed\} will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: src/Folklore/Services/CustomerIo/Client.php
+
+		-
+			message: '#^Call to function method_exists\(\) with \$this\(Folklore\\Services\\CustomerIo\\Client\) and ''getRequestTimeout'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Folklore/Services/CustomerIo/Client.php
+
+		-
+			message: '#^Class Folklore\\Services\\CustomerIo\\DeliveryMessage constructor invoked with 2 parameters, 1 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: src/Folklore/Services/CustomerIo/Client.php
+
+		-
+			message: '#^Instanceof between Folklore\\Contracts\\Services\\CustomerIo\\HasSubscriptionPreferences and Folklore\\Contracts\\Services\\CustomerIo\\HasSubscriptionPreferences will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Folklore/Services/CustomerIo/Client.php
+
+		-
+			message: '#^Method Folklore\\Services\\CustomerIo\\Client\:\:getAuthorizationHeader\(\) invoked with 4 parameters, 1 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: src/Folklore/Services/CustomerIo/Client.php
+
+		-
+			message: '#^Method Folklore\\Services\\CustomerIo\\Client\:\:getDeliveriesForCustomer\(\) should return Folklore\\Services\\CustomerIo\\CollectionWithCursor but returns Illuminate\\Support\\Collection\<\(int\|string\), mixed\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Folklore/Services/CustomerIo/Client.php
+
+		-
+			message: '#^Parameter \#1 \$message of static method Symfony\\Component\\Mime\\MessageConverter\:\:toEmail\(\) expects Symfony\\Component\\Mime\\Message, Symfony\\Component\\Mime\\RawMessage given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Folklore/Services/CustomerIo/MailTransport.php
+
+		-
+			message: '#^Call to an undefined method DOMNameSpaceNode\|DOMNode\:\:getAttribute\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Folklore/Services/Google/Drive.php
+
+		-
+			message: '#^Call to function method_exists\(\) with \$this\(Folklore\\Services\\Google\\Drive\) and ''getRequestTimeout'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Folklore/Services/Google/Drive.php
+
+		-
+			message: '#^Call to function method_exists\(\) with \$this\(Folklore\\Services\\Google\\Maps\) and ''getRequestTimeout'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Folklore/Services/Google/Maps.php
+
+		-
+			message: '#^Call to function method_exists\(\) with \$this\(Folklore\\Services\\PubSubHubbub\\PubSubHubbubClient\) and ''getRequestTimeout'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Folklore/Services/PubSubHubbub/PubSubHubbubClient.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: src/Folklore/Services/PubSubHubbub/PubSubHubbubManager.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<mixed, mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Folklore/Services/PubSubHubbub/PubSubHubbubManager.php
+
+		-
+			message: '#^Call to function is_null\(\) with mixed will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: src/Folklore/Services/PubSubHubbub/PubSubHubbubManager.php
+
+		-
+			message: '#^Call to function is_null\(\) with string will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: src/Folklore/Services/PubSubHubbub/PubSubHubbubManager.php
+
+		-
+			message: '#^Call to function is_string\(\) with array will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: src/Folklore/Services/PubSubHubbub/PubSubHubbubManager.php
+
+		-
+			message: '#^Method Folklore\\Services\\PubSubHubbub\\PubSubHubbubManager\:\:createDefaultDriver\(\) has invalid return type Urbania\\AppleNews\\Contracts\\Parser\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Folklore/Services/PubSubHubbub/PubSubHubbubManager.php
+
+		-
+			message: '#^Method Folklore\\Services\\PubSubHubbub\\PubSubHubbubManager\:\:createDefaultDriver\(\) invoked with 2 parameters, 1 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: src/Folklore/Services/PubSubHubbub/PubSubHubbubManager.php
+
+		-
+			message: '#^Method Folklore\\Services\\PubSubHubbub\\PubSubHubbubManager\:\:createDefaultDriver\(\) should return Urbania\\AppleNews\\Contracts\\Parser but returns Folklore\\Services\\PubSubHubbub\\PubSubHubbubClient\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Folklore/Services/PubSubHubbub/PubSubHubbubManager.php
+
+		-
+			message: '#^Method Folklore\\Services\\PubSubHubbub\\PubSubHubbubManager\:\:hub\(\) has invalid return type App\\Contracts\\Dialog\\Service\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/Folklore/Services/PubSubHubbub/PubSubHubbubManager.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$parser$#'
+			identifier: parameter.notFound
+			count: 1
+			path: src/Folklore/Services/PubSubHubbub/PubSubHubbubManager.php
+
+		-
+			message: '#^PHPDoc tag @return with type App\\Contracts\\Dialog\\Service is not subtype of native type Folklore\\Contracts\\Services\\PubSubHubbub\\Client\.$#'
+			identifier: return.phpDocType
+			count: 1
+			path: src/Folklore/Services/PubSubHubbub/PubSubHubbubManager.php
+
+		-
+			message: '#^Cannot instantiate interface Folklore\\Contracts\\Site\\Site\.$#'
+			identifier: new.interface
+			count: 1
+			path: src/Folklore/Site/Manager.php
+
+		-
+			message: '#^Trait Folklore\\Support\\Concerns\\CommandIsDaemon is used zero times and is not analysed\.$#'
+			identifier: trait.unused
+			count: 1
+			path: src/Folklore/Support/Concerns/CommandIsDaemon.php
+
+		-
+			message: '#^Trait Folklore\\Support\\Concerns\\QueriesRelations is used zero times and is not analysed\.$#'
+			identifier: trait.unused
+			count: 1
+			path: src/Folklore/Support/Concerns/QueriesRelations.php
+
+		-
+			message: '#^Trait Folklore\\Support\\Concerns\\SeedsData is used zero times and is not analysed\.$#'
+			identifier: trait.unused
+			count: 1
+			path: src/Folklore/Support/Concerns/SeedsData.php
+
+		-
+			message: '#^Trait Folklore\\Support\\Concerns\\SerializesEntityModel is used zero times and is not analysed\.$#'
+			identifier: trait.unused
+			count: 1
+			path: src/Folklore/Support/Concerns/SerializesEntityModel.php
+
+		-
+			message: '#^Trait Folklore\\Support\\Concerns\\SyncRelations is used zero times and is not analysed\.$#'
+			identifier: trait.unused
+			count: 1
+			path: src/Folklore/Support/Concerns/SyncRelations.php
+
+		-
+			message: '#^Instanceof between mixed and Illuminate\\Support\\Collection will always evaluate to false\.$#'
+			identifier: instanceof.alwaysFalse
+			count: 1
+			path: src/Folklore/Support/Data.php
+
+		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 1
+			path: src/Folklore/Support/Data.php
+
+		-
+			message: '#^Method Folklore\\Support\\OffsetPaginator\:\:nextOffsetUrl\(\) should return string\|null but return statement is missing\.$#'
+			identifier: return.missing
+			count: 1
+			path: src/Folklore/Support/OffsetPaginator.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$currentPage$#'
+			identifier: parameter.notFound
+			count: 2
+			path: src/Folklore/Support/OffsetPaginator.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$perPage$#'
+			identifier: parameter.notFound
+			count: 1
+			path: src/Folklore/Support/OffsetPaginator.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between int\<0, max\> and false will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: src/Folklore/Support/OffsetPaginator.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Schema\\ColumnDefinition\:\:nulable\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/migrations/2023_03_15_000001_create_organisations_members_table.php
+
+		-
+			message: '#^Method Illuminate\\Database\\Schema\\Blueprint\:\:foreignId\(\) invoked with 2 parameters, 1 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: src/migrations/2023_03_15_000003_create_organisations_invitations_table.php

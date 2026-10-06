@@ -25,14 +25,17 @@ The shared foundation of the Laravel sites built by Folklore. It is a toolbox:
 
 - Existing sites depend on this package. Avoid breaking changes: prefer additive, opt-in changes whose defaults keep the current behaviour, and deprecate before removing.
 - A module a site doesn't use must cost it nothing: no side effects at boot, no heavy mandatory dependency.
-- Add or update tests with every change.
+- Every change comes with tests (a regression test for each bug fix) and must pass CI before it lands.
 - The roadmap is tracked in [#1](https://github.com/folkloreinc/laravel-folklore/issues/1). Create a sub-issue for an item when you start working on it, and reference it in the PR.
 
 ## Development
 
 - Requirements: PHP `^8.2`, Laravel 11 to 13 (see `composer.json`).
 - Install dependencies: `composer install`
-- Run tests: `vendor/bin/phpunit --testsuite Feature` (the `Unit` suite declared in `phpunit.xml` has no directory yet).
-- Code style: Prettier with `@prettier/plugin-php` (`.prettierrc.json`: 4 spaces, single quotes, 100 columns).
+- Run tests: `composer test` (PHPUnit with Orchestra Testbench; suites in `tests/Unit` and `tests/Feature`).
+- Format code: `composer format` (Laravel Pint, `laravel` preset, see `pint.json`).
+- Static analysis: `composer analyse` (Larastan, see `phpstan.neon`). Existing errors are listed in `phpstan-baseline.neon`: never add new errors to it, fix them instead. When a change fixes baselined errors, regenerate it with `vendor/bin/phpstan analyse --generate-baseline --memory-limit=2G`.
+- CI (GitHub Actions): `.github/workflows/tests.yml` runs the tests on PHP 8.2 to 8.4 × Laravel 11 to 13; `.github/workflows/code-quality.yml` runs `composer validate`, Pint and Larastan.
+- The commit that applied Pint to the whole codebase is listed in `.git-blame-ignore-revs`; run `git config blame.ignoreRevsFile .git-blame-ignore-revs` to skip it in `git blame`.
 - Layout: `src/Folklore` (namespace `Folklore\`), `src/migrations`, `src/stubs`, `tests`.
 - Active development happens on the `v1.1` branch.
