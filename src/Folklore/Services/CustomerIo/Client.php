@@ -676,11 +676,37 @@ class Client implements CustomerIo
 
     protected function getAuthorizationHeader($url)
     {
+        if (! $this->isCustomerIoUrl($url)) {
+            return null;
+        }
+
         if (in_array($url, ['/api/v2/entity', '/api/v1/events'])) {
             return sprintf('Basic %s', base64_encode($this->siteId.':'.$this->trackingKey));
         }
 
         return sprintf('Bearer %s', $this->key);
+    }
+
+    /**
+     * Whether credentials can be sent to this URL: relative paths (resolved
+     * against the API or track base URL), the configured hosts and Customer.io.
+     */
+    protected function isCustomerIoUrl(string $url): bool
+    {
+        $host = parse_url($url, PHP_URL_HOST);
+        if (empty($host)) {
+            return true;
+        }
+
+        $host = strtolower($host);
+        $configuredHosts = array_map(
+            fn ($baseUrl) => strtolower((string) parse_url($baseUrl, PHP_URL_HOST)),
+            [$this->apiBaseUrl, $this->trackBaseUrl]
+        );
+
+        return in_array($host, $configuredHosts, true) ||
+            $host === 'customer.io' ||
+            str_ends_with($host, '.customer.io');
     }
 
     protected function getRequestBaseUri()
