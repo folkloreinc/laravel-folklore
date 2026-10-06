@@ -127,18 +127,6 @@ parameters:
 			path: src/Folklore/Eloquent/JsonDataCast.php
 
 		-
-			message: '#^Call to an undefined static method Folklore\\Image\\Facade\:\:url\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: src/Folklore/Entities/Image.php
-
-		-
-			message: '#^Call to an undefined static method Folklore\\Image\\Facade\:\:url\(\)\.$#'
-			identifier: staticMethod.notFound
-			count: 1
-			path: src/Folklore/Entities/ImageSize.php
-
-		-
 			message: '#^Unreachable statement \- code above always terminates\.$#'
 			identifier: deadCode.unreachable
 			count: 4
@@ -500,12 +488,6 @@ parameters:
 
 		-
 			message: '#^Method Folklore\\Repositories\\Medias\:\:findById\(\) should return Folklore\\Contracts\\Entities\\Media\|null but returns Folklore\\Contracts\\Entities\\Entity\|null\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Folklore/Repositories/Medias.php
-
-		-
-			message: '#^Method Folklore\\Repositories\\Medias\:\:newModel\(\) should return Illuminate\\Database\\Eloquent\\Model but returns Folklore\\Mediatheque\\Contracts\\Models\\Media\.$#'
 			identifier: return.type
 			count: 1
 			path: src/Folklore/Repositories/Medias.php
