@@ -106,6 +106,6 @@ class BlockWithBlocks implements Arrayable, Jsonable, ResourceType
 
     public function toJson($options = 0)
     {
-        return $this->type->toJson($options);
+        return json_encode($this->jsonSerialize(), $options);
     }
 }

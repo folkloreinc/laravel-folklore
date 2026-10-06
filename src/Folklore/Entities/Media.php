@@ -103,6 +103,6 @@ class Media implements HasModel, MediaContract
 
     public function updatedAt(): ?Carbon
     {
-        return $this->model->updatedAt;
+        return $this->model->updated_at;
     }
 }

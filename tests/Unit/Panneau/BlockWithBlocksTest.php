@@ -26,6 +26,20 @@ class BlockWithBlocksTest extends TestCase
         $this->assertSame('{"id":"text"}', json_encode($block));
     }
 
+    public function test_to_json_encodes_the_json_serialization()
+    {
+        $type = $this->createStub(ResourceType::class);
+        $type->method('jsonSerialize')->willReturn(['id' => 'text', 'name' => 'Texte']);
+
+        $block = new BlockWithBlocks($type, 1);
+
+        $this->assertSame('{"id":"text","name":"Texte"}', $block->toJson());
+        $this->assertSame(
+            json_encode(['id' => 'text', 'name' => 'Texte'], JSON_PRETTY_PRINT),
+            $block->toJson(JSON_PRETTY_PRINT),
+        );
+    }
+
     public function test_json_serialize_matches_the_json_serializable_signature()
     {
         $method = new ReflectionMethod(BlockWithBlocks::class, 'jsonSerialize');

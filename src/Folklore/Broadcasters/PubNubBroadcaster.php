@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use PubNub\PubNub;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 class PubNubBroadcaster extends Broadcaster
 {
@@ -57,7 +58,7 @@ class PubNubBroadcaster extends Broadcaster
             Str::startsWith($request->channel_name, ['private-', 'presence-']) &&
             ! $request->user()
         ) {
-            throw new HttpException(403);
+            throw new AccessDeniedHttpException;
         }
 
         $channelName = Str::startsWith($request->channel_name, 'private-')
