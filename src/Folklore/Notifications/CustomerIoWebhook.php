@@ -15,7 +15,9 @@ class CustomerIoWebhook
 
     public static function fromId($id)
     {
-        return new self('https://api.customer.io/v1/webhook/'.$id);
+        $baseUrl = config('services.customerio.api_base_url') ?: 'https://api.customer.io';
+
+        return new self(rtrim($baseUrl, '/').'/v1/webhook/'.$id);
     }
 
     public function data(array $data)
