@@ -51,6 +51,42 @@ class OffsetPaginatorTest extends TestCase
         $this->assertFalse($paginator->hasMore());
     }
 
+    public function test_urls_start_at_offset_zero()
+    {
+        $paginator = new OffsetPaginator(collect([1, 2, 3]), 10, 3);
+
+        $this->assertSame('/?offset=0', $paginator->url(0));
+        $this->assertSame('/?offset=0', $paginator->url(-5));
+        $this->assertSame('/?offset=3', $paginator->url(3));
+        $this->assertSame('/?offset=0', $paginator->toArray()['first_offset_url']);
+    }
+
+    public function test_urls_keep_extra_query_parameters()
+    {
+        $paginator = new OffsetPaginator(collect([1, 2, 3]), 10, 3);
+        $paginator->appends(['type' => 'image']);
+
+        $this->assertSame('/?type=image&offset=0', $paginator->url(0));
+    }
+
+    public function test_from_and_to_are_positions_of_the_slice()
+    {
+        $paginator = new OffsetPaginator(collect([1, 2, 3]), 10, 3);
+
+        $this->assertSame(4, $paginator->firstItem());
+        $this->assertSame(6, $paginator->lastItem());
+        $this->assertSame(4, $paginator->toArray()['from']);
+        $this->assertSame(6, $paginator->toArray()['to']);
+    }
+
+    public function test_from_and_to_are_null_for_an_empty_slice()
+    {
+        $paginator = new OffsetPaginator(collect([]), 10, 10);
+
+        $this->assertNull($paginator->firstItem());
+        $this->assertNull($paginator->lastItem());
+    }
+
     public function test_serialization()
     {
         $paginator = new OffsetPaginator(collect([1, 2, 3]), 10, 3);
