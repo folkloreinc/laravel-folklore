@@ -3,6 +3,7 @@
 namespace Folklore\Support;
 
 use Illuminate\Pagination\AbstractPaginator;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 
 class OffsetPaginator extends AbstractPaginator
@@ -117,6 +118,46 @@ class OffsetPaginator extends AbstractPaginator
     public function nextOffset()
     {
         return $this->currentOffset() + $this->count();
+    }
+
+    /**
+     * Get the URL for a given offset. Unlike page numbers, offsets start at 0.
+     *
+     * @param  int  $offset
+     * @return string
+     */
+    public function url($offset)
+    {
+        $parameters = [$this->pageName => max(0, (int) $offset)];
+
+        if (count($this->query) > 0) {
+            $parameters = array_merge($this->query, $parameters);
+        }
+
+        return $this->path()
+            .(str_contains($this->path(), '?') ? '&' : '?')
+            .Arr::query($parameters)
+            .$this->buildFragment();
+    }
+
+    /**
+     * Get the 1-based position of the first item in the slice.
+     *
+     * @return int|null
+     */
+    public function firstItem()
+    {
+        return $this->count() > 0 ? $this->currentOffset() + 1 : null;
+    }
+
+    /**
+     * Get the 1-based position of the last item in the slice.
+     *
+     * @return int|null
+     */
+    public function lastItem()
+    {
+        return $this->count() > 0 ? $this->currentOffset() + $this->count() : null;
     }
 
     /**
