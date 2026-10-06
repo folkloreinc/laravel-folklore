@@ -32,9 +32,7 @@ class Users extends Entities implements UsersContract
 
     public function findByEmail(string $email): ?UserContract
     {
-        $model = $this->newQuery()
-            ->where('email', 'LIKE', $email)
-            ->first();
+        $model = $this->whereLikeLiteral($this->newQuery(), 'email', $email)->first();
 
         return to_entity($model);
     }

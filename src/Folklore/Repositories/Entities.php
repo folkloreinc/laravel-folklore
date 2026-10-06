@@ -324,6 +324,21 @@ abstract class Entities implements EntitiesContract
         return $query;
     }
 
+    /**
+     * Match a column against a value literally with LIKE: the comparison stays
+     * case-insensitive where the database makes it so, but `%` and `_` in the
+     * value are escaped instead of acting as wildcards.
+     */
+    protected function whereLikeLiteral($query, string $column, string $value)
+    {
+        $escapedValue = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $value);
+
+        return $query->whereRaw(
+            $query->getQuery()->getGrammar()->wrap($column)." LIKE ? ESCAPE '!'",
+            [$escapedValue],
+        );
+    }
+
     protected function getQueryFromIdentifier(
         $query,
         $identifier,

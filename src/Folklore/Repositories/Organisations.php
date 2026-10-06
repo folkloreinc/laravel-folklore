@@ -29,9 +29,7 @@ class Organisations extends Entities implements OrganisationsContract
 
     public function findBySlug(string $slug): ?OrganisationContract
     {
-        $model = $this->newQueryWithParams()
-            ->where('slug', 'LIKE', $slug)
-            ->first();
+        $model = $this->whereLikeLiteral($this->newQueryWithParams(), 'slug', $slug)->first();
 
         return to_entity($model);
     }
