@@ -2,6 +2,7 @@
 
 namespace Folklore\Repositories;
 
+use Folklore\Contracts\Entities\HasModel;
 use Folklore\Contracts\Entities\User as UserContract;
 use Folklore\Contracts\Repositories\Users as UsersContract;
 use Folklore\Models\User as UserModel;
@@ -121,19 +122,20 @@ class Users extends Entities implements UsersContract
         return $this->userProvider->validateCredentials($user, $credentials);
     }
 
+    /**
+     * Rehash the user's password if required, on the model behind the entity.
+     *
+     * @return void
+     */
     public function rehashPasswordIfRequired(
         Authenticatable $user,
-        array $credentials,
+        #[\SensitiveParameter] array $credentials,
         bool $force = false
     ) {
-        // TODO: fix this
+        if ($user instanceof HasModel) {
+            $user = $user->getModel();
+        }
 
-        // if (! $this->hasher->needsRehash($user->getAuthPassword()) && ! $force) {
-        //     return;
-        // }
-
-        // $user->forceFill([
-        //     $user->getAuthPasswordName() => $this->hasher->make($credentials['password']),
-        // ])->save();
+        $this->userProvider->rehashPasswordIfRequired($user, $credentials, $force);
     }
 }
