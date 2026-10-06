@@ -5,12 +5,20 @@ namespace Folklore\Tests\Feature\Auth;
 use Folklore\Contracts\Repositories\Users;
 use Folklore\Models\User as UserModel;
 use Folklore\Tests\TestCase;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Fortify\Fortify;
+use Laravel\Fortify\FortifyServiceProvider;
 
 class PasswordRehashTest extends TestCase
 {
     protected Users $users;
+
+    protected function getPackageProviders($app)
+    {
+        return array_merge(parent::getPackageProviders($app), [FortifyServiceProvider::class]);
+    }
 
     protected function getEnvironmentSetUp($app)
     {
@@ -87,6 +95,46 @@ class PasswordRehashTest extends TestCase
         $hash = $model->fresh()->password;
         $this->assertNotSame($outdatedHash, $hash);
         $this->assertFalse(Hash::needsRehash($hash));
+    }
+
+    public function test_fortify_login_rehashes_the_password()
+    {
+        $model = $this->createUserWithOutdatedHash('secret');
+        $outdatedHash = $model->password;
+
+        $user = call_user_func(Fortify::$authenticateUsingCallback, Request::create('/login', 'POST', [
+            'email' => 'john@example.com',
+            'password' => 'secret',
+        ]));
+
+        $this->assertSame('john@example.com', $user?->email());
+        $hash = $model->fresh()->password;
+        $this->assertNotSame($outdatedHash, $hash);
+        $this->assertFalse(Hash::needsRehash($hash));
+    }
+
+    public function test_fortify_login_keeps_the_hash_when_rehash_on_login_is_disabled()
+    {
+        $this->app['config']->set('hashing.rehash_on_login', false);
+        $model = $this->createUserWithOutdatedHash('secret');
+        $outdatedHash = $model->password;
+
+        call_user_func(Fortify::$authenticateUsingCallback, Request::create('/login', 'POST', [
+            'email' => 'john@example.com',
+            'password' => 'secret',
+        ]));
+
+        $this->assertSame($outdatedHash, $model->fresh()->password);
+    }
+
+    public function test_fortify_login_rejects_a_wrong_password()
+    {
+        $this->createUserWithOutdatedHash('secret');
+
+        $this->assertNull(call_user_func(Fortify::$authenticateUsingCallback, Request::create('/login', 'POST', [
+            'email' => 'john@example.com',
+            'password' => 'wrong',
+        ])));
     }
 
     protected function createUserWithOutdatedHash(string $password): UserModel

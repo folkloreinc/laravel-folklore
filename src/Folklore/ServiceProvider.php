@@ -351,6 +351,12 @@ class ServiceProvider extends BaseServiceProvider
                 $user &&
                 $provider->validateCredentials($user, ['password' => $request->password])
             ) {
+                // Fortify logs the user in without SessionGuard::attempt(), so
+                // rehash here like attempt() does.
+                if ($this->app['config']->get('hashing.rehash_on_login', true)) {
+                    $provider->rehashPasswordIfRequired($user, ['password' => $request->password]);
+                }
+
                 return $user;
             }
         });
