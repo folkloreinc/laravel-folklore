@@ -13,12 +13,6 @@ parameters:
 			path: src/Folklore/Broadcasters/PubNubBroadcaster.php
 
 		-
-			message: '#^Instantiated class Folklore\\Broadcasters\\HttpException not found\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Folklore/Broadcasters/PubNubBroadcaster.php
-
-		-
 			message: '#^Method Folklore\\Broadcasters\\PubNubBroadcaster\:\:getPubNub\(\) has invalid return type PubNub\\PubNub\.$#'
 			identifier: class.notFound
 			count: 1
@@ -44,12 +38,6 @@ parameters:
 
 		-
 			message: '#^Property Folklore\\Broadcasters\\PubNubBroadcaster\:\:\$pubnub has unknown class PubNub\\PubNub as its type\.$#'
-			identifier: class.notFound
-			count: 1
-			path: src/Folklore/Broadcasters/PubNubBroadcaster.php
-
-		-
-			message: '#^Throwing object of an unknown class Folklore\\Broadcasters\\HttpException\.$#'
 			identifier: class.notFound
 			count: 1
 			path: src/Folklore/Broadcasters/PubNubBroadcaster.php
