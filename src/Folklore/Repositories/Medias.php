@@ -17,6 +17,14 @@ class Medias extends Entities implements MediasRepositoryContract
 {
     protected $typeFactory;
 
+    /**
+     * Seconds allowed to connect to the host, and to download the whole file,
+     * when a media is created from a URL.
+     */
+    protected int $downloadConnectTimeout = 10;
+
+    protected int $downloadTimeout = 600;
+
     public function __construct(TypeFactory $typeFactory)
     {
         $this->typeFactory = $typeFactory;
@@ -111,7 +119,7 @@ class Medias extends Entities implements MediasRepositoryContract
             )
             : null;
 
-        if ($isUrl && file_exists($path)) {
+        if ($isUrl && ! empty($path) && file_exists($path)) {
             unlink($path);
         }
 
@@ -125,24 +133,47 @@ class Medias extends Entities implements MediasRepositoryContract
 
     protected function downloadFile(string $url): ?string
     {
-        // $ext = pathinfo($url, PATHINFO_EXTENSION);
-        // $tempPath = tempnam(sys_get_temp_dir(), 'media') . '.' . $ext;
-
         $cleanPath = parse_url($url, PHP_URL_PATH) ?: $url;
         $ext = pathinfo($cleanPath, PATHINFO_EXTENSION);
 
-        $tempPath = tempnam(sys_get_temp_dir(), 'media').($ext !== '' ? '.'.$ext : '');
+        $tempFile = tempnam($this->getDownloadDirectory(), 'media');
+        if ($tempFile === false) {
+            return null;
+        }
+        $tempPath = $ext !== '' ? $tempFile.'.'.$ext : $tempFile;
+        if ($tempPath !== $tempFile && ! rename($tempFile, $tempPath)) {
+            unlink($tempFile);
 
-        $client = new HttpClient;
+            return null;
+        }
+
         try {
-            $client->request('GET', $url, ['sink' => $tempPath, 'verify' => false]);
+            $this->newHttpClient()->request('GET', $url, [
+                'sink' => $tempPath,
+                'verify' => true,
+                'connect_timeout' => $this->downloadConnectTimeout,
+                'timeout' => $this->downloadTimeout,
+            ]);
 
             return $tempPath;
         } catch (Exception $e) {
             Log::error($e);
+            if (file_exists($tempPath)) {
+                unlink($tempPath);
+            }
 
             return null;
         }
+    }
+
+    protected function newHttpClient(): HttpClient
+    {
+        return new HttpClient;
+    }
+
+    protected function getDownloadDirectory(): string
+    {
+        return sys_get_temp_dir();
     }
 
     protected function getNameFromPath(string $path): ?string
