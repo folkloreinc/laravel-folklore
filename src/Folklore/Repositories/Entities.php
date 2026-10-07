@@ -7,6 +7,7 @@ use Folklore\Contracts\Entities\Entity;
 use Folklore\Contracts\Repositories\Entities as EntitiesContract;
 use Folklore\Eloquent\JsonDataCast;
 use Folklore\Support\OffsetPaginator;
+use Illuminate\Contracts\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\AbstractPaginator;
 use Illuminate\Support\Str;
@@ -23,6 +24,14 @@ abstract class Entities implements EntitiesContract
     protected $jsonAttributeExclude = null;
 
     protected $queryColumns = [];
+
+    /**
+     * Columns that the `order` param accepts (see getOrderableColumns()), or
+     * null to accept every column but the model's hidden attributes.
+     *
+     * @var array<string>|null
+     */
+    protected $orderableColumns = null;
 
     protected $identifierHandleColumn = 'handle';
 
@@ -301,27 +310,93 @@ abstract class Entities implements EntitiesContract
         }
 
         if (isset($params['order'])) {
-            if (is_array($params['order'])) {
-                $order = $params['order'];
-                if (isset($order[0]) && ! empty($order[0]) && is_string($order[0])) {
-                    if (isset($order[1]) && ! empty($order[1])) {
-                        $query->orderBy($order[0], $order[1]);
-                    } else {
-                        $query->orderBy($order[0], 'ASC');
-                    }
-                } elseif (isset($order[0]) && ! empty($order[0]) && is_array($order[0])) {
-                    foreach ($order as $subOrder) {
-                        $query->orderBy($subOrder[0], $subOrder[1]);
+            $order = $params['order'];
+            if (is_array($order) && isset($order[0]) && is_array($order[0])) {
+                foreach ($order as $subOrder) {
+                    if (is_array($subOrder)) {
+                        $this->orderQuery($query, $subOrder[0] ?? null, $subOrder[1] ?? null);
                     }
                 }
-            } elseif (isset($params['order_direction']) && ! empty($params['order_direction'])) {
-                $query->orderBy($params['order'], $params['order_direction']);
+            } elseif (is_array($order)) {
+                $this->orderQuery($query, $order[0] ?? null, $order[1] ?? null);
             } else {
-                $query->orderBy($params['order'], 'ASC');
+                $this->orderQuery($query, $order, $params['order_direction'] ?? null);
             }
         }
 
         return $query;
+    }
+
+    /**
+     * Order the query by a column of the `order` param, unless the column is
+     * not orderable (see isOrderableColumn()). A missing or invalid direction
+     * falls back to ascending.
+     */
+    protected function orderQuery($query, $column, $direction = null)
+    {
+        if (is_string($column)) {
+            $column = trim($column);
+        }
+        if (
+            ! ($column instanceof Expression || (is_string($column) && $column !== '')) ||
+            ! $this->isOrderableColumn($column)
+        ) {
+            return $query;
+        }
+
+        $direction = is_string($direction) ? strtolower(trim($direction)) : '';
+
+        return $query->orderBy($column, in_array($direction, ['asc', 'desc'], true) ? $direction : 'asc');
+    }
+
+    /**
+     * Whether the `order` param can order by the column. Expressions come from
+     * code and are always accepted. When getOrderableColumns() returns a list,
+     * the column must match it; otherwise the column, or the JSON column a
+     * path points into, must not be one of getUnorderableColumns().
+     */
+    protected function isOrderableColumn($column): bool
+    {
+        if ($column instanceof Expression) {
+            return true;
+        }
+
+        $column = strtolower($column);
+        $orderableColumns = $this->getOrderableColumns();
+        if (! is_null($orderableColumns)) {
+            return collect($orderableColumns)->contains(
+                fn ($pattern) => Str::is(strtolower($pattern), $column)
+            );
+        }
+
+        $name = trim(Str::afterLast(Str::before($column, '->'), '.'), ' `"[]');
+
+        return ! in_array($name, array_map('strtolower', $this->getUnorderableColumns()), true);
+    }
+
+    /**
+     * Columns that the `order` param accepts, where `*` matches any characters,
+     * or null to accept every column but the unorderable ones.
+     */
+    protected function getOrderableColumns(): ?array
+    {
+        return $this->orderableColumns;
+    }
+
+    /**
+     * Columns that the `order` param refuses when no orderable columns are set:
+     * the model's hidden attributes (passwords, tokens, secrets), except its
+     * timestamps, so that a request can't sort by values it can't read.
+     */
+    protected function getUnorderableColumns(): array
+    {
+        $model = $this->newModel();
+        $timestamps = [$model->getCreatedAtColumn(), $model->getUpdatedAtColumn()];
+        if (method_exists($model, 'getDeletedAtColumn')) {
+            $timestamps[] = $model->getDeletedAtColumn();
+        }
+
+        return array_values(array_diff($model->getHidden(), $timestamps));
     }
 
     /**
