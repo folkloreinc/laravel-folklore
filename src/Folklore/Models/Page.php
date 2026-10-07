@@ -12,10 +12,11 @@ use Folklore\Mediatheque\Support\Traits\HasMedias;
 use Folklore\Models\Concerns\SluggableWithFallback;
 use Folklore\Support\Concerns\HasTypedEntity;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Page extends Model implements HasJsonDataRelations, ToEntity
 {
-    use HasMedias, HasTypedEntity, Sluggable, SluggableWithFallback;
+    use HasMedias, HasTypedEntity, Sluggable, SluggableWithFallback, SoftDeletes;
 
     protected $fillable = ['handle', 'type', 'parent_id', 'data', 'published'];
 

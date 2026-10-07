@@ -109,4 +109,24 @@ class PagesRepositoryTest extends TestCase
 
         $this->assertSame(0, BlockModel::count());
     }
+
+    public function test_destroying_a_page_soft_deletes_it()
+    {
+        $page = $this->pages->create([
+            'handle' => 'about',
+            'title' => ['fr' => 'À propos'],
+            'blocks' => [['type' => 'text', 'body' => 'First']],
+        ]);
+
+        $this->assertTrue($this->pages->destroy($page->id()));
+
+        $this->assertNull($this->pages->findById($page->id()));
+        $this->assertNull($this->pages->findByHandle('about'));
+        $this->assertNull($this->pages->findBySlug('a-propos', 'fr'));
+        $this->assertSame(0, $this->pages->count());
+
+        $model = PageModel::withTrashed()->with('blocks')->findOrFail($page->id());
+        $this->assertTrue($model->trashed());
+        $this->assertCount(1, $model->blocks);
+    }
 }
