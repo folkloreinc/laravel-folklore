@@ -42,6 +42,10 @@ class Pages extends Entities implements PagesRepositoryContract
         return to_entity($model);
     }
 
+    /**
+     * Unpublished pages are returned too. To only find published pages, set
+     * the `published` param: `$pages->setGlobalQuery(['published' => true])`.
+     */
     public function findBySlug(string $slug, ?string $locale = null): ?PageContract
     {
         if (is_null($locale)) {
@@ -63,6 +67,25 @@ class Pages extends Entities implements PagesRepositoryContract
     public function update(string $id, $data): ?PageContract
     {
         return parent::update($id, $data);
+    }
+
+    /**
+     * Besides the common params, `published` (a boolean, or a boolean string
+     * such as "1" or "false" from a request) only keeps published or
+     * unpublished pages. Without it, pages are returned whatever their state.
+     */
+    protected function buildQueryFromParams($query, $params)
+    {
+        $query = parent::buildQueryFromParams($query, $params);
+
+        $published = isset($params['published']) && $params['published'] !== ''
+            ? filter_var($params['published'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE)
+            : null;
+        if (! is_null($published)) {
+            $query->where('published', $published);
+        }
+
+        return $query;
     }
 
     /**
