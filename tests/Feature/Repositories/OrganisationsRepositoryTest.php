@@ -3,6 +3,7 @@
 namespace Folklore\Tests\Feature\Repositories;
 
 use Folklore\Contracts\Repositories\Organisations;
+use Folklore\Models\Organisation as OrganisationModel;
 use Folklore\Tests\TestCase;
 
 class OrganisationsRepositoryTest extends TestCase
@@ -46,5 +47,17 @@ class OrganisationsRepositoryTest extends TestCase
         $this->organisations->create(['name' => 'Acme Inc', 'slug' => 'acme_inc']);
 
         $this->assertSame('acme_inc', $this->organisations->findBySlug('acme_inc')?->slug());
+    }
+
+    public function test_destroying_an_organisation_soft_deletes_it()
+    {
+        $organisation = $this->organisations->create(['name' => 'Acme', 'slug' => 'acme']);
+
+        $this->assertTrue($this->organisations->destroy($organisation->id()));
+
+        $this->assertNull($this->organisations->findById($organisation->id()));
+        $this->assertNull($this->organisations->findBySlug('acme'));
+        $this->assertSame(0, $this->organisations->count());
+        $this->assertTrue(OrganisationModel::withTrashed()->findOrFail($organisation->id())->trashed());
     }
 }
