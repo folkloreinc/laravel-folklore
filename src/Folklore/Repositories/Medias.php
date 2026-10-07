@@ -30,6 +30,13 @@ class Medias extends Entities implements MediasRepositoryContract
 
     protected int $downloadTimeout = 600;
 
+    /**
+     * Maximum size in bytes of a file downloaded when a media is created from
+     * a URL, unless `site.medias.download.max_size` sets another one (null
+     * removes the limit).
+     */
+    protected int $downloadMaxSize = 1024 * 1024 * 1024;
+
     public function __construct(TypeFactory $typeFactory)
     {
         $this->typeFactory = $typeFactory;
@@ -226,7 +233,7 @@ class Medias extends Entities implements MediasRepositoryContract
     }
 
     /**
-     * Whether the URL's host is allowed by `folklore.medias.download.allowed_hosts`.
+     * Whether the URL's host is allowed by `site.medias.download.allowed_hosts`.
      */
     protected function isAllowedDownloadUrl(string $url): bool
     {
@@ -250,11 +257,13 @@ class Medias extends Entities implements MediasRepositoryContract
     }
 
     /**
-     * Hosts that medias can be downloaded from, or null to allow every host.
+     * Hosts that medias can be downloaded from (`*` matches any characters),
+     * from `site.medias.download.allowed_hosts`, or null to allow every host.
+     * Redirects must stay on these hosts too.
      */
     protected function getDownloadAllowedHosts(): ?array
     {
-        $hosts = config('folklore.medias.download.allowed_hosts');
+        $hosts = config('site.medias.download.allowed_hosts');
         if (is_null($hosts)) {
             return null;
         }
@@ -267,7 +276,7 @@ class Medias extends Entities implements MediasRepositoryContract
      */
     protected function getDownloadMaxSize(): ?int
     {
-        $maxSize = config('folklore.medias.download.max_size');
+        $maxSize = config('site.medias.download.max_size', $this->downloadMaxSize);
 
         return is_null($maxSize) ? null : (int) $maxSize;
     }

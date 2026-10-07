@@ -85,13 +85,24 @@ class MediasDownloadTest extends TestCase
 
     public function test_downloads_are_limited_to_one_gigabyte_from_any_host_by_default()
     {
-        $this->assertNull(config('folklore.medias.download.allowed_hosts'));
-        $this->assertSame(1024 * 1024 * 1024, config('folklore.medias.download.max_size'));
+        $medias = $this->makeRepository([]);
+
+        $this->assertNull($medias->allowedHosts());
+        $this->assertSame(1024 * 1024 * 1024, $medias->maxSize());
+    }
+
+    public function test_the_site_config_sets_the_limits()
+    {
+        config(['site.medias.download' => ['allowed_hosts' => ['cdn.example.com'], 'max_size' => 2048]]);
+        $medias = $this->makeRepository([]);
+
+        $this->assertSame(['cdn.example.com'], $medias->allowedHosts());
+        $this->assertSame(2048, $medias->maxSize());
     }
 
     public function test_a_file_announced_as_too_large_is_not_downloaded()
     {
-        config(['folklore.medias.download.max_size' => 10]);
+        config(['site.medias.download.max_size' => 10]);
         $medias = $this->makeRepository([new Response(200, ['Content-Length' => '11'], str_repeat('a', 11))]);
 
         $this->assertNull($medias->download('https://example.com/videos/video.mp4'));
@@ -100,7 +111,7 @@ class MediasDownloadTest extends TestCase
 
     public function test_a_file_growing_past_the_maximum_size_is_not_kept()
     {
-        config(['folklore.medias.download.max_size' => 10]);
+        config(['site.medias.download.max_size' => 10]);
         $medias = $this->makeRepository([new Response(200, [], str_repeat('a', 11))]);
 
         $this->assertNull($medias->download('https://example.com/videos/video.mp4'));
@@ -109,7 +120,7 @@ class MediasDownloadTest extends TestCase
 
     public function test_a_file_of_the_maximum_size_is_downloaded()
     {
-        config(['folklore.medias.download.max_size' => 10]);
+        config(['site.medias.download.max_size' => 10]);
         $medias = $this->makeRepository([new Response(200, ['Content-Length' => '10'], str_repeat('a', 10))]);
 
         $path = $medias->download('https://example.com/videos/video.mp4');
@@ -119,7 +130,7 @@ class MediasDownloadTest extends TestCase
 
     public function test_the_size_limit_can_be_removed()
     {
-        config(['folklore.medias.download.max_size' => null]);
+        config(['site.medias.download.max_size' => null]);
         $medias = $this->makeRepository([new Response(200, [], str_repeat('a', 2048))]);
 
         $path = $medias->download('https://example.com/videos/video.mp4');
@@ -129,7 +140,7 @@ class MediasDownloadTest extends TestCase
 
     public function test_allowed_hosts_restrict_downloads()
     {
-        config(['folklore.medias.download.allowed_hosts' => ['cdn.example.com', '*.example.org']]);
+        config(['site.medias.download.allowed_hosts' => ['cdn.example.com', '*.example.org']]);
         $medias = $this->makeRepository(array_fill(0, 6, new Response(200, [], 'content')));
 
         $this->assertNotNull($medias->download('https://cdn.example.com/a.jpg'));
@@ -143,7 +154,7 @@ class MediasDownloadTest extends TestCase
 
     public function test_allowed_hosts_can_be_a_comma_separated_string()
     {
-        config(['folklore.medias.download.allowed_hosts' => 'cdn.example.com, *.example.org']);
+        config(['site.medias.download.allowed_hosts' => 'cdn.example.com, *.example.org']);
         $medias = $this->makeRepository(array_fill(0, 3, new Response(200, [], 'content')));
 
         $this->assertNotNull($medias->download('https://cdn.example.com/a.jpg'));
@@ -154,7 +165,7 @@ class MediasDownloadTest extends TestCase
 
     public function test_a_redirect_to_a_host_that_is_not_allowed_is_not_followed()
     {
-        config(['folklore.medias.download.allowed_hosts' => ['cdn.example.com']]);
+        config(['site.medias.download.allowed_hosts' => ['cdn.example.com']]);
         $medias = $this->makeRepository([
             new Response(302, ['Location' => 'http://169.254.169.254/latest/meta-data']),
             new Response(200, [], 'secret'),
@@ -167,7 +178,7 @@ class MediasDownloadTest extends TestCase
 
     public function test_a_redirect_to_an_allowed_host_is_followed()
     {
-        config(['folklore.medias.download.allowed_hosts' => ['cdn.example.com']]);
+        config(['site.medias.download.allowed_hosts' => ['cdn.example.com']]);
         $medias = $this->makeRepository([
             new Response(302, ['Location' => 'https://cdn.example.com/b.jpg']),
             new Response(200, [], 'content'),
@@ -197,6 +208,16 @@ class MediasDownloadTest extends TestCase
             public function download(string $url): ?string
             {
                 return $this->downloadFile($url);
+            }
+
+            public function allowedHosts(): ?array
+            {
+                return $this->getDownloadAllowedHosts();
+            }
+
+            public function maxSize(): ?int
+            {
+                return $this->getDownloadMaxSize();
             }
 
             protected function newHttpClient(): HttpClient
