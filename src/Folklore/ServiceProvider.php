@@ -377,6 +377,16 @@ class ServiceProvider extends BaseServiceProvider
                 return $user;
             }
         });
+
+        // Fortify confirms passwords by reading the username as a property of
+        // the user, which entities don't expose: check the password with the
+        // user provider instead. A site can set its own callback in its
+        // FortifyServiceProvider, which boots after this one.
+        Fortify::confirmPasswordsUsing(function ($user, string $password) {
+            return $this->app[StatefulGuard::class]
+                ->getProvider()
+                ->validateCredentials($user, ['password' => $password]);
+        });
     }
 
     public function bootPubNubBroadcaster()
