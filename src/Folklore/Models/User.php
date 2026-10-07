@@ -13,11 +13,12 @@ class User extends Authenticatable implements ToEntity
     use Notifiable;
 
     /**
-     * The attributes that are mass assignable.
+     * The attributes that are mass assignable. The role is not: the users
+     * repository sets it explicitly.
      *
      * @var array
      */
-    protected $fillable = ['name', 'email', 'password', 'role'];
+    protected $fillable = ['name', 'email', 'password'];
 
     /**
      * The attributes that should be hidden for arrays.
