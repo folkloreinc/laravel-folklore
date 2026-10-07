@@ -34,9 +34,9 @@ class TestCase extends BaseTestCase
     }
 
     /**
-     * SQLite in memory by default. Set DB_DRIVER to `mysql` or `mariadb`, with
-     * DB_HOST, DB_PORT, DB_DATABASE, DB_USERNAME and DB_PASSWORD, to run the
-     * tests against a database server, as CI does.
+     * SQLite in memory by default. Set DB_DRIVER to `mysql`, with DB_HOST,
+     * DB_PORT, DB_DATABASE, DB_USERNAME and DB_PASSWORD, to run the tests
+     * against a MySQL server, as CI does.
      */
     protected function getTestDatabaseConnection(): array
     {

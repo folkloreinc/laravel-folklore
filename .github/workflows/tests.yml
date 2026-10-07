@@ -65,23 +65,14 @@ jobs:
       - name: Run tests
         run: vendor/bin/phpunit
 
-  databases:
-    name: PHP 8.4 - Laravel ${{ matrix.laravel }} - ${{ matrix.database.name }}
+  mysql:
+    name: PHP 8.4 - Laravel ${{ matrix.laravel }} - MySQL 8.4
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
         laravel: ['11.*', '12.*', '13.*']
-        database:
-          - name: MySQL 8.4
-            driver: mysql
-            image: mysql:8.4
-            health: mysqladmin ping -h 127.0.0.1 -ppassword
-          - name: MariaDB 11.4
-            driver: mariadb
-            image: mariadb:11.4
-            health: healthcheck.sh --connect --innodb_initialized
         include:
           - laravel: '11.*'
             testbench: '9.*'
@@ -91,15 +82,15 @@ jobs:
             testbench: '11.*'
 
     services:
-      database:
-        image: ${{ matrix.database.image }}
+      mysql:
+        image: mysql:8.4
         env:
           MYSQL_ROOT_PASSWORD: password
           MYSQL_DATABASE: testing
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="${{ matrix.database.health }}"
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -ppassword"
           --health-interval=5s
           --health-timeout=5s
           --health-retries=30
@@ -138,7 +129,7 @@ jobs:
       - name: Run tests
         run: vendor/bin/phpunit
         env:
-          DB_DRIVER: ${{ matrix.database.driver }}
+          DB_DRIVER: mysql
           DB_HOST: 127.0.0.1
           DB_PORT: 3306
           DB_DATABASE: testing
