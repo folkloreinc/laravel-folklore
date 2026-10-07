@@ -11,13 +11,28 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class User implements HasModel, UserContract
 {
+    // Fortify only challenges users whose class uses this trait. Its methods
+    // are overridden below to delegate to the model.
     use TwoFactorAuthenticatable;
+
+    /**
+     * The two-factor authentication columns of the model, which Fortify reads
+     * as properties of the user. They are copied from the model when the
+     * entity is created and when forceFill() changes the model.
+     */
+    public $two_factor_secret = null;
+
+    public $two_factor_recovery_codes = null;
+
+    public $two_factor_confirmed_at = null;
 
     protected $model;
 
     public function __construct(Authenticatable $model)
     {
         $this->model = $model;
+
+        $this->syncTwoFactorAttributes();
     }
 
     public function id(): string
@@ -232,29 +247,75 @@ class User implements HasModel, UserContract
     {
         $this->model->forceFill($attributes);
 
+        $this->syncTwoFactorAttributes();
+
         return $this;
     }
 
     /**
-     * Read an attribute of the model. Fortify reads the username and the
-     * two-factor authentication columns as properties of the user.
+     * Determine if two-factor authentication has been enabled.
      *
-     * @param  string  $key
-     * @return mixed
+     * @return bool
      */
-    public function __get($key)
+    public function hasEnabledTwoFactorAuthentication()
     {
-        return $this->model->getAttribute($key);
+        return $this->model->hasEnabledTwoFactorAuthentication();
     }
 
     /**
-     * Determine if an attribute of the model is set.
+     * Get the user's two factor authentication recovery codes.
      *
-     * @param  string  $key
-     * @return bool
+     * @return array
      */
-    public function __isset($key)
+    public function recoveryCodes()
     {
-        return isset($this->model[$key]);
+        return $this->model->recoveryCodes();
+    }
+
+    /**
+     * Replace the given recovery code with a new one in the user's stored codes.
+     *
+     * @param  string  $code
+     * @return void
+     */
+    public function replaceRecoveryCode($code)
+    {
+        $this->model->replaceRecoveryCode($code);
+
+        $this->syncTwoFactorAttributes();
+    }
+
+    /**
+     * Get the QR code SVG of the user's two factor authentication QR code URL.
+     *
+     * @return string
+     */
+    public function twoFactorQrCodeSvg()
+    {
+        return $this->model->twoFactorQrCodeSvg();
+    }
+
+    /**
+     * Get the two factor authentication QR code URL.
+     *
+     * @return string
+     */
+    public function twoFactorQrCodeUrl()
+    {
+        return $this->model->twoFactorQrCodeUrl();
+    }
+
+    /**
+     * Copy the two-factor authentication columns of the model. The raw
+     * attributes are read, so that a model without these columns doesn't
+     * throw when it prevents accessing missing attributes.
+     */
+    protected function syncTwoFactorAttributes(): void
+    {
+        $attributes = $this->model->getAttributes();
+
+        $this->two_factor_secret = $attributes['two_factor_secret'] ?? null;
+        $this->two_factor_recovery_codes = $attributes['two_factor_recovery_codes'] ?? null;
+        $this->two_factor_confirmed_at = $attributes['two_factor_confirmed_at'] ?? null;
     }
 }

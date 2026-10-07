@@ -4,8 +4,10 @@ namespace Folklore\Tests\Feature\Auth;
 
 use Folklore\Contracts\Entities\User as UserContract;
 use Folklore\Contracts\Repositories\Users;
+use Folklore\Entities\User as UserEntity;
 use Folklore\Models\User as UserModel;
 use Folklore\Tests\TestCase;
+use Illuminate\Database\Eloquent\Model;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
 use Laravel\Fortify\FortifyServiceProvider;
@@ -185,6 +187,45 @@ class TwoFactorAuthenticationTest extends TestCase
 
         $this->assertArrayNotHasKey('two_factor_secret', $attributes);
         $this->assertArrayNotHasKey('two_factor_recovery_codes', $attributes);
+    }
+
+    public function test_the_entity_copies_the_two_factor_columns_of_the_model()
+    {
+        $user = $this->createUserWithTwoFactorAuthentication();
+        $model = UserModel::findOrFail($user->id());
+        $entity = $this->users->findById($user->id());
+
+        $this->assertSame($model->two_factor_secret, $entity->two_factor_secret);
+        $this->assertSame($model->two_factor_recovery_codes, $entity->two_factor_recovery_codes);
+        $this->assertNotNull($entity->two_factor_confirmed_at);
+
+        $entity->forceFill(['two_factor_secret' => null, 'two_factor_confirmed_at' => null]);
+
+        $this->assertNull($entity->two_factor_secret);
+        $this->assertNull($entity->two_factor_confirmed_at);
+        $this->assertNull($entity->getModel()->two_factor_secret);
+    }
+
+    public function test_the_entity_does_not_expose_other_attributes_of_the_model()
+    {
+        $entity = $this->createUser();
+
+        $this->assertFalse(isset($entity->password));
+        $this->assertFalse(property_exists($entity, 'email'));
+    }
+
+    public function test_an_entity_without_two_factor_columns_does_not_read_missing_attributes()
+    {
+        Model::preventAccessingMissingAttributes();
+
+        try {
+            $entity = new UserEntity((new UserModel)->setRawAttributes(['id' => 1, 'email' => 'jane@example.com']));
+        } finally {
+            Model::preventAccessingMissingAttributes(false);
+        }
+
+        $this->assertNull($entity->two_factor_secret);
+        $this->assertNull($entity->two_factor_confirmed_at);
     }
 
     protected function createUser(): UserContract
