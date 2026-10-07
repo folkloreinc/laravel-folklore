@@ -751,12 +751,6 @@ parameters:
 			path: src/Folklore/Services/PubSubHubbub/PubSubHubbubManager.php
 
 		-
-			message: '#^Cannot instantiate interface Folklore\\Contracts\\Site\\Site\.$#'
-			identifier: new.interface
-			count: 1
-			path: src/Folklore/Site/Manager.php
-
-		-
 			message: '#^Trait Folklore\\Support\\Concerns\\CommandIsDaemon is used zero times and is not analysed\.$#'
 			identifier: trait.unused
 			count: 1

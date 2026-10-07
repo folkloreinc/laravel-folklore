@@ -32,6 +32,7 @@ use Folklore\Services\Google\Drive;
 use Folklore\Services\Google\Maps;
 use Folklore\Services\Google\Places;
 use Folklore\Services\PubSubHubbub\PubSubHubbubManager;
+use Folklore\Site\Manager as SiteManager;
 use Folklore\Support\Concerns\RegistersBindings;
 use Folklore\Support\OffsetPaginator;
 use Illuminate\Broadcasting\BroadcastManager;
@@ -66,6 +67,8 @@ class ServiceProvider extends BaseServiceProvider
         $this->registerRepositories();
 
         $this->registerMediatheque();
+
+        $this->registerSite();
 
         if ($this->app['config']->get('services.customerio') !== null) {
             $this->registerCustomerIo();
@@ -122,6 +125,15 @@ class ServiceProvider extends BaseServiceProvider
             File::class,
             MediaFile::class
         );
+    }
+
+    protected function registerSite()
+    {
+        $this->app->singleton(Contracts\Site\Factory::class, function ($app) {
+            return new SiteManager($app);
+        });
+
+        $this->app->alias(Contracts\Site\Factory::class, SiteManager::class);
     }
 
     /**
