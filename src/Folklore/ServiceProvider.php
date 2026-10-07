@@ -63,6 +63,8 @@ class ServiceProvider extends BaseServiceProvider
      */
     public function register()
     {
+        $this->mergeConfigFrom(__DIR__.'/../config/folklore.php', 'folklore');
+
         $this->registerRepositories();
 
         $this->registerMediatheque();
@@ -206,6 +208,12 @@ class ServiceProvider extends BaseServiceProvider
         $this->bootPubNubBroadcaster();
 
         $this->bootMail();
+
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                __DIR__.'/../config/folklore.php' => config_path('folklore.php'),
+            ], 'folklore-config');
+        }
 
         // Console
         if ($this->app->runningInConsole()) {

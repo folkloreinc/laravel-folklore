@@ -8,9 +8,14 @@ use Folklore\Contracts\Repositories\Medias as MediasRepositoryContract;
 use Folklore\Mediatheque\Contracts\Models\Media as MediaModelContract;
 use Folklore\Mediatheque\Contracts\Type\Factory as TypeFactory;
 use GuzzleHttp\Client as HttpClient;
+use GuzzleHttp\Psr7\FnStream;
+use GuzzleHttp\Psr7\Utils;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\UriInterface;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\File\File;
 
 class Medias extends Entities implements MediasRepositoryContract
@@ -133,6 +138,12 @@ class Medias extends Entities implements MediasRepositoryContract
 
     protected function downloadFile(string $url): ?string
     {
+        if (! $this->isAllowedDownloadUrl($url)) {
+            Log::warning('Media download refused: the host of '.$url.' is not allowed.');
+
+            return null;
+        }
+
         $cleanPath = parse_url($url, PHP_URL_PATH) ?: $url;
         $ext = pathinfo($cleanPath, PATHINFO_EXTENSION);
 
@@ -147,23 +158,118 @@ class Medias extends Entities implements MediasRepositoryContract
             return null;
         }
 
+        $maxSize = $this->getDownloadMaxSize();
+        $stream = null;
+        $size = 0;
+        $tooLarge = false;
+
         try {
+            $stream = Utils::streamFor(Utils::tryFopen($tempPath, 'w+'));
+            // Writing nothing once the file is too large makes the HTTP client
+            // abort the transfer.
+            $sink = FnStream::decorate($stream, [
+                'write' => function (string $data) use ($stream, $maxSize, &$size, &$tooLarge): int {
+                    $size += strlen($data);
+                    if (! is_null($maxSize) && $size > $maxSize) {
+                        $tooLarge = true;
+
+                        return 0;
+                    }
+
+                    return $stream->write($data);
+                },
+            ]);
+
             $this->newHttpClient()->request('GET', $url, [
-                'sink' => $tempPath,
+                'sink' => $sink,
                 'verify' => true,
                 'connect_timeout' => $this->downloadConnectTimeout,
                 'timeout' => $this->downloadTimeout,
+                'allow_redirects' => [
+                    'on_redirect' => function ($request, $response, UriInterface $uri) {
+                        if (! $this->isAllowedDownloadUrl((string) $uri)) {
+                            throw new RuntimeException('Redirected to a host that is not allowed: '.$uri->getHost().'.');
+                        }
+                    },
+                ],
+                'on_headers' => function ($response) use ($maxSize) {
+                    $length = $response instanceof ResponseInterface
+                        ? $response->getHeaderLine('Content-Length')
+                        : '';
+                    if (! is_null($maxSize) && ctype_digit($length) && (int) $length > $maxSize) {
+                        throw new RuntimeException('The file is larger than the maximum download size of '.$maxSize.' bytes.');
+                    }
+                },
             ]);
 
-            return $tempPath;
+            if ($tooLarge) {
+                throw new RuntimeException('The file is larger than the maximum download size of '.$maxSize.' bytes.');
+            }
+
+            $failed = false;
         } catch (Exception $e) {
             Log::error($e);
+            $failed = true;
+        }
+
+        $stream?->close();
+
+        if ($failed) {
             if (file_exists($tempPath)) {
                 unlink($tempPath);
             }
 
             return null;
         }
+
+        return $tempPath;
+    }
+
+    /**
+     * Whether the URL's host is allowed by `folklore.medias.download.allowed_hosts`.
+     */
+    protected function isAllowedDownloadUrl(string $url): bool
+    {
+        $allowedHosts = $this->getDownloadAllowedHosts();
+        if (is_null($allowedHosts)) {
+            return true;
+        }
+
+        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
+        if ($host === '') {
+            return false;
+        }
+
+        foreach ($allowedHosts as $allowedHost) {
+            if (Str::is(strtolower(trim($allowedHost)), $host)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Hosts that medias can be downloaded from, or null to allow every host.
+     */
+    protected function getDownloadAllowedHosts(): ?array
+    {
+        $hosts = config('folklore.medias.download.allowed_hosts');
+        if (is_null($hosts)) {
+            return null;
+        }
+
+        return is_string($hosts) ? explode(',', $hosts) : (array) $hosts;
+    }
+
+    /**
+     * Maximum size of a downloaded file in bytes, or null for no limit.
+     */
+    protected function getDownloadMaxSize(): ?int
+    {
+        $maxSize = config('folklore.medias.download.max_size');
+
+        return is_null($maxSize) ? null : (int) $maxSize;
     }
 
     protected function newHttpClient(): HttpClient

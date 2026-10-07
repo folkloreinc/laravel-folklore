@@ -20,6 +20,8 @@ class MediasDownloadTest extends TestCase
 
     protected array $history = [];
 
+    protected MockHandler $mock;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -81,9 +83,105 @@ class MediasDownloadTest extends TestCase
         $this->assertSame([basename($path)], $this->filesInDirectory());
     }
 
+    public function test_downloads_are_limited_to_one_gigabyte_from_any_host_by_default()
+    {
+        $this->assertNull(config('folklore.medias.download.allowed_hosts'));
+        $this->assertSame(1024 * 1024 * 1024, config('folklore.medias.download.max_size'));
+    }
+
+    public function test_a_file_announced_as_too_large_is_not_downloaded()
+    {
+        config(['folklore.medias.download.max_size' => 10]);
+        $medias = $this->makeRepository([new Response(200, ['Content-Length' => '11'], str_repeat('a', 11))]);
+
+        $this->assertNull($medias->download('https://example.com/videos/video.mp4'));
+        $this->assertSame([], $this->filesInDirectory());
+    }
+
+    public function test_a_file_growing_past_the_maximum_size_is_not_kept()
+    {
+        config(['folklore.medias.download.max_size' => 10]);
+        $medias = $this->makeRepository([new Response(200, [], str_repeat('a', 11))]);
+
+        $this->assertNull($medias->download('https://example.com/videos/video.mp4'));
+        $this->assertSame([], $this->filesInDirectory());
+    }
+
+    public function test_a_file_of_the_maximum_size_is_downloaded()
+    {
+        config(['folklore.medias.download.max_size' => 10]);
+        $medias = $this->makeRepository([new Response(200, ['Content-Length' => '10'], str_repeat('a', 10))]);
+
+        $path = $medias->download('https://example.com/videos/video.mp4');
+
+        $this->assertSame(str_repeat('a', 10), file_get_contents($path));
+    }
+
+    public function test_the_size_limit_can_be_removed()
+    {
+        config(['folklore.medias.download.max_size' => null]);
+        $medias = $this->makeRepository([new Response(200, [], str_repeat('a', 2048))]);
+
+        $path = $medias->download('https://example.com/videos/video.mp4');
+
+        $this->assertSame(2048, filesize($path));
+    }
+
+    public function test_allowed_hosts_restrict_downloads()
+    {
+        config(['folklore.medias.download.allowed_hosts' => ['cdn.example.com', '*.example.org']]);
+        $medias = $this->makeRepository(array_fill(0, 6, new Response(200, [], 'content')));
+
+        $this->assertNotNull($medias->download('https://cdn.example.com/a.jpg'));
+        $this->assertNotNull($medias->download('https://CDN.Example.com/b.jpg'));
+        $this->assertNotNull($medias->download('https://images.example.org/c.jpg'));
+        $this->assertNull($medias->download('https://example.org/d.jpg'));
+        $this->assertNull($medias->download('https://cdn.example.com.attacker.test/e.jpg'));
+        $this->assertNull($medias->download('http://169.254.169.254/latest/meta-data'));
+        $this->assertCount(3, $this->history);
+    }
+
+    public function test_allowed_hosts_can_be_a_comma_separated_string()
+    {
+        config(['folklore.medias.download.allowed_hosts' => 'cdn.example.com, *.example.org']);
+        $medias = $this->makeRepository(array_fill(0, 3, new Response(200, [], 'content')));
+
+        $this->assertNotNull($medias->download('https://cdn.example.com/a.jpg'));
+        $this->assertNotNull($medias->download('https://images.example.org/b.jpg'));
+        $this->assertNull($medias->download('https://example.com/c.jpg'));
+        $this->assertCount(2, $this->history);
+    }
+
+    public function test_a_redirect_to_a_host_that_is_not_allowed_is_not_followed()
+    {
+        config(['folklore.medias.download.allowed_hosts' => ['cdn.example.com']]);
+        $medias = $this->makeRepository([
+            new Response(302, ['Location' => 'http://169.254.169.254/latest/meta-data']),
+            new Response(200, [], 'secret'),
+        ]);
+
+        $this->assertNull($medias->download('https://cdn.example.com/a.jpg'));
+        $this->assertCount(1, $this->mock);
+        $this->assertSame([], $this->filesInDirectory());
+    }
+
+    public function test_a_redirect_to_an_allowed_host_is_followed()
+    {
+        config(['folklore.medias.download.allowed_hosts' => ['cdn.example.com']]);
+        $medias = $this->makeRepository([
+            new Response(302, ['Location' => 'https://cdn.example.com/b.jpg']),
+            new Response(200, [], 'content'),
+        ]);
+
+        $path = $medias->download('https://cdn.example.com/a.jpg');
+
+        $this->assertSame('content', file_get_contents($path));
+    }
+
     protected function makeRepository(array $responses): Medias
     {
-        $stack = HandlerStack::create(new MockHandler($responses));
+        $this->mock = new MockHandler($responses);
+        $stack = HandlerStack::create($this->mock);
         $stack->push(Middleware::history($this->history));
 
         return new class($this->app->make(TypeFactory::class), new HttpClient(['handler' => $stack]), $this->directory) extends Medias
