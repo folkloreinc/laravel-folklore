@@ -176,6 +176,41 @@ class MediasDownloadTest extends TestCase
         $this->assertSame([], $this->filesInDirectory());
     }
 
+    public function test_allowed_hosts_refuse_hosts_that_are_not_plain_names()
+    {
+        config(['site.medias.download.allowed_hosts' => ['cdn.example.com', '*.example.org']]);
+        $medias = $this->makeRepository(array_fill(0, 9, new Response(200, [], 'content')));
+
+        foreach ([
+            'https://x%2E.example.org/a.jpg',
+            'https://127.0.0.%31.example.org/a.jpg',
+            'https://images..example.org/a.jpg',
+            'https://user@cdn.example.com/a.jpg',
+            'https://user:secret@cdn.example.com/a.jpg',
+            'https://127.0.0.1\\@cdn.example.com/a.jpg',
+            'https://cdn.example.com./a.jpg',
+            'https://[::1]/a.jpg',
+        ] as $url) {
+            $this->assertNull($medias->download($url), $url);
+        }
+        $this->assertCount(0, $this->history);
+
+        $this->assertNotNull($medias->download('https://CDN.example.com/a.jpg'));
+    }
+
+    public function test_a_redirect_to_a_host_that_is_not_a_plain_name_is_not_followed()
+    {
+        config(['site.medias.download.allowed_hosts' => ['*.example.org']]);
+        $medias = $this->makeRepository([
+            new Response(302, ['Location' => 'https://x%2E.example.org/b.jpg']),
+            new Response(200, [], 'content'),
+        ]);
+
+        $this->assertNull($medias->download('https://cdn.example.org/a.jpg'));
+        $this->assertCount(1, $this->mock);
+        $this->assertSame([], $this->filesInDirectory());
+    }
+
     public function test_a_redirect_to_an_allowed_host_is_followed()
     {
         config(['site.medias.download.allowed_hosts' => ['cdn.example.com']]);
