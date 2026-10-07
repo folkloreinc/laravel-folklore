@@ -16,15 +16,51 @@ class TestCase extends BaseTestCase
      */
     protected function getEnvironmentSetUp($app)
     {
-        // Setup default database to use sqlite :memory:
         $app['config']->set('database.default', 'testbench');
-        $app['config']->set('database.connections.testbench', [
-            'driver' => 'sqlite',
-            'database' => ':memory:',
-            'prefix' => '',
-        ]);
+        $app['config']->set('database.connections.testbench', $this->getTestDatabaseConnection());
 
         $app->usePublicPath(__DIR__.'/fixture');
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Unlike SQLite in memory, a database server keeps its tables from one
+        // test to the next.
+        if ($this->app['config']->get('database.connections.testbench.driver') !== 'sqlite') {
+            $this->artisan('db:wipe', ['--database' => 'testbench']);
+        }
+    }
+
+    /**
+     * SQLite in memory by default. Set DB_DRIVER to `mysql` or `mariadb`, with
+     * DB_HOST, DB_PORT, DB_DATABASE, DB_USERNAME and DB_PASSWORD, to run the
+     * tests against a database server, as CI does.
+     */
+    protected function getTestDatabaseConnection(): array
+    {
+        $driver = env('DB_DRIVER', 'sqlite');
+        if ($driver === 'sqlite') {
+            return [
+                'driver' => 'sqlite',
+                'database' => ':memory:',
+                'prefix' => '',
+            ];
+        }
+
+        return [
+            'driver' => $driver,
+            'host' => env('DB_HOST', '127.0.0.1'),
+            'port' => env('DB_PORT', '3306'),
+            'database' => env('DB_DATABASE', 'testing'),
+            'username' => env('DB_USERNAME', 'root'),
+            'password' => env('DB_PASSWORD', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
+        ];
     }
 
     protected function getPackageProviders($app)

@@ -32,10 +32,10 @@ The shared foundation of the Laravel sites built by Folklore. It is a toolbox:
 
 - Requirements: PHP `^8.3`, Laravel 11 to 13 (see `composer.json`).
 - Install dependencies: `composer install`
-- Run tests: `composer test` (PHPUnit with Orchestra Testbench; suites in `tests/Unit` and `tests/Feature`).
+- Run tests: `composer test` (PHPUnit with Orchestra Testbench; suites in `tests/Unit` and `tests/Feature`). They use SQLite in memory by default. To run them against MySQL or MariaDB, set `DB_DRIVER` (`mysql` or `mariadb`) with `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME` and `DB_PASSWORD`; the database is wiped before each test.
 - Format code: `composer format` (Laravel Pint, `laravel` preset, see `pint.json`).
 - Static analysis: `composer analyse` (Larastan, see `phpstan.neon`). Existing errors are listed in `phpstan-baseline.neon`: never add new errors to it, fix them instead. When a change fixes baselined errors, regenerate it with `vendor/bin/phpstan analyse --generate-baseline --memory-limit=2G`. If Larastan reports unmatched baseline entries after a dependency update, refresh Testbench's package discovery (`vendor/bin/testbench package:discover`) and clear the result cache (`vendor/bin/phpstan clear-result-cache`) before regenerating.
-- CI (GitHub Actions): `.github/workflows/tests.yml` runs the tests on PHP 8.3 and 8.4 × Laravel 11 to 13; `.github/workflows/code-quality.yml` runs `composer validate`, Pint and Larastan.
+- CI (GitHub Actions): `.github/workflows/tests.yml` runs the tests on PHP 8.3 and 8.4 × Laravel 11 to 13 with SQLite, and on PHP 8.4 × Laravel 11 to 13 with MySQL 8.4 and MariaDB 11.4; `.github/workflows/code-quality.yml` runs `composer validate`, Pint and Larastan.
 - The commit that applied Pint to the whole codebase is listed in `.git-blame-ignore-revs`; run `git config blame.ignoreRevsFile .git-blame-ignore-revs` to skip it in `git blame`.
 - Layout: `src/Folklore` (namespace `Folklore\`), `src/migrations`, `src/stubs`, `tests`.
 - Active development happens on the `v1.1` branch.
