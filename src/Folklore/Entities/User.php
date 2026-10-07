@@ -7,9 +7,12 @@ use Folklore\Contracts\Entities\User as UserContract;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class User implements HasModel, UserContract
 {
+    use TwoFactorAuthenticatable;
+
     protected $model;
 
     public function __construct(Authenticatable $model)
@@ -214,18 +217,44 @@ class User implements HasModel, UserContract
         return $this->model->email;
     }
 
-    /**
-     * Get the user's two factor authentication recovery codes.
-     *
-     * @return array
-     */
-    public function recoveryCodes()
-    {
-        return json_decode(decrypt($this->two_factor_recovery_codes), true);
-    }
-
     public function save(array $options = [])
     {
         return $this->model->save($options);
+    }
+
+    /**
+     * Fill the model with the given attributes, guarded or not. Fortify
+     * uses it to update the user, before calling save().
+     *
+     * @return $this
+     */
+    public function forceFill(array $attributes)
+    {
+        $this->model->forceFill($attributes);
+
+        return $this;
+    }
+
+    /**
+     * Read an attribute of the model. Fortify reads the username and the
+     * two-factor authentication columns as properties of the user.
+     *
+     * @param  string  $key
+     * @return mixed
+     */
+    public function __get($key)
+    {
+        return $this->model->getAttribute($key);
+    }
+
+    /**
+     * Determine if an attribute of the model is set.
+     *
+     * @param  string  $key
+     * @return bool
+     */
+    public function __isset($key)
+    {
+        return isset($this->model[$key]);
     }
 }

@@ -58,6 +58,18 @@ class Users extends Entities implements UsersContract
     }
 
     /**
+     * Get the class name of the user model. Fortify finds the user of a
+     * two-factor challenge with it, so the model must use Fortify's
+     * TwoFactorAuthenticatable trait when two-factor authentication is enabled.
+     *
+     * @return class-string<Model>
+     */
+    public function getModel()
+    {
+        return get_class($this->newModel());
+    }
+
+    /**
      * Retrieve a user by their unique identifier.
      *
      * @param  mixed  $identifier
