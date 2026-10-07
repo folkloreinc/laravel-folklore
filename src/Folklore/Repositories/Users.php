@@ -10,6 +10,7 @@ use Illuminate\Auth\EloquentUserProvider;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Hash;
 
 class Users extends Entities implements UsersContract
@@ -50,6 +51,13 @@ class Users extends Entities implements UsersContract
 
     protected function fillModel($model, $data)
     {
+        // The role is not mass assignable on the model, so that it can't be
+        // set from unvalidated input; the repository still accepts it.
+        if ($model instanceof UserModel && array_key_exists('role', $data)) {
+            $model->forceFill(['role' => $data['role']]);
+            $data = Arr::except($data, ['role']);
+        }
+
         parent::fillModel($model, $data);
 
         if (isset($data['password']) && ! empty($data['password'])) {
