@@ -38,7 +38,7 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php: ${{ matrix.php }}
+          php-version: ${{ matrix.php }}
           extensions: dom, curl, libxml, mbstring, zip, pdo, sqlite, pdo_sqlite, fileinfo, gd
           coverage: none
 
@@ -102,7 +102,7 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php: '8.4'
+          php-version: '8.4'
           extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_mysql, fileinfo, gd
           coverage: none
 
