@@ -9,10 +9,12 @@ use Folklore\Mediatheque\Contracts\Models\Media as MediaModelContract;
 use Folklore\Mediatheque\Contracts\Type\Factory as TypeFactory;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Psr7\FnStream;
+use GuzzleHttp\Psr7\Uri;
 use GuzzleHttp\Psr7\Utils;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\UriInterface;
 use RuntimeException;
@@ -242,8 +244,8 @@ class Medias extends Entities implements MediasRepositoryContract
             return true;
         }
 
-        $host = strtolower((string) parse_url($url, PHP_URL_HOST));
-        if ($host === '') {
+        $host = $this->getDownloadHost($url);
+        if (is_null($host)) {
             return false;
         }
 
@@ -254,6 +256,37 @@ class Medias extends Entities implements MediasRepositoryContract
         }
 
         return false;
+    }
+
+    /**
+     * The host of a download URL, lowercased, or null unless it is a plain
+     * host name. Percent escapes, user info, backslashes, brackets or a
+     * trailing dot can make the HTTP client connect to another host than the
+     * one checked (GHSA-v5mv-p594-2x33), so such URLs are refused when the
+     * allowed hosts are set.
+     */
+    protected function getDownloadHost(string $url): ?string
+    {
+        if (str_contains($url, '\\')) {
+            return null;
+        }
+
+        try {
+            $uri = new Uri($url);
+        } catch (InvalidArgumentException $e) {
+            return null;
+        }
+
+        $host = strtolower($uri->getHost());
+        if (
+            $uri->getUserInfo() !== '' ||
+            $host !== strtolower((string) parse_url($url, PHP_URL_HOST)) ||
+            preg_match('/\A[a-z0-9-]+(\.[a-z0-9-]+)*\z/', $host) !== 1
+        ) {
+            return null;
+        }
+
+        return $host;
     }
 
     /**
