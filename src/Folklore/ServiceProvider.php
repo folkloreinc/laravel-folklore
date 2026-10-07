@@ -33,6 +33,7 @@ use Folklore\Services\Google\Maps;
 use Folklore\Services\Google\Places;
 use Folklore\Services\PubSubHubbub\PubSubHubbubManager;
 use Folklore\Support\Concerns\RegistersBindings;
+use Folklore\Support\Csv;
 use Folklore\Support\OffsetPaginator;
 use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Contracts\Auth\StatefulGuard;
@@ -269,10 +270,13 @@ class ServiceProvider extends BaseServiceProvider
             )->header('Content-type', 'image/png');
         });
 
-        Response::macro('csv', function (callable $getRows, $filename) {
+        // Values starting like a formula (=, +, -, @) are prefixed with a single
+        // quote, so that a spreadsheet shows them as text instead of running
+        // them, unless $escapeFormulas is false. Numbers are left as they are.
+        Response::macro('csv', function (callable $getRows, $filename, bool $escapeFormulas = true) {
             try {
                 $response = response()->streamDownload(
-                    function () use ($getRows) {
+                    function () use ($getRows, $escapeFormulas) {
                         try {
                             $file = fopen('php://output', 'w+');
 
@@ -296,9 +300,9 @@ class ServiceProvider extends BaseServiceProvider
                                         $columns = collect($row)
                                             ->keys()
                                             ->toArray();
-                                        fputcsv($file, $columns);
+                                        fputcsv($file, $escapeFormulas ? Csv::escapeFormulas($columns) : $columns, escape: '\\');
                                     }
-                                    fputcsv($file, $row);
+                                    fputcsv($file, $escapeFormulas ? Csv::escapeFormulas($row) : $row, escape: '\\');
                                 }
                                 $lastPage =
                                     $items instanceof AbstractPaginator ||
