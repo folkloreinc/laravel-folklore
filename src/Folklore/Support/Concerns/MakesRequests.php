@@ -4,9 +4,12 @@ namespace Folklore\Support\Concerns;
 
 use Exception;
 use GuzzleHttp\Exception\RequestException;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Psr\Http\Message\ResponseInterface;
+use Throwable;
 
 trait MakesRequests
 {
@@ -123,12 +126,26 @@ trait MakesRequests
 
             return $response;
         } catch (RequestException $e) {
-            return $e->getResponse();
+            $response = $this->getRequestExceptionResponse($e);
+
+            return ! is_null($response) ? new Response($response) : null;
         } catch (Exception $e) {
             Log::error($e);
 
             return null;
         }
+    }
+
+    /**
+     * The response carried by a request exception, if any. Guzzle 7 exposes it
+     * on every `RequestException`, Guzzle 8 only on its `ResponseException`
+     * subclass.
+     */
+    protected function getRequestExceptionResponse(Throwable $e): ?ResponseInterface
+    {
+        $response = method_exists($e, 'getResponse') ? $e->getResponse() : null;
+
+        return $response instanceof ResponseInterface ? $response : null;
     }
 
     protected function getRequestClient()

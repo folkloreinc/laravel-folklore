@@ -33,7 +33,7 @@
         "folklore/laravel-locale": "^8.1",
         "cviebrock/eloquent-sluggable": "^11.0|^12.0|^13.0",
         "google/apiclient": "^2.18",
-        "guzzlehttp/guzzle": "^7.15.2",
+        "guzzlehttp/guzzle": "^7.15.2|^8.0.1",
         "laravel/fortify": "^1.13",
         "parsecsv/php-parsecsv": "^1.3"
     },
