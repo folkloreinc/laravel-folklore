@@ -25,7 +25,8 @@ class Places implements ServicesPlacesContract
     {
         $httpClient = new HttpClient([
             'headers' => [
-                'referer' => config('app.url'),
+                // Guzzle 8 only accepts string header values.
+                'referer' => (string) config('app.url'),
             ],
         ]);
 

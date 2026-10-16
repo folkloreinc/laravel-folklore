@@ -202,12 +202,7 @@ class Medias extends Entities implements MediasRepositoryContract
                     },
                 ],
                 'on_headers' => function ($response) use ($maxSize) {
-                    $length = $response instanceof ResponseInterface
-                        ? $response->getHeaderLine('Content-Length')
-                        : '';
-                    if (! is_null($maxSize) && ctype_digit($length) && (int) $length > $maxSize) {
-                        throw new RuntimeException('The file is larger than the maximum download size of '.$maxSize.' bytes.');
-                    }
+                    $this->checkDownloadContentLength($response, $maxSize);
                 },
             ]);
 
@@ -232,6 +227,21 @@ class Medias extends Entities implements MediasRepositoryContract
         }
 
         return $tempPath;
+    }
+
+    /**
+     * Refuses a download whose Content-Length is larger than the maximum size.
+     * Guzzle 7's MockHandler also passes the exception of a failed request as
+     * the response.
+     */
+    protected function checkDownloadContentLength(mixed $response, ?int $maxSize): void
+    {
+        $length = $response instanceof ResponseInterface
+            ? $response->getHeaderLine('Content-Length')
+            : '';
+        if (! is_null($maxSize) && ctype_digit($length) && (int) $length > $maxSize) {
+            throw new RuntimeException('The file is larger than the maximum download size of '.$maxSize.' bytes.');
+        }
     }
 
     /**
