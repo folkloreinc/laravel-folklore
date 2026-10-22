@@ -31,7 +31,7 @@ What both pilots need first: Niche's brand images, and the contests platform bef
 - [ ] Modules switched in `config/site.php`; modules that alpha 1 doesn't port yet stay off and don't load their 1.x dependencies
 - [ ] Contracts without Panneau 1.x; optional typed base entity; typed query next to `get()`; PHPDoc types on the 1.x methods
 - [ ] Global query context: `withGlobalQuery()`, default resolver ([decisions/0004](decisions/0004-global-query-context.md))
-- [ ] `findById()` by route key for repositories that opt in with `$findByRouteKey` ([decisions/0015](decisions/0015-find-by-id-or-route-key.md)); `@template TModel, TEntity` on the base class
+- [ ] `$idColumn` on the base repository, `id` by default, for `findById()`, `update()`, `destroy()` and the `ids` of `EntitiesQuery`, with the contract test that `findById($entity->id())` finds the entity ([decisions/0015](decisions/0015-id-column.md)); `@template TModel, TEntity` on the base class
 - [ ] `make:entity` and `make:repository` on the 2.0 bases
 - [ ] `JsonDataCast` ([json-data.md](json-data.md), decisions [0005](decisions/0005-json-reference-keys.md) to [0007](decisions/0007-batch-resolution-and-listing.md)):
   - [ ] registry of keys, `map()`, `enforceMap()`, per-relation `key`, fallback to the relation name

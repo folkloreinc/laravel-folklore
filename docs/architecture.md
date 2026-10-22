@@ -78,7 +78,7 @@ The pilot writes its entities and repositories on a prototype of the core, to be
 | `Contracts\Repositories\Entities<TEntity>` with `findById()` only | The 1.x contract, generic: also `get()`, `count()`, `create()`… | Ready: the pilot's repositories extend the base class, which implements them |
 | `Entities\ModelEntity<TModel>` | Same | Ready |
 | `Repositories\Entities<TModel, TEntity>`: `newModel()`, `newQuery(): Builder`, `toEntity()` | The 1.x base class, not generic; `newQuery()` untyped, entities built by `getEntityFromModel()` | Alpha 1: the base class gets `@template TModel, TEntity` with defaults |
-| `findById()` by the model's route key (the public uid) | `findById()` by `id`, or by route key with `$findByRouteKey` ([decisions/0015](decisions/0015-find-by-id-or-route-key.md)) | Alpha 1: the pilot's repositories set `$findByRouteKey` |
+| `findById()` by the model's route key (the public uid) | `findById()` by `$idColumn`, `id` by default ([decisions/0015](decisions/0015-id-column.md)) | Alpha 1: the pilot's repositories set `$idColumn = 'uid'` |
 
 ### Review against `laravel-mediatheque` 2
 
@@ -95,6 +95,7 @@ The pilot writes its entities and repositories on a prototype of the core, to be
 - Existing methods get PHPDoc types, checked by Larastan; their signatures don't change.
 - Repositories list their JSON columns (`$jsonAttributes`), not only `data`, and can load the references of a whole result (`withJsonReferences()`) ([json-data.md](json-data.md#repositories)).
 - **Proposed:** `findById()`, `update()` and `destroy()` apply the global query context, as `get()` does. In 1.x they ignore it, which defeats tenant scoping; applying it changes what they return for a scoped repository, so it would be listed in the upgrade guide.
+- Repositories find by `$idColumn`, `id` by default; a repository whose public id is another column sets it ([decisions/0015](decisions/0015-id-column.md)).
 - A repository bound by the package or by `RepositoriesServiceProvider` stays a `bind()`, not a singleton.
 
 ### Global query context
