@@ -28,6 +28,8 @@ The shared foundation of the Laravel sites built by Folklore. It is a toolbox:
 - Every change comes with tests (a regression test for each bug fix) and must pass CI before it lands.
 - The roadmap is tracked in [#1](https://github.com/folkloreinc/laravel-folklore/issues/1). Create a sub-issue for an item when you start working on it, and reference it in the PR.
 
+**Branch `v2.x`.** 2.0 is developed on `v2.x`. Read [`docs/`](docs/README.md) first: its architecture and decisions override the 1.x rules in this file wherever they differ. Until the 2.0 tooling lands (see [`docs/roadmap.md`](docs/roadmap.md), phase 0), the rest of this file describes 1.x.
+
 ## Development
 
 - Requirements: PHP `^8.3`, Laravel 11 to 13 (see `composer.json`).
