@@ -91,18 +91,6 @@ parameters:
 			path: src/Folklore/Console/RepositoryMakeCommand.php
 
 		-
-			message: '#^Call to an undefined method Folklore\\Contracts\\Eloquent\\HasJsonDataRelations\:\:getAttributes\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
-			message: '#^Call to an undefined method Folklore\\Contracts\\Eloquent\\HasJsonDataRelations\:\:getCasts\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
 			message: '#^Call to function is_null\(\) with array will always evaluate to false\.$#'
 			identifier: function.impossibleType
 			count: 2
