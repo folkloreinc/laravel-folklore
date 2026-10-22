@@ -144,24 +144,24 @@ On `laravel-mediatheque` 2 and `laravel-image` 2 ([decisions/0008](decisions/000
 
 ## Package layout
 
-**Proposed**, settled with the tooling in phase 0. PSR-4, `Folklore\` → `src/`, replacing 1.x's PSR-0 `src/Folklore/`. The paths change, the class names don't.
+PSR-4, `Folklore\` → `src/Folklore/`. The files stay where 1.x has them: PSR-0 and PSR-4 resolve every 1.x class to the same path, so the switch moves nothing, and fixes made on `v1.1` keep applying to `v2.x`. New code goes into the same tree, next to the 1.x classes it evolves.
 
 ```text
-src/
+src/Folklore/
 ├── Contracts/            core contracts
 ├── Entities/             1.x entities, the typed base entity
 ├── Repositories/         Entities base class, typed query, context
 ├── Eloquent/             JsonDataCast, JsonData, JsonReference, handlers
-├── Medias/               medias module
-├── Pages/                pages module
-├── Auth/                 auth module
+├── Medias/               medias module (proposed)
+├── Pages/                pages module (proposed)
+├── Auth/                 auth module (proposed)
 ├── Panneau/              Panneau 5 plugin
 ├── Services/             Customer.io, Google
 ├── Support/              helpers, concerns
 └── ServiceProvider.php
 ```
 
-1.x classes that move into a module keep a class alias at their 1.x name until 3.0.
+The module namespaces are named with the contracts. 1.x classes that move into a module keep a class alias at their 1.x name until 3.0.
 
 ## Dependencies
 
