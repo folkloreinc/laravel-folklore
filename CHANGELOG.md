@@ -15,7 +15,7 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ### Added
 
-- `Entities\ModelEntity`, an optional typed base for new entities, with the model's route key as id.
+- `Entities\ModelEntity`, an optional typed base for new entities, whose id is the value of its `$idColumn` (`id` by default).
 - `HasModel`, `ToEntity` and the `Entities` repository contract are generic, with defaults.
 - The typed query contract, `QueriesEntities` (`query(EntitiesQuery)`, `withGlobalQuery()`), with `EntitiesQuery`, `Sort` and `SortDirection`. Repositories implement it in alpha 1.
 - `QueryContextResolver`, the contract of the default query context.

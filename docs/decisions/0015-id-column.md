@@ -7,7 +7,7 @@
 
 In 1.x, `findById()`, `update()` and `destroy()` find a model with `where('id', $id)`, through `findModelById()`. Sites pass integer ids.
 
-The pilot's prototype of the core finds by the model's route key, its public uid (`wsp_…`), and its repositories call `parent::findById()` with uids. `ModelEntity::id()` returns the route key.
+The pilot's prototype of the core finds by the model's route key, its public uid (`wsp_…`), and its repositories call `parent::findById()` with uids. Its `ModelEntity::id()` returns the route key.
 
 Finding by the route key was considered, everywhere or as an opt-in. The route key belongs to routing and can change at runtime: the pages module's `Page` routes by `slug_{locale}`, which depends on the current locale. A repository would then find by a different column in each language, and changing a model's URLs would change what its repository finds.
 
@@ -22,6 +22,6 @@ Finding by the route key was considered, everywhere or as an opt-in. The route k
 ## Consequences
 
 - 1.x sites see no change.
-- The pilot's repositories set `$idColumn = 'uid'` and swap from the prototype without changing their calls.
-- For an entity on `ModelEntity`, whose `id()` is the route key, the repository sets `$idColumn` to the route key's column; the contract test catches a mismatch. The `make:repository` generator can set it when it generates an entity on `ModelEntity`.
+- The pilot's repositories and entities set `$idColumn = 'uid'` and swap from the prototype without changing their calls.
+- `ModelEntity` reads its id from the same kind of column, `protected string $idColumn = 'id';`, rather than from the route key as the prototype did. An entity and its repository set the same column; the contract test catches a mismatch. The `make:entity` and `make:repository` generators set both.
 - The `identifier` param of 1.x (numeric to `id`, otherwise `handle`) doesn't change.

@@ -9,18 +9,33 @@ use PHPUnit\Framework\TestCase;
 
 class ModelEntityTest extends TestCase
 {
-    public function test_the_id_is_the_route_key()
+    public function test_the_id_is_the_id_column_by_default()
     {
-        $model = new class(['id' => 12, 'uid' => 'med_01JAB3']) extends ReferencedMedia
+        $this->assertSame('12', $this->entity(new ReferencedMedia(['id' => 12, 'uid' => 'med_01JAB3']))->id());
+    }
+
+    public function test_the_id_column_can_be_another_column()
+    {
+        $model = new ReferencedMedia(['id' => 12, 'uid' => 'med_01JAB3']);
+        $entity = new class($model) extends ModelEntity
+        {
+            protected string $idColumn = 'uid';
+        };
+
+        $this->assertSame('med_01JAB3', $entity->id());
+    }
+
+    public function test_the_id_does_not_follow_the_route_key()
+    {
+        $model = new class(['id' => 12, 'slug_fr' => 'accueil']) extends ReferencedMedia
         {
             public function getRouteKeyName()
             {
-                return 'uid';
+                return 'slug_fr';
             }
         };
 
-        $this->assertSame('med_01JAB3', $this->entity($model)->id());
-        $this->assertSame('12', $this->entity(new ReferencedMedia(['id' => 12]))->id());
+        $this->assertSame('12', $this->entity($model)->id());
     }
 
     public function test_an_unsaved_model_has_an_empty_id()

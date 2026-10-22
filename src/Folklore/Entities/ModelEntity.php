@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * A typed base for new entities: an immutable object that reads a model. Its id is the
- * model's route key, the public id.
+ * value of `$idColumn`, the same column its repository finds by (docs/decisions/0015).
  *
  * The 1.x entities don't extend it, so their protected properties keep working.
  *
@@ -19,15 +19,23 @@ use Illuminate\Database\Eloquent\Model;
 abstract class ModelEntity implements Entity, HasModel
 {
     /**
+     * The model's column that holds the public id. Set it to the repository's `$idColumn`.
+     */
+    protected string $idColumn = 'id';
+
+    /**
      * @param  TModel  $model
      */
     public function __construct(protected readonly Model $model) {}
 
+    /**
+     * The value of `$idColumn`, or an empty string when the model has none yet.
+     */
     public function id(): string
     {
-        $key = $this->model->getRouteKey();
+        $id = $this->model->getAttribute($this->idColumn);
 
-        return is_scalar($key) ? (string) $key : '';
+        return is_scalar($id) ? (string) $id : '';
     }
 
     /**

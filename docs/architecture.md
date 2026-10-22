@@ -62,7 +62,7 @@ Modules are enabled in `config/site.php`, which 1.x already uses (`site.medias.d
 ## Entities
 
 - **Contracts keep their 1.x names and methods.** `Entity` (`id(): string`), `HasModel` and `ToEntity` stay, but `Entity` no longer extends Panneau's `ResourceItem` ([decisions/0003](decisions/0003-evolve-in-place.md)).
-- **An optional typed base entity** for new code, `Entities\ModelEntity`: built from a model, which it keeps in a readonly property, with `id()` as the model's route key and `getModel()` for the edges that need a model (Fortify, Sanctum). It is the pilot's prototype, under the same name. The 1.x entities don't extend it, so their protected properties (`$model`, `$data`, `$metadata`, `$sizes`, `$files`) keep working.
+- **An optional typed base entity** for new code, `Entities\ModelEntity`: built from a model, which it keeps in a readonly property, with `id()` as the value of its `$idColumn` (`id` by default, like the repositories', [decisions/0015](decisions/0015-id-column.md)) and `getModel()` for the edges that need a model (Fortify, Sanctum). It is the pilot's prototype, under the same name; the prototype's `id()` read the route key. The 1.x entities don't extend it, so their protected properties (`$model`, `$data`, `$metadata`, `$sizes`, `$files`) keep working.
 - `HasModel`, `ToEntity` and the `Entities` repository contract are generic (`HasModel<TModel>`, `ToEntity<TEntity>`, `Entities<TEntity>`), with defaults, so 1.x classes that don't say their types keep passing Larastan.
 - `HasTypedEntity`, `to_entity()`, `to_id()` and `SerializesEntityModel` stay, with the same behaviour and payload.
 - The `make:entity` and `make:repository` generators produce typed classes on the 2.0 bases.
@@ -76,7 +76,7 @@ The pilot writes its entities and repositories on a prototype of the core, to be
 | `Contracts\Entities\Entity` (`id(): string`) | Same | Ready |
 | `HasModel<TModel>`, `ToEntity<TEntity>` (`toEntity(): Entity`) | Same, generic; `toEntity()` returns `?Entity`, which a model may narrow | Ready |
 | `Contracts\Repositories\Entities<TEntity>` with `findById()` only | The 1.x contract, generic: also `get()`, `count()`, `create()`… | Ready: the pilot's repositories extend the base class, which implements them |
-| `Entities\ModelEntity<TModel>` | Same | Ready |
+| `Entities\ModelEntity<TModel>`, `id()` = route key | Same, `id()` = `$idColumn`, `id` by default | Alpha 1: the pilot's entities set `$idColumn = 'uid'` |
 | `Repositories\Entities<TModel, TEntity>`: `newModel()`, `newQuery(): Builder`, `toEntity()` | The 1.x base class, not generic; `newQuery()` untyped, entities built by `getEntityFromModel()` | Alpha 1: the base class gets `@template TModel, TEntity` with defaults |
 | `findById()` by the model's route key (the public uid) | `findById()` by `$idColumn`, `id` by default ([decisions/0015](decisions/0015-id-column.md)) | Alpha 1: the pilot's repositories set `$idColumn = 'uid'` |
 
