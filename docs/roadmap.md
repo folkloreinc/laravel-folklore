@@ -31,6 +31,7 @@ What both pilots need first: Niche's brand images, and the contests platform bef
 - [ ] Modules switched in `config/site.php`; modules that alpha 1 doesn't port yet stay off and don't load their 1.x dependencies
 - [ ] Contracts without Panneau 1.x; optional typed base entity; typed query next to `get()`; PHPDoc types on the 1.x methods
 - [ ] Global query context: `withGlobalQuery()`, default resolver ([decisions/0004](decisions/0004-global-query-context.md))
+- [ ] `findById()` by route key for repositories that opt in with `$findByRouteKey` ([decisions/0015](decisions/0015-find-by-id-or-route-key.md)); `@template TModel, TEntity` on the base class
 - [ ] `make:entity` and `make:repository` on the 2.0 bases
 - [ ] `JsonDataCast` ([json-data.md](json-data.md), decisions [0005](decisions/0005-json-reference-keys.md) to [0007](decisions/0007-batch-resolution-and-listing.md)):
   - [ ] registry of keys, `map()`, `enforceMap()`, per-relation `key`, fallback to the relation name
@@ -93,7 +94,6 @@ To settle before alpha 1 ships:
 - **Scope of the default handler:** resolve unmapped keys through the owner's relation, as 1.x did, or always by column, with scoping left to `allows()` ([json-data.md](json-data.md#batch-resolution)).
 - **`resolveMany()` signature:** references, as in the #56 design, or identifiers with a context, as in [json-data.md](json-data.md#handlers).
 - **Syncing to `medias_pivot`** without detaching media attached otherwise ([json-data.md](json-data.md#syncing)).
-- **`findById()` by route key**, as the pilot's prototype does, or by `id`, as 1.x does. The pilot's repositories call `parent::findById()` with public uids, so this decides whether they swap unchanged ([architecture.md](architecture.md#review-against-the-pilots-prototype)).
 - **Media ingested by a save that fails outside a transaction:** whether the mediatheque prunes media that were never used, through its usage graph ([json-data.md](json-data.md#when-the-save-fails-afterwards)).
 
 Later:

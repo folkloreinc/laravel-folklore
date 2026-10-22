@@ -78,7 +78,7 @@ The pilot writes its entities and repositories on a prototype of the core, to be
 | `Contracts\Repositories\Entities<TEntity>` with `findById()` only | The 1.x contract, generic: also `get()`, `count()`, `create()`… | Ready: the pilot's repositories extend the base class, which implements them |
 | `Entities\ModelEntity<TModel>` | Same | Ready |
 | `Repositories\Entities<TModel, TEntity>`: `newModel()`, `newQuery(): Builder`, `toEntity()` | The 1.x base class, not generic; `newQuery()` untyped, entities built by `getEntityFromModel()` | Alpha 1: the base class gets `@template TModel, TEntity` with defaults |
-| `findById()` by the model's route key (the public uid) | `findById()` by `id` | **Open, before alpha 1:** the pilot calls `parent::findById()` with uids |
+| `findById()` by the model's route key (the public uid) | `findById()` by `id`, or by route key with `$findByRouteKey` ([decisions/0015](decisions/0015-find-by-id-or-route-key.md)) | Alpha 1: the pilot's repositories set `$findByRouteKey` |
 
 ### Review against `laravel-mediatheque` 2
 
