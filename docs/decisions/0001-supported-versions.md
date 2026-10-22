@@ -1,6 +1,6 @@
 # 0001: PHP 8.3+ and Laravel 12+
 
-- Status: proposed
+- Status: accepted
 - Date: 2026-10-22
 
 ## Context
@@ -12,7 +12,7 @@
 - Some active sites on 1.1 run Laravel 11 and PHP 8.3.
 - Laravel 12 gets security fixes until February 2027, PHP 8.3 until the end of 2027.
 
-The plan in [#56](https://github.com/folkloreinc/laravel-folklore/issues/56#issuecomment-6271513875) chose PHP 8.3+ and Laravel 12+. This decision records it, and is to be confirmed before the tooling lands: requiring PHP 8.4 or Laravel 13 would fit both pilots, but not the packages 2.0 builds on, nor the 1.1 sites on Laravel 12.
+The plan in [#56](https://github.com/folkloreinc/laravel-folklore/issues/56#issuecomment-6271513875) chose PHP 8.3+ and Laravel 12+. Requiring PHP 8.4 or Laravel 13 would fit both pilots, but not the packages 2.0 builds on, nor the 1.1 sites on Laravel 12. The choice was confirmed in phase 0, before the tooling.
 
 ## Decision
 
