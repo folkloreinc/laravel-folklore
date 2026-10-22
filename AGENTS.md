@@ -28,16 +28,16 @@ The shared foundation of the Laravel sites built by Folklore. It is a toolbox:
 - Every change comes with tests (a regression test for each bug fix) and must pass CI before it lands.
 - The roadmap is tracked in [#1](https://github.com/folkloreinc/laravel-folklore/issues/1). Create a sub-issue for an item when you start working on it, and reference it in the PR.
 
-**Branch `v2.x`.** 2.0 is developed on `v2.x`. Read [`docs/`](docs/README.md) first: its architecture and decisions override the 1.x rules in this file wherever they differ. Until the 2.0 tooling lands (see [`docs/roadmap.md`](docs/roadmap.md), phase 0), the rest of this file describes 1.x.
+**Branch `v2.x`.** 2.0 is developed on `v2.x`. Read [`docs/`](docs/README.md) first: its architecture and decisions override the 1.x rules in this file wherever they differ. The development rules below apply to `v2.x`; on `v1.1`, see that branch's own `AGENTS.md`.
 
 ## Development
 
-- Requirements: PHP `^8.3`, Laravel 11 to 13 (see `composer.json`).
+- Requirements: PHP `^8.3`, Laravel 12 and 13 (see `composer.json` and [decisions/0001](docs/decisions/0001-supported-versions.md)).
 - Install dependencies: `composer install`
 - Run tests: `composer test` (PHPUnit with Orchestra Testbench; suites in `tests/Unit` and `tests/Feature`). They use SQLite in memory by default. To run them against MySQL, set `DB_DRIVER=mysql` with `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME` and `DB_PASSWORD`; the database is wiped before each test.
-- Format code: `composer format` (Laravel Pint, `laravel` preset, see `pint.json`).
-- Static analysis: `composer analyse` (Larastan, see `phpstan.neon`). Existing errors are listed in `phpstan-baseline.neon`: never add new errors to it, fix them instead. When a change fixes baselined errors, regenerate it with `vendor/bin/phpstan analyse --generate-baseline --memory-limit=2G`. If Larastan reports unmatched baseline entries after a dependency update, refresh Testbench's package discovery (`vendor/bin/testbench package:discover`) and clear the result cache (`vendor/bin/phpstan clear-result-cache`) before regenerating.
-- CI (GitHub Actions): `.github/workflows/tests.yml` runs the tests on PHP 8.3 and 8.4 × Laravel 11 to 13 with SQLite, and on PHP 8.4 × Laravel 11 to 13 with laravel-panneau 1.3 and with MySQL 8.4, and on PHP 8.4 × Laravel 13 with the lowest accepted Guzzle 7 and 8 releases; `.github/workflows/code-quality.yml` runs `composer validate`, Pint and Larastan.
+- Format code: `composer format` (Laravel Pint, `laravel` preset, see `pint.json`); check it with `composer lint`.
+- Static analysis: `composer analyse` (Larastan at the maximum level, see `phpstan.neon`). The errors of the 1.x code are listed in `phpstan-baseline.neon`: never add new errors to it, fix them instead. New code passes the maximum level without a baseline entry. When a change fixes baselined errors, regenerate it with `vendor/bin/phpstan analyse --generate-baseline --memory-limit=2G`. If Larastan reports unmatched baseline entries after a dependency update, refresh Testbench's package discovery (`vendor/bin/testbench package:discover`) and clear the result cache (`vendor/bin/phpstan clear-result-cache`) before regenerating.
+- CI (GitHub Actions): `.github/workflows/tests.yml` runs the tests on PHP 8.3 to 8.5 × Laravel 12 and 13 with SQLite, and on PHP 8.4 × Laravel 12 and 13 with laravel-panneau 1.3 and with MySQL 8.4, and on PHP 8.4 × Laravel 13 with the lowest accepted Guzzle 7 and 8 releases; `.github/workflows/code-quality.yml` runs `composer validate`, Pint and Larastan.
 - The commit that applied Pint to the whole codebase is listed in `.git-blame-ignore-revs`; run `git config blame.ignoreRevsFile .git-blame-ignore-revs` to skip it in `git blame`.
-- Layout: `src/Folklore` (namespace `Folklore\`), `src/migrations`, `src/stubs`, `tests`.
-- Active development happens on the `v1.1` branch.
+- Layout: `src/Folklore` (PSR-4, namespace `Folklore\`), `src/migrations`, `src/stubs`, `tests`.
+- 2.0 is developed on `v2.x`; 1.x fixes go to `v1.1`.
