@@ -1,6 +1,6 @@
 # Architecture of 2.0
 
-Design of `laravel-folklore` 2.0. Each choice is recorded in [decisions/](decisions/); the 1.x it starts from is in [current-state.md](current-state.md). Class names that 1.x doesn't have yet (`QueryContextResolver`, `ModuleRequirementMissing`, the module namespaces) are proposals until the contracts land in phase 0 ([roadmap.md](roadmap.md)). Details marked **Proposed** go beyond the decisions and are open to review.
+Design of `laravel-folklore` 2.0. Each choice is recorded in [decisions/](decisions/); the 1.x it starts from is in [current-state.md](current-state.md). New class names are settled in [decisions/0014](decisions/0014-names.md); the typed query, the typed base entity and the module namespaces are named with the contracts ([roadmap.md](roadmap.md)). Details marked **Proposed** go beyond the decisions and are open to review.
 
 ## Goals
 
@@ -178,4 +178,4 @@ src/
 
 ## Supported versions
 
-PHP 8.3+ and Laravel 12+ ([decisions/0001](decisions/0001-supported-versions.md), proposed).
+PHP 8.3+ and Laravel 12+ ([decisions/0001](decisions/0001-supported-versions.md)).

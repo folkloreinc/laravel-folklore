@@ -16,8 +16,8 @@ Tracking issues: [#1](https://github.com/folkloreinc/laravel-folklore/issues/1) 
 ## Phase 0: kickoff
 
 - [x] `v2.x` branch, created from `v1.1` (`v1.1.8`)
-- [ ] `docs/`: current state, architecture, `JsonDataCast` spec, decisions, this roadmap, upgrade guide
-- [ ] Settle the open points of phase 0 ([below](#open-questions)): supported versions ([decisions/0001](decisions/0001-supported-versions.md)), deferring `prepare()`, class names
+- [x] `docs/`: current state, architecture, `JsonDataCast` spec, decisions, this roadmap, upgrade guide ([#67](https://github.com/folkloreinc/laravel-folklore/pull/67))
+- [x] Settle the open points of phase 0: supported versions ([decisions/0001](decisions/0001-supported-versions.md)), deferring `prepare()` ([decisions/0013](decisions/0013-defer-prepare-until-saving.md)), names ([decisions/0014](decisions/0014-names.md))
 - [ ] Tooling: PSR-4, PHP 8.3+, Laravel 12+, CI matrix (PHP 8.3 to 8.5 × Laravel 12 and 13, SQLite and MySQL), Pint, Larastan at the maximum level for new code (the 1.x baseline stays for 1.x code)
 - [ ] Release process: changelog, `v2.0.0-alpha.N` tags from a green CI, as `laravel-mediatheque` 2 and `laravel-image` 2 do
 - [ ] Contracts and their tests: `Entity`, `HasModel`, `ToEntity` without Panneau; the `Entities` repository contract and its typed query; the query context resolver; `JsonData`, `JsonReference`, `ReferenceHandler`, `ReferenceContext`
@@ -88,18 +88,14 @@ The auth and other modules are placed in the beta because the site that upgrades
 
 ## Open questions
 
-To settle in phase 0:
-
-- **Supported versions:** confirm PHP 8.3+ and Laravel 12+ ([decisions/0001](decisions/0001-supported-versions.md), proposed).
-- **Deferring `prepare()`** until the model's `saving` event, so that a file isn't ingested before the save can succeed and the owner's tenant is known ([json-data.md](json-data.md#writing)).
-- **Names:** `JsonData`, `JsonReference`, `ReferenceHandler`, `ReferenceContext`, `MediaReferences`, `withJsonReferences()`, `JsonData::load()`, `folklore:json-references:rewrite`, the query context resolver, the typed query and base entity.
-
 To settle before alpha 1 ships:
 
 - **Scope of the default handler:** resolve unmapped keys through the owner's relation, as 1.x did, or always by column, with scoping left to `allows()` ([json-data.md](json-data.md#batch-resolution)).
 - **`resolveMany()` signature:** references, as in the #56 design, or identifiers with a context, as in [json-data.md](json-data.md#handlers).
 - **Syncing to `medias_pivot`** without detaching media attached otherwise ([json-data.md](json-data.md#syncing)).
 - **`findById()` by route key**, as the pilot's prototype does, or by `id`, as 1.x does, for the typed base classes.
+- **Names of the typed query and the typed base entity**, with the contracts ([decisions/0014](decisions/0014-names.md)).
+- **Media ingested by a save that fails outside a transaction:** whether the mediatheque prunes media that were never used, through its usage graph ([json-data.md](json-data.md#when-the-save-fails-afterwards)).
 
 Later:
 
