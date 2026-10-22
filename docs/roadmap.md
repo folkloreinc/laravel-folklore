@@ -19,7 +19,7 @@ Tracking issues: [#1](https://github.com/folkloreinc/laravel-folklore/issues/1) 
 - [x] `docs/`: current state, architecture, `JsonDataCast` spec, decisions, this roadmap, upgrade guide ([#67](https://github.com/folkloreinc/laravel-folklore/pull/67))
 - [x] Settle the open points of phase 0: supported versions ([decisions/0001](decisions/0001-supported-versions.md)), deferring `prepare()` ([decisions/0013](decisions/0013-defer-prepare-until-saving.md)), names ([decisions/0014](decisions/0014-names.md))
 - [ ] Tooling: PSR-4, PHP 8.3+, Laravel 12+, CI matrix (PHP 8.3 to 8.5 × Laravel 12 and 13, SQLite and MySQL), Pint, Larastan at the maximum level for new code (the 1.x baseline stays for 1.x code)
-- [ ] Release process: changelog, `v2.0.0-alpha.N` tags from a green CI, as `laravel-mediatheque` 2 and `laravel-image` 2 do
+- [x] Release process: changelog, `v2.0.0-alpha.N` tags from a green CI, as `laravel-image` 2 does (see "Releases" in [AGENTS.md](../AGENTS.md))
 - [ ] Contracts and their tests: `Entity`, `HasModel`, `ToEntity` without Panneau; the `Entities` repository contract and its typed query; the query context resolver; `JsonData`, `JsonReference`, `ReferenceHandler`, `ReferenceContext`
 - [ ] Review the contracts against the pilot's prototype of the core and against `laravel-mediatheque` 2's references and usage graph
 

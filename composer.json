@@ -65,6 +65,9 @@
         "analyse": "phpstan analyse --memory-limit=2G"
     },
     "extra": {
+        "branch-alias": {
+            "dev-v2.x": "2.x-dev"
+        },
         "laravel": {
             "providers": [
                 "Folklore\\ServiceProvider"
