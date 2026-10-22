@@ -3,10 +3,17 @@
 namespace Folklore\Contracts\Repositories;
 
 use Folklore\Contracts\Entities\Entity;
-use Panneau\Contracts\Repository;
 
-interface Entities extends Repository
+/**
+ * The access to the data of one kind of entity.
+ *
+ * @template TEntity of Entity = Entity
+ */
+interface Entities
 {
+    /**
+     * @return TEntity|null
+     */
     public function findById(string $id): ?Entity;
 
     public function get(array $query = [], ?int $page = null, ?int $count = 10);
@@ -19,8 +26,14 @@ interface Entities extends Repository
 
     public function value($column, array $query = []);
 
+    /**
+     * @return TEntity
+     */
     public function create($data): Entity;
 
+    /**
+     * @return TEntity|null
+     */
     public function update(string $id, $data): ?Entity;
 
     public function destroy(string $id): bool;
