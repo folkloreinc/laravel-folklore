@@ -209,7 +209,7 @@ abstract class Entities implements EntitiesContract
 
         $jsonAttributeName = $this->getJsonAttributeName();
         $jsonAttributeExclude = $this->getJsonAttributeExclude() ?? [];
-        $currentAttributeValue = $model->{$jsonAttributeName};
+        $currentAttributeValue = JsonDataCast::getValueWithUnresolvedReferences($model, $jsonAttributeName);
         $fillable = $model->getFillable();
         $newAttributeValue = collect(
             $jsonAttributeFillable === '*'
