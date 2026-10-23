@@ -28,6 +28,10 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ### Added
 
+- `JsonData::load($models, $attributes)` resolves the references of a collection together: one call to each key's handler, and the relations of unmapped keys eager-loaded. Repositories do it for their results with `withJsonReferences()`, which returns a copy.
+- `JsonData::references($model)` lists the references stored in a model's JSON attributes, with their attribute, path and relation, whether they resolve or not.
+- `$jsonAttributes` on repositories: the JSON attributes after the first are given as a whole and merged into their stored value.
+- `php artisan folklore:json-references:rewrite --from=medias --to=media [--model=…] [--dry-run]` rewrites the references of one key to another, in chunks and without model events.
 - Media references: the medias module maps `media` (`media://med_…`, by uid) and `medias` (`medias://12`, by id) to its media model, with `Folklore\Eloquent\MediaReferences`, and writes the key of `site.medias.reference_key` (`media` by default; `medias` for upgraded sites). `MediaReferences` takes media, entities, references, uids, 1.x ids, Panneau 5 values, uploaded files, files and URLs, which it ingests when the owner is saved; `ingestUsing()` and `allowUsing()` plug a tenancy into it.
 - `Repositories\Medias::downloadForIngest()`, which downloads a URL with the repository's limits.
 - `JsonDataCast` on the registry of keys ([json-data.md](docs/json-data.md)):
