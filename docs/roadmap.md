@@ -57,11 +57,11 @@ What both pilots need first: Niche's brand images, and the contests platform bef
 
 The pilot replaces its prototype on alpha 1. It runs PostgreSQL with `jsonb` columns, which neither this package nor the mediatheque tested. Alpha 2 adds checks and docs, not new APIs ([#89](https://github.com/folkloreinc/laravel-folklore/issues/89)). The `Entities` contract stays as it is ([#83](https://github.com/folkloreinc/laravel-folklore/issues/83), closed).
 
-- [ ] The test suite on PostgreSQL 17, where the JSON fixtures' columns are `jsonb` ([#87](https://github.com/folkloreinc/laravel-folklore/issues/87))
-- [ ] `conflict` with `laravel-mediatheque` below 2.0.0-alpha.7: the medias module needs `HasMedias` (alpha.6) and the migrations that run on MySQL (alpha.7), and `suggest` doesn't enforce a version
-- [ ] The base repository passes its `TEntity` to its contracts, so that a repository contract typed on its entity passes static analysis ([#90](https://github.com/folkloreinc/laravel-folklore/pull/90))
-- [ ] The `ShortUuid` test that failed at random, on `v2.x` and `v1.1` ([#66](https://github.com/folkloreinc/laravel-folklore/issues/66))
-- [ ] Docs: the usage graph and the JSON sync settled, and the limits of the repository contract found in the review of the prototype ([architecture.md](architecture.md#review-against-the-pilots-prototype)); `resolveMany()` taking identifiers settled, and the three 1.1.8 tests that change on purpose ([json-data.md](json-data.md))
+- [x] The test suite on PostgreSQL 17, where the JSON fixtures' columns are `jsonb` ([#87](https://github.com/folkloreinc/laravel-folklore/issues/87))
+- [x] `conflict` with `laravel-mediatheque` below 2.0.0-alpha.7: the medias module needs `HasMedias` (alpha.6) and the migrations that run on MySQL (alpha.7), and `suggest` doesn't enforce a version
+- [x] The base repository passes its `TEntity` to its contracts, so that a repository contract typed on its entity passes static analysis ([#90](https://github.com/folkloreinc/laravel-folklore/pull/90))
+- [x] The `ShortUuid` test that failed at random, on `v2.x` and `v1.1` ([#66](https://github.com/folkloreinc/laravel-folklore/issues/66))
+- [x] Docs: the usage graph and the JSON sync settled, and the limits of the repository contract found in the review of the prototype ([architecture.md](architecture.md#review-against-the-pilots-prototype)); `resolveMany()` taking identifiers settled, and the three 1.1.8 tests that change on purpose ([json-data.md](json-data.md))
 
 ## Alpha 3: JSON references on the cast
 
