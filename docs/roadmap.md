@@ -67,8 +67,10 @@ The pilot replaces its prototype on alpha 1. It runs PostgreSQL with `jsonb` col
 
 What the pilot needs to move its JSON references onto `JsonDataCast`.
 
-- [ ] `MediaReferences`: the forms of references it accepts, with a strict mode ([#85](https://github.com/folkloreinc/laravel-folklore/issues/85))
-- [ ] `JsonData::stored()`: a JSON column with its references as stored ([#88](https://github.com/folkloreinc/laravel-folklore/issues/88))
+- [x] `MediaReferences`: the forms of references it accepts, with a strict mode ([#85](https://github.com/folkloreinc/laravel-folklore/issues/85))
+- [x] `JsonData::stored()`: a JSON column with its references as stored ([#88](https://github.com/folkloreinc/laravel-folklore/issues/88))
+- [x] The cast syncs the relations of a model's references when the model is saved anywhere, not only through the base repository, and doesn't refresh it ([#97](https://github.com/folkloreinc/laravel-folklore/issues/97))
+- [x] `MediaReferences` resolves media of the database under `Mediatheque::fake()` ([#98](https://github.com/folkloreinc/laravel-folklore/issues/98))
 
 ## Alpha 4: the rest of the medias module, and the Panneau adapter
 
