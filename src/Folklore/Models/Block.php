@@ -7,7 +7,7 @@ use Folklore\Contracts\Entities\Block as BlockContract;
 use Folklore\Contracts\Entities\ToEntity;
 use Folklore\Eloquent\JsonDataCast;
 use Folklore\Entities\Block as BlockEntity;
-use Folklore\Mediatheque\Support\Traits\HasMedias;
+use Folklore\Mediatheque\Concerns\HasMedias;
 use Folklore\Support\Concerns\HasTypedEntity;
 use Illuminate\Database\Eloquent\Model;
 

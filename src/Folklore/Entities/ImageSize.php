@@ -4,67 +4,65 @@ namespace Folklore\Entities;
 
 use Folklore\Contracts\Entities\Image as ImageContract;
 use Folklore\Contracts\Entities\ImageSize as ImageSizeContract;
-use Folklore\Image\Facade as ImageFacade;
-use Illuminate\Support\Arr;
+use Folklore\Image\Exceptions\ImageException;
+use Folklore\Image\Variants\ImageVariant;
 
+/**
+ * An image in one preset of laravel-image 2, with its URL, its exact dimensions and its type.
+ */
 class ImageSize implements ImageSizeContract
 {
+    /**
+     * @var ImageContract
+     */
     protected $image;
 
+    /**
+     * @var string
+     */
     protected $size;
 
     protected $filters;
 
+    /**
+     * @var string|null
+     */
     protected $format;
 
     protected $url;
 
     protected $dimension;
 
-    public function __construct(ImageContract $image, $size, $format = null, $filters = null)
+    protected ?ImageVariant $variant = null;
+
+    protected bool $resolved = false;
+
+    /**
+     * @param  string  $size  The name of a laravel-image preset.
+     * @param  string|null  $format  A format other than the preset's (`webp`, `avif`…).
+     */
+    public function __construct(ImageContract $image, string $size, ?string $format = null, $filters = null)
     {
         $this->image = $image;
-        $this->size = Arr::except($size, ['format']);
-        $this->format = $format ?? data_get($size, 'format');
+        $this->size = $size;
+        $this->format = $format;
         $this->filters = $filters;
     }
 
     public function id(): string
     {
-        return $this->size['id'];
+        return $this->size;
     }
 
+    /**
+     * The URL of the preset, or the original's URL when laravel-image can't render it, or an
+     * empty string without files.
+     */
     public function url(): string
     {
         if (! isset($this->url)) {
-            // $imageUrl = (
-            //     $this->image->files()->first(function ($file) {
-            //         return $file->handle() === 'original';
-            //     }) ?? $this->image->files()->first()
-            // )->url();
-            $imageUrl = $this->image->urlWithoutFilters();
-            if ($imageUrl === '') {
-                return $this->url = '';
-            }
-            $metadata = $this->image->metadata();
-            $mime = ! is_null($metadata) ? $metadata->mime() : null;
-            $isSVG = $mime === 'image/svg' || $mime === 'image/svg+xml';
-            $path = parse_url($imageUrl, PHP_URL_PATH);
-            $filters = $this->filters ?? [];
-            if ($this->size['id'] !== 'original' && ! $isSVG) {
-                $filters[] = $this->size['id'];
-            }
-            if (
-                isset($this->format) &&
-                ! $isSVG &&
-                preg_match('/\.'.preg_quote($this->format, '/').'$/', $imageUrl) === 0
-            ) {
-                $filters['format'] = $this->format;
-            }
-            $this->url = count($filters)
-                ? rtrim(config('app.image_url', config('app.url')), '/').
-                    ImageFacade::url($path, $filters)
-                : $imageUrl;
+            $original = $this->image->urlWithoutFilters();
+            $this->url = $original === '' ? '' : ($this->variant()->url ?? $original);
         }
 
         return $this->url;
@@ -72,83 +70,41 @@ class ImageSize implements ImageSizeContract
 
     public function width(): int
     {
-        if (! isset($this->dimension)) {
-            $this->dimension = $this->getDimension();
-        }
-
-        return data_get($this->dimension, 'width', 0);
+        return $this->variant()->width ?? $this->image->metadata()->width();
     }
 
     public function height(): int
     {
-        if (! isset($this->dimension)) {
-            $this->dimension = $this->getDimension();
-        }
-
-        return data_get($this->dimension, 'height', 0);
+        return $this->variant()->height ?? $this->image->metadata()->height();
     }
 
     public function mime(): ?string
     {
-        switch ($this->format) {
-            case 'gif':
-                return 'image/gif';
-                break;
-            case 'jpg':
-            case 'jpeg':
-                return 'image/jpeg';
-                break;
-            case 'png':
-                return 'image/png';
-            case 'webp':
-                return 'image/webp';
-                break;
-            case 'avif':
-                return 'image/avif';
-                break;
-        }
-        $metadata = $this->image->metadata();
-
-        return ! is_null($metadata) ? $metadata->mime() : null;
+        return $this->variant()?->mime() ?? $this->image->metadata()->mime();
     }
 
-    protected function getDimension()
+    /**
+     * The variant of the preset, or null when laravel-image can't build it: no files, a
+     * source without dimensions, or an unknown preset.
+     */
+    protected function variant(): ?ImageVariant
     {
-        $metadata = $this->image->metadata();
-        $imageWidth = $metadata->width();
-        $imageHeight = $metadata->height();
-        $filterWidth = data_get($this->size, 'maxWidth');
-        $filterHeight = data_get($this->size, 'maxHeight');
-
-        $dimension = [
-            'width' => data_get($this->size, 'width', $imageWidth),
-            'height' => data_get($this->size, 'height', $imageHeight),
-        ];
-
-        if ($imageWidth === 0 || $imageHeight === 0) {
-            return $dimension;
+        if (! $this->resolved) {
+            $this->resolved = true;
+            if (! $this->image instanceof Image || $this->image->urlWithoutFilters() === '') {
+                return null;
+            }
+            try {
+                $image = $this->image->pendingImage($this->filters)?->preset($this->size);
+                if (! is_null($image) && ! is_null($this->format)) {
+                    $image = $image->format($this->format);
+                }
+                $this->variant = $image?->variant();
+            } catch (ImageException) {
+                $this->variant = null;
+            }
         }
 
-        if (isset($filterWidth) && isset($filterHeight)) {
-            $maxWidth = min($filterWidth, $imageWidth);
-            $maxHeight = min($filterHeight, $imageHeight);
-            $widthScale = $imageWidth > 0 ? $maxWidth / $imageWidth : 0;
-            $heightScale = $imageHeight > 0 ? $maxHeight / $imageHeight : 0;
-            $scale = min($widthScale, $heightScale);
-            $dimension['width'] = (int) round($imageWidth * $scale);
-            $dimension['height'] = (int) round($imageHeight * $scale);
-        } elseif (isset($filterWidth)) {
-            $maxWidth = min($filterWidth, $imageWidth);
-            $scale = $maxWidth / $imageWidth;
-            $dimension['width'] = $maxWidth;
-            $dimension['height'] = (int) round($imageHeight * $scale);
-        } elseif (isset($filterHeight)) {
-            $maxHeight = min($filterHeight, $imageHeight);
-            $scale = $maxHeight / $imageHeight;
-            $dimension['height'] = $maxHeight;
-            $dimension['width'] = (int) round($imageWidth * $scale);
-        }
-
-        return $dimension;
+        return $this->variant;
     }
 }

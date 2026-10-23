@@ -18,7 +18,8 @@ use Folklore\Contracts\Services\CustomerIo;
 use Folklore\Contracts\Services\PubSubHubbub\Factory;
 use Folklore\Exceptions\ModuleRequirementMissing;
 use Folklore\Http\Middleware\LocalMiddleware;
-use Folklore\Mediatheque\Contracts\Models\File;
+use Folklore\Mediatheque\Models\File as MediathequeFile;
+use Folklore\Mediatheque\Models\Media as MediathequeMedia;
 use Folklore\Models\Media;
 use Folklore\Models\MediaFile;
 use Folklore\Repositories\Blocks;
@@ -69,11 +70,11 @@ class ServiceProvider extends BaseServiceProvider
      */
     public const MODULES = [
         'medias' => [
-            'Folklore\\Mediatheque\\Contracts\\Models\\Media' => 'folklore/laravel-mediatheque',
-            'Folklore\\Image\\Facade' => 'folklore/laravel-image',
+            'Folklore\\Mediatheque\\Concerns\\HasMedias' => 'folklore/laravel-mediatheque ^2.0',
+            'Folklore\\Image\\Facades\\Image' => 'folklore/laravel-image ^2.0',
         ],
         'pages' => [
-            'Folklore\\Mediatheque\\Support\\Traits\\HasMedias' => 'folklore/laravel-mediatheque',
+            'Folklore\\Mediatheque\\Concerns\\HasMedias' => 'folklore/laravel-mediatheque ^2.0',
             'Cviebrock\\EloquentSluggable\\Sluggable' => 'cviebrock/eloquent-sluggable',
             'Folklore\\Locale\\LocaleManager' => 'folklore/laravel-locale',
         ],
@@ -104,10 +105,6 @@ class ServiceProvider extends BaseServiceProvider
         $this->checkModuleRequirements();
 
         $this->registerRepositories();
-
-        if ($this->moduleEnabled('medias')) {
-            $this->registerMediatheque();
-        }
 
         if ($this->moduleEnabled('sites')) {
             $this->registerSite();
@@ -193,17 +190,19 @@ class ServiceProvider extends BaseServiceProvider
         }
     }
 
-    protected function registerMediatheque()
+    /**
+     * Sets the models of the medias module in `config('mediatheque.models')`, unless the
+     * site sets its own there.
+     */
+    protected function bootMediatheque(): void
     {
-        $this->app->bind(
-            Mediatheque\Contracts\Models\Media::class,
-            Media::class
-        );
-
-        $this->app->bind(
-            File::class,
-            MediaFile::class
-        );
+        $config = $this->app->make(Repository::class);
+        foreach (['media' => [MediathequeMedia::class, Media::class], 'file' => [MediathequeFile::class, MediaFile::class]] as $key => [$default, $model]) {
+            $current = $config->get('mediatheque.models.'.$key);
+            if ($current === null || $current === $default) {
+                $config->set('mediatheque.models.'.$key, $model);
+            }
+        }
     }
 
     protected function registerSite()
@@ -290,6 +289,10 @@ class ServiceProvider extends BaseServiceProvider
      */
     public function boot()
     {
+        if ($this->moduleEnabled('medias')) {
+            $this->bootMediatheque();
+        }
+
         if ($this->moduleEnabled('http')) {
             $this->bootHttp();
         }

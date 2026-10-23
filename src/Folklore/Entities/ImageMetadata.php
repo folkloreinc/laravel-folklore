@@ -8,15 +8,11 @@ class ImageMetadata extends MediaMetadata implements ImageMetadataContract
 {
     public function width(): int
     {
-        $metadata = $this->getMetadatas()->get('width');
-
-        return ! is_null($metadata) ? $metadata->getValue() : 0;
+        return (int) ($this->getOriginalFile()?->width() ?? $this->number('width') ?? 0);
     }
 
     public function height(): int
     {
-        $metadata = $this->getMetadatas()->get('height');
-
-        return ! is_null($metadata) ? $metadata->getValue() : 0;
+        return (int) ($this->getOriginalFile()?->height() ?? $this->number('height') ?? 0);
     }
 }

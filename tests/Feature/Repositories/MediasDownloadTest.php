@@ -2,7 +2,6 @@
 
 namespace Folklore\Tests\Feature\Repositories;
 
-use Folklore\Mediatheque\Contracts\Type\Factory as TypeFactory;
 use Folklore\Repositories\Medias;
 use Folklore\Tests\TestCase;
 use GuzzleHttp\Client as HttpClient;
@@ -230,15 +229,12 @@ class MediasDownloadTest extends TestCase
         $stack = HandlerStack::create($this->mock);
         $stack->push(Middleware::history($this->history));
 
-        return new class($this->app->make(TypeFactory::class), new HttpClient(['handler' => $stack]), $this->directory) extends Medias
+        return new class(new HttpClient(['handler' => $stack]), $this->directory) extends Medias
         {
             public function __construct(
-                TypeFactory $typeFactory,
                 protected HttpClient $testClient,
                 protected string $testDirectory,
-            ) {
-                parent::__construct($typeFactory);
-            }
+            ) {}
 
             public function download(string $url): ?string
             {

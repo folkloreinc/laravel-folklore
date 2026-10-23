@@ -48,6 +48,21 @@
 | Panneau 1.x fields and resources | Panneau 5 plugin | Removed |
 | `blocks_pivot` | Blocks in the page's JSON | Converted by `folklore:upgrade` |
 
+### Medias
+
+| 1.1 | 2.0 |
+|---|---|
+| `laravel-mediatheque` 1.x, `laravel-image` 1.x | Their 2.x: upgrade them first, with their guides |
+| The package rebinds the mediatheque's model contracts | `config('mediatheque.models')`: the medias module sets its models there unless the site sets its own |
+| `Folklore\Mediatheque\Support\Traits\HasMedias` on site models | `Folklore\Mediatheque\Concerns\HasMedias` |
+| Image sizes from `config('image.sizes')` (filters) | `laravel-image` presets, `config('image.presets')` |
+| `new ImageSize($image, $filters, $format)` | `new ImageSize($image, 'preset', $format)` |
+| `Image::setFilters([...])` | Deprecated: a preset name, or `width`, `height`, `fit`, `format`, `quality` |
+| `MediaMetadata::getMetadatas()` | Removed: the entities read the mediatheque's `metadata()` |
+| `new Medias($typeFactory)` | `new Medias()` |
+
 ### JSON data
 
 Stored references don't change. Without `JsonData::enforceMap()`, a key that isn't mapped falls back to the relation of the same name, as in 1.x. See [json-data.md](json-data.md#from-1x).
+
+The media referenced in JSON data are synced to the mediatheque's pivot under the `json` handle. 1.x wrote those rows without a handle, and the first sync leaves them: remove them before it (`folklore:upgrade` will), or they stay as usages of their media.

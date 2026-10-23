@@ -12,9 +12,20 @@ use Folklore\Entities\Video as VideoEntity;
 use Folklore\Mediatheque\Models\Media as BaseMedia;
 use Folklore\Support\Concerns\HasTypedEntity;
 
+/**
+ * The media model of the medias module, on laravel-mediatheque 2. The module sets it in
+ * `config('mediatheque.models.media')` unless the site sets its own.
+ */
 class Media extends BaseMedia implements ToEntity
 {
     use HasTypedEntity;
+
+    /**
+     * What repositories fill from their data. The mediatheque's model guards every column.
+     *
+     * @var list<string>
+     */
+    protected $fillable = ['name', 'data'];
 
     protected $entitiesByType = [
         'image' => ImageEntity::class,

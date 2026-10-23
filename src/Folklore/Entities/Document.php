@@ -36,8 +36,8 @@ class Document extends Media implements DocumentContract
     {
         if (! isset($this->thumbnailFile)) {
             $this->thumbnailFile = $this->files()->first(function ($file) {
-                return preg_match('/^thumbnail/', $file->handle()) === 1 ||
-                    preg_match('/thumbnails-0/', $file->name()) === 1;
+                return preg_match('/^thumbnail/', (string) $file->handle()) === 1 ||
+                    preg_match('/thumbnails-0/', (string) $file->name()) === 1;
             });
         }
 

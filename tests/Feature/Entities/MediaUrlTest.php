@@ -59,7 +59,7 @@ class MediaUrlTest extends TestCase
         $image = $this->createStub(ImageContract::class);
         $image->method('urlWithoutFilters')->willReturn('');
 
-        $size = new ImageSize($image, ['id' => 'large', 'maxWidth' => 1000]);
+        $size = new ImageSize($image, 'large');
 
         $this->assertSame('', $size->url());
     }

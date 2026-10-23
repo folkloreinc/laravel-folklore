@@ -4,7 +4,7 @@ namespace Folklore\Tests\Feature;
 
 use Folklore\Contracts\Eloquent\HasJsonDataRelations;
 use Folklore\Eloquent\JsonDataCast;
-use Folklore\Mediatheque\Support\Traits\HasMedias;
+use Folklore\Mediatheque\Concerns\HasMedias;
 use Illuminate\Database\Eloquent\Model;
 
 class Post extends Model implements HasJsonDataRelations

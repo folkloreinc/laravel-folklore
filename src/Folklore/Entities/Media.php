@@ -7,14 +7,24 @@ use Folklore\Contracts\Entities\HasModel;
 use Folklore\Contracts\Entities\Media as MediaContract;
 use Folklore\Contracts\Entities\MediaFile as MediaFileContract;
 use Folklore\Contracts\Entities\MediaMetadata as MediaMetadataContract;
+use Folklore\Mediatheque\Contracts\Models\File as FileContract;
 use Folklore\Models\Media as MediaModel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
+/**
+ * @implements HasModel<MediaModel>
+ */
 class Media implements HasModel, MediaContract
 {
+    /**
+     * @var MediaModel
+     */
     protected $model;
 
+    /**
+     * @var Collection<int, MediaFile>|null
+     */
     protected $files;
 
     protected $metadata;
@@ -26,19 +36,32 @@ class Media implements HasModel, MediaContract
         $this->model = $model;
     }
 
+    /**
+     * The internal id, which `medias://` references and the 1.x JSON shape use.
+     */
     public function id(): string
     {
-        return $this->model->id;
+        $key = $this->model->getKey();
+
+        return is_scalar($key) ? (string) $key : '';
+    }
+
+    /**
+     * The public id (`med_…`), which `media://` references use.
+     */
+    public function uid(): string
+    {
+        return $this->model->uid();
     }
 
     public function type(): string
     {
-        return $this->model->type;
+        return $this->model->type();
     }
 
     public function name(): string
     {
-        return $this->model->name;
+        return $this->model->name() ?? '';
     }
 
     public function url(): string
@@ -52,7 +75,7 @@ class Media implements HasModel, MediaContract
     {
         if (! isset($this->thumbnailUrl)) {
             $thumbnailFile = $this->files()->first(function ($file) {
-                return preg_match('/^thumbnail/', $file->handle()) === 1;
+                return preg_match('/^(thumbnail|poster)/', (string) $file->handle()) === 1;
             });
             if (! is_null($thumbnailFile)) {
                 $this->thumbnailUrl = $thumbnailFile->url();
@@ -64,12 +87,16 @@ class Media implements HasModel, MediaContract
         return $this->thumbnailUrl;
     }
 
+    /**
+     * @return Collection<int, MediaFile>
+     */
     public function files(): Collection
     {
         if (! isset($this->files)) {
-            $this->files = $this->model->files->toBase()->map(function ($item) {
-                return to_entity($item);
-            });
+            $this->files = $this->model->files()
+                ->filter(fn (FileContract $file) => $file instanceof Model)
+                ->map(fn (FileContract&Model $file) => new MediaFile($file))
+                ->values();
         }
 
         return $this->files;
@@ -87,7 +114,7 @@ class Media implements HasModel, MediaContract
     protected function getOriginalFile(): ?MediaFileContract
     {
         return $this->files()->first(function ($file) {
-            return $file->handle() === 'original';
+            return $file->handle() === FileContract::ORIGINAL;
         });
     }
 

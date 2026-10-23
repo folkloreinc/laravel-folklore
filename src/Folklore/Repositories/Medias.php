@@ -5,13 +5,16 @@ namespace Folklore\Repositories;
 use Exception;
 use Folklore\Contracts\Entities\Media as MediaContract;
 use Folklore\Contracts\Repositories\Medias as MediasRepositoryContract;
-use Folklore\Mediatheque\Contracts\Models\Media as MediaModelContract;
-use Folklore\Mediatheque\Contracts\Type\Factory as TypeFactory;
+use Folklore\Mediatheque\Contracts\Models\Media as MediathequeMedia;
+use Folklore\Mediatheque\Facades\Mediatheque;
+use Folklore\Mediatheque\Support\Models;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Psr7\FnStream;
 use GuzzleHttp\Psr7\Uri;
 use GuzzleHttp\Psr7\Utils;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -22,8 +25,6 @@ use Symfony\Component\HttpFoundation\File\File;
 
 class Medias extends Entities implements MediasRepositoryContract
 {
-    protected $typeFactory;
-
     /**
      * Seconds allowed to connect to the host, and to download the whole file,
      * when a media is created from a URL.
@@ -39,19 +40,19 @@ class Medias extends Entities implements MediasRepositoryContract
      */
     protected int $downloadMaxSize = 1024 * 1024 * 1024;
 
-    public function __construct(TypeFactory $typeFactory)
-    {
-        $this->typeFactory = $typeFactory;
-    }
-
+    /**
+     * The media model of `config('mediatheque.models.media')`.
+     */
     protected function newModel(): Model
     {
-        return resolve(MediaModelContract::class);
+        $class = Models::media();
+
+        return new $class;
     }
 
     protected function newQuery()
     {
-        return parent::newQuery()->with('files', 'metadatas');
+        return parent::newQuery()->with('mediaFiles');
     }
 
     public function findById(string $id): ?MediaContract
@@ -80,34 +81,44 @@ class Medias extends Entities implements MediasRepositoryContract
         return parent::create($data);
     }
 
+    /**
+     * Ingests the file with the mediatheque (`Mediatheque::ingest()`), which validates it,
+     * stores it, probes it and runs its type's pipeline, then fills the model with the data.
+     */
     public function createFromFile(File $file, $data = []): MediaContract
     {
-        $type = $this->typeFactory->typeFromPath($file->getRealPath());
-        $model = $type->newModel();
-        $model->setOriginalFile($file);
-        $this->saveData($model, $data);
-        $model->load('files'); // @TODO
+        $data = (array) $data;
+        $name = $data['name'] ?? null;
+        $model = Mediatheque::ingest($file->getRealPath(), name: is_string($name) ? $name : null);
+        $data = Arr::except($data, ['name']);
+        if (count($data) > 0) {
+            $this->saveData($model, $data);
+        }
+        if ($model instanceof Model) {
+            $model->load('mediaFiles');
+        }
 
         return to_entity($model);
     }
 
+    /**
+     * Replaces the original of a media (`Mediatheque::replaceOriginal()`): it keeps its id,
+     * uid and usages, and its renditions are produced again.
+     */
     public function updateFromFile(string $id, File $file, $data = []): MediaContract
     {
         $model = $this->findModelById($id);
-        $model->files()->detach();
-
-        $model->setOriginalFile($file);
-        $this->saveData($model, $data);
-
-        $type = $model->getType();
-        if (! is_null($type)) {
-            $pipeline = $type->pipeline();
-            if (! is_null($pipeline) && ! $model->typePipelineDisabled()) {
-                $model->runPipeline($pipeline);
-            }
+        if (! $model instanceof MediathequeMedia) {
+            throw (new ModelNotFoundException)->setModel(Models::media(), [$id]);
         }
-
-        $model->load('files');
+        $model = Mediatheque::replaceOriginal($model, $file->getRealPath());
+        $data = (array) $data;
+        if (count($data) > 0) {
+            $this->saveData($model, $data);
+        }
+        if ($model instanceof Model) {
+            $model->load('mediaFiles');
+        }
 
         return to_entity($model);
     }
