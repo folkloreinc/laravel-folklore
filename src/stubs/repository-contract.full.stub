@@ -5,6 +5,9 @@ namespace {{ namespace }};
 use Folklore\Contracts\Repositories\Entities;
 use {{ namespacedEntity }} as {{ entityAlias }};
 
+/**
+ * @extends Entities<{{ entityAlias }}>
+ */
 interface {{ class }} extends Entities
 {
     public function findById(string $id): ?{{ entityAlias }};

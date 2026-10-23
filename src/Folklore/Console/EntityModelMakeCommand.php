@@ -52,7 +52,9 @@ class EntityModelMakeCommand extends GeneratorCommand
 
         $model = $this->option('model');
         $stub = $model ? $this->replaceModel($stub, $model) : $stub;
-        $stub = $this->replaceEntity($stub, $name);
+        // The contract of the entity, not the class being generated: App\Entities\Brand
+        // implements App\Contracts\Entities\Brand
+        $stub = $this->replaceEntity($stub, class_basename($name));
 
         return $stub;
     }

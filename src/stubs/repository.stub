@@ -5,15 +5,13 @@ namespace {{ namespace }};
 use Folklore\Repositories\Entities;
 use {{ namespacedModel }} as {{ modelAlias }};
 
+/**
+ * @extends Entities<{{ modelAlias }}>
+ */
 class {{ class }} extends Entities
 {
     protected function newModel(): {{ modelAlias }}
     {
         return new {{ modelAlias }}();
-    }
-
-    protected function newQuery()
-    {
-        return parent::newQuery();
     }
 }

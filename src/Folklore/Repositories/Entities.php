@@ -283,7 +283,7 @@ abstract class Entities implements EntitiesContract, QueriesEntities
     public function create($data): Entity
     {
         $model = $this->newModel();
-        $this->saveData($model, $data);
+        $this->saveDataInTransaction($model, $data);
 
         return $this->getEntityFromModel($model);
     }
@@ -291,10 +291,10 @@ abstract class Entities implements EntitiesContract, QueriesEntities
     public function update(string $id, $data): ?Entity
     {
         $model = $this->findModelById($id);
-        if (is_null($model)) {
+        if (! $model instanceof Model) {
             return null;
         }
-        $this->saveData($model, $data);
+        $this->saveDataInTransaction($model, $data);
 
         return $this->getEntityFromModel($model);
     }
@@ -389,6 +389,18 @@ abstract class Entities implements EntitiesContract, QueriesEntities
         $global = is_array($this->globalQuery) ? $this->globalQuery : [];
 
         return array_filter(array_merge($resolved, $global), 'is_string', ARRAY_FILTER_USE_KEY);
+    }
+
+    /**
+     * Saves the data in a database transaction: a save that fails after the model's
+     * `saving` event rolls back what it created, such as the media that a JSON reference
+     * ingested (docs/decisions/0013).
+     */
+    protected function saveDataInTransaction(Model $model, mixed $data): void
+    {
+        $model->getConnection()->transaction(function () use ($model, $data) {
+            $this->saveData($model, $data);
+        });
     }
 
     protected function saveData($model, $data)

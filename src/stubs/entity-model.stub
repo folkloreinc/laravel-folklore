@@ -2,20 +2,16 @@
 
 namespace {{ namespace }};
 
+use Folklore\Entities\ModelEntity;
 use {{ namespacedModel }} as {{ modelAlias }};
 use {{ namespacedEntity }} as {{ entityAlias }};
 
-class {{ class }} implements {{ entityAlias }}
+/**
+ * Its id is the model's entity key (`HasEntityKey`), or its key, the same column its
+ * repository finds by.
+ *
+ * @extends ModelEntity<{{ modelAlias }}>
+ */
+class {{ class }} extends ModelEntity implements {{ entityAlias }}
 {
-    protected $model;
-
-    public function __construct({{ modelAlias }} $model)
-    {
-        $this->model = $model;
-    }
-
-    public function id(): string
-    {
-        return $this->model->id;
-    }
 }
