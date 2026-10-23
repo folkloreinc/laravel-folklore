@@ -8,20 +8,24 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+## [2.0.0-alpha.3] - 2026-10-23
+
+What the pilot needs to move its JSON references onto `JsonDataCast` ([roadmap](docs/roadmap.md#alpha-3-json-references-on-the-cast), [#89](https://github.com/folkloreinc/laravel-folklore/issues/89)).
+
 ### Breaking changes
 
-- `JsonDataCast` syncs the relations of a model's references when the model is saved with events, however it is saved, not only through the base repository. Only the relations declared in the JSON attributes that changed are synced. The base repository's `syncRelations()` no longer syncs, and no longer calls `refresh()` on the model: the synced relations are unset instead ([#97](https://github.com/folkloreinc/laravel-folklore/issues/97)).
 - Under `JsonData::enforceMap()`, `MediaReferences` takes only media models and entities, `media://` references and uids by default (`MediaReferences::STRICT`): a URL, a file or an internal id throws `InvalidJsonReference`. Set `site.medias.references.accept` to `MediaReferences::FORMS` to keep every form. Without `enforceMap()`, every form is still taken ([#85](https://github.com/folkloreinc/laravel-folklore/issues/85)).
+- `JsonDataCast` syncs the relations of a model's references when the model is saved with events, however it is saved, not only through the base repository. Only the relations declared in the JSON attributes that changed are synced. The base repository's `syncRelations()` no longer syncs, and no longer calls `refresh()` on the model: the synced relations are unset instead ([#97](https://github.com/folkloreinc/laravel-folklore/issues/97)).
 
 ### Added
 
-- `JsonData::stored($model, $attribute)`: the decoded value of a JSON attribute with its references as stored, for APIs and front ends. A value that isn't saved yet reads as the reference stored before ([#88](https://github.com/folkloreinc/laravel-folklore/issues/88)).
 - `site.medias.references.accept` lists the forms that `MediaReferences` takes (`model`, `reference`, `uid`, `legacy_id`, `file`, `url`); a value of another form throws `InvalidJsonReference` under `JsonData::enforceMap()`, and is written `null` otherwise, without being downloaded or ingested. `site.medias.references.other_key` set to `false` maps only the key of `site.medias.reference_key` ([#85](https://github.com/folkloreinc/laravel-folklore/issues/85)).
+- `JsonData::stored($model, $attribute)`: the decoded value of a JSON attribute with its references as stored, for APIs and front ends. A value that isn't saved yet reads as the reference stored before ([#88](https://github.com/folkloreinc/laravel-folklore/issues/88)).
 
 ### Fixed
 
-- `JsonDataCast` registered its `saving` listener once per event dispatcher by object id: a new dispatcher that reused the id of one that was gone, as between tests, got no listener, and pending values weren't prepared.
 - `MediaReferences` resolves media through the media model's query instead of the `Mediatheque` facade, so that references to media of the database resolve under `Mediatheque::fake()`, which only knows the media it ingested ([#98](https://github.com/folkloreinc/laravel-folklore/issues/98)).
+- `JsonDataCast` registered its `saving` listener once per event dispatcher by object id: a new dispatcher that reused the id of one that was gone, as between tests, got no listener, and pending values weren't prepared.
 
 ## [2.0.0-alpha.2] - 2026-10-23
 
@@ -103,6 +107,7 @@ The core and `JsonDataCast`, and the medias module on `laravel-mediatheque` 2 an
 
 - `make:entity` generated an entity and a repository that implemented themselves instead of their contracts, so they didn't load.
 
-[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.2...v2.x
+[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.3...v2.x
+[2.0.0-alpha.3]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.3
 [2.0.0-alpha.2]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.2
 [2.0.0-alpha.1]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.1
