@@ -16,7 +16,7 @@ In 1.x, only `PageSlug` has a component of its own (`page-slug`): it shows the p
   - `Page` and `Pages`: a `Relation` to the pages resource, multiple for `Pages`.
   - `Blocks`: a `Repeater` whose `types` are built from the block type registry ([0009](0009-pages-and-blocks.md)). Its maximum depth and excluded types are computed in PHP, as in 1.x.
   - `PageSlug`: Panneau's `Slug`. The pages module gives the URL of a slug from its routes (`home`, `page`, `page_with_parent`) and the page's parent.
-- **The slug features go to Panneau.** A source per locale, a URL computed by the backend from the form's values, and checking that a slug is free are proposed as features of Panneau's generic `slug` field, since they aren't specific to pages.
+- **The slug features go to Panneau.** A source per locale, a URL computed by the backend from the form's values, and checking that a slug is free are proposed as features of Panneau's generic `slug` field, since they aren't specific to pages ([folkloreinc/panneau-js#109](https://github.com/folkloreinc/panneau-js/issues/109)).
 - The rest of [0011](0011-panneau-plugin.md) stands: an opt-in module requiring `folklore/laravel-panneau ^5.0` (suggested), the `ResourceRepository` adapter on the typed query, `scope()` on the query context, and shipping before Panneau 5's betas end.
 
 ## Consequences
