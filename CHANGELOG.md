@@ -2,15 +2,15 @@
 
 All notable changes to `folklore/laravel-folklore` 2.x are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
-
 2.0 is in development on the `v2.x` branch ([#56](https://github.com/folkloreinc/laravel-folklore/issues/56), [roadmap](docs/roadmap.md)). It is released in slices, tagged `v2.0.0-alpha.N`, then `beta.N` and `rc.N`. Until the release candidate, an alpha can break the previous one: each alpha lists its breaking changes since the previous one under **Breaking changes**.
 
 1.x is released from the [`v1.1`](https://github.com/folkloreinc/laravel-folklore/tree/v1.1) branch; its changes are in its [GitHub releases](https://github.com/folkloreinc/laravel-folklore/releases).
 
-### Fixed
+## [Unreleased]
 
-- `make:entity` generated an entity and a repository that implemented themselves instead of their contracts, so they didn't load.
+## [2.0.0-alpha.1] - 2026-10-23
+
+The core and `JsonDataCast`, and the medias module on `laravel-mediatheque` 2 and `laravel-image` 2 ([roadmap](docs/roadmap.md#alpha-1-the-core-and-jsondatacast)). The breaking changes are those since 1.1.8; the [upgrade guide](docs/upgrade.md) lists what a site changes.
 
 ### Breaking changes
 
@@ -28,7 +28,7 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
   - `Repositories\Medias::createFromFile()` ingests with `Mediatheque::ingest()`, and `updateFromFile()` replaces the original with `Mediatheque::replaceOriginal()`. Its constructor takes no type factory.
   - `Page`, `Block` and the models of sites use the mediatheque 2's `Folklore\Mediatheque\Concerns\HasMedias`.
   - `JsonDataCast` syncs the media referenced in JSON data with `syncMedias()`, under the `json` handle (`JsonDataCast::MEDIAS_HANDLE`): media attached otherwise are no longer detached, and a reference that isn't a media id is no longer written to the pivot.
-- The Panneau 1.x fields and resources (`Panneau\Fields\*`, `Panneau\Resources\*`) are removed, with `folklore/laravel-panneau` 1.x. A Panneau 5 plugin replaces them later in alpha 1.
+- The Panneau 1.x fields and resources (`Panneau\Fields\*`, `Panneau\Resources\*`) are removed, with `folklore/laravel-panneau` 1.x. A Panneau 5 plugin replaces them: its repository adapter in alpha 2, its page fields with the pages module in alpha 3 ([decision 0018](docs/decisions/0018-panneau-plugin-php-only.md)).
 - Everything the service provider booted is behind a module, off by default: the medias, pages, users and organisations repositories, the mediatheque model bindings, the `repository` auth provider and the Fortify callbacks, the site manager, the `routeForReactRouter` macro, the `pixel` and `csv` responses and the offset page resolver, `assets:view` and `LocalMiddleware`, `users:create`, Customer.io, Google, the `pubnub` driver and PubSubHubbub. Turn on the modules a site uses in `config/site.php` (`modules`).
 - The `Entity` contract no longer extends Panneau 1.x's `ResourceItem`, and the `Entities` repository contract no longer extends Panneau 1.x's `Repository` ([decision 0003](docs/decisions/0003-evolve-in-place.md)). Neither do the `Page`, `Block` and `MediaFile` entity contracts. Code that passes an entity or a repository to Panneau 1.x as one of its contracts no longer type-checks.
 
@@ -61,3 +61,10 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 - The typed query contract, `QueriesEntities` (`queryEntities(EntitiesQuery)`, `withGlobalQuery()`), with `EntitiesQuery`, `Sort` and `SortDirection`.
 - `QueryContextResolver`, the contract of the default query context.
 - `JsonData`, the registry of JSON reference keys: `map()`, `enforceMap()`, `keysFor()`, `keyFor()`, `parse()`, `reference()`; `JsonReference`, `JsonReferenceEntry`, and the `ReferenceHandler` contract with `ReferenceContext`. `JsonDataCast` uses them in alpha 1.
+
+### Fixed
+
+- `make:entity` generated an entity and a repository that implemented themselves instead of their contracts, so they didn't load.
+
+[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.1...v2.x
+[2.0.0-alpha.1]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.1

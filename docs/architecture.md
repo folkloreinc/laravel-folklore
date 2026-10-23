@@ -71,7 +71,7 @@ Modules are turned on in `config/site.php`, which 1.x already uses (`site.medias
   Google Places still needs `google/apiclient` when it is used, until it moves to Laravel's HTTP client.
 - The modules use parts of Laravel that the core doesn't require (HTTP, routing, auth, mail, broadcasting, views, and `Foundation` for the auth module's `User` model): a Laravel application has them.
 - For now, the package's service provider registers each module's part. A module gets its own service provider when it gets its namespace, with its alpha.
-- The panneau module, for the Panneau 5 plugin, comes later in alpha 1. The Panneau 1.x fields and resources are removed.
+- The panneau module, for the Panneau 5 plugin, comes in alpha 2 with its repository adapter, and gets its page fields in alpha 3 with the pages module. The Panneau 1.x fields and resources are removed.
 - `folklore:upgrade` writes the modules an upgraded site uses into its config. Until it exists (beta), an upgraded site turns them on by hand.
 
 ## Entities
@@ -213,7 +213,7 @@ The module namespaces are named with the contracts. 1.x classes that move into a
 | `folklore/laravel-mediatheque`, `folklore/laravel-image` | `^2.0`, suggested (medias module) | `^2.0@alpha`, suggested |
 | `folklore/laravel-locale ^8.1`, `cviebrock/eloquent-sluggable` | Suggested (pages module) | Same |
 | `laravel/fortify` | Suggested (auth module) | Same |
-| `folklore/laravel-panneau` | `^5.0`, suggested (Panneau plugin) | Not yet: the Panneau 1.x fields are removed, the plugin comes later in alpha 1 |
+| `folklore/laravel-panneau` | `^5.0`, suggested (Panneau plugin) | Not yet: the Panneau 1.x fields are removed, the plugin comes in alpha 2 |
 | `guzzlehttp/guzzle`, `parsecsv/php-parsecsv`, `pubnub/pubnub` | Suggested (services) | Same |
 | `google/apiclient` | Removed | Suggested, for Places until it moves to Laravel's HTTP client |
 

@@ -50,11 +50,12 @@ What both pilots need first: Niche's brand images, and the contests platform bef
   - [x] the pages models and the JSON media sync on the mediatheque's `HasMedias`, by handle ([json-data.md](json-data.md#syncing))
 - [x] Medias module, references: the `media` and `medias` keys and `MediaReferences`, with `site.medias.reference_key` ([decisions/0008](decisions/0008-media-references.md))
 - [x] Panneau 1.x removed: its fields and resources, and `folklore/laravel-panneau` 1.x
-- [ ] Panneau 5 plugin, moved from alpha 3: `ResourceRepository` adapter on the typed query, `scope()`, the `Page`, `Pages`, `Blocks` and `PageSlug` fields, in PHP on Panneau 5's built-in types ([decisions/0018](decisions/0018-panneau-plugin-php-only.md)); the slug features proposed to Panneau; `laravel-panneau`'s architecture updated for the adapter
 - [x] The 1.1.8 characterization tests of `JsonDataCast` pass, but three that the spec changes on purpose: a string that isn't a reference of its relation is neither written nor synced as an id, a reference is synced only to the relation of its path, and a media reference resolves before it is attached ([CHANGELOG](../CHANGELOG.md))
-- [ ] Niche replaces its prototype with `^2.0@alpha`
+- [ ] Niche replaces its prototype with `^2.0@alpha`, once `v2.0.0-alpha.1` is tagged
 
-## Alpha 2: the rest of the medias module
+## Alpha 2: the rest of the medias module, and the Panneau adapter
+
+- [ ] Panneau 5 plugin, its first part: the `ResourceRepository` adapter on the typed query, and `scope()` on the query context ([decisions/0018](decisions/0018-panneau-plugin-php-only.md)); `laravel-panneau`'s architecture updated for the adapter. Moved from alpha 1, which Niche needs without Panneau
 
 Once `laravel-mediatheque` 2 has them:
 
@@ -64,6 +65,7 @@ Once `laravel-mediatheque` 2 has them:
 ## Alpha 3: pages
 
 - [ ] Pages module: blocks in the page's JSON, type registry, configurable route names ([decisions/0009](decisions/0009-pages-and-blocks.md))
+- [ ] The Panneau plugin's page fields: `Page`, `Pages`, `Blocks` and `PageSlug`, in PHP on Panneau 5's built-in types, with the URL of a slug from the pages module ([decisions/0018](decisions/0018-panneau-plugin-php-only.md)); `PageSlug` on Panneau's generic slug field ([folkloreinc/panneau-js#109](https://github.com/folkloreinc/panneau-js/issues/109))
 
 ## Beta: upgrade path
 
@@ -94,11 +96,5 @@ The auth and other modules are placed in the beta because the site that upgrades
 
 ## Open questions
 
-To settle before alpha 1 ships:
-
-- **Media ingested by a save that fails outside a transaction:** whether the mediatheque prunes media that were never used, through its usage graph ([json-data.md](json-data.md#when-the-save-fails-afterwards)).
-
-Later:
-
-- How `Page` restricts the pages it offers to some types, as `withTypes()` did in 1.x: a relation filter in Panneau 5, or a pages resource per type (alpha 1).
+- How `Page` restricts the pages it offers to some types, as `withTypes()` did in 1.x: a relation filter in Panneau 5, or a pages resource per type (alpha 3).
 - Whether a 1.2 accepts `^1.1|^2.0` of the mediatheque and `laravel-image`, so that sites upgrade them before this package (decided at the mediatheque's beta).
