@@ -49,6 +49,9 @@
         "parsecsv/php-parsecsv": "^1.3",
         "phpunit/phpunit": "^11.5|^12.0"
     },
+    "conflict": {
+        "folklore/laravel-mediatheque": "<2.0.0-alpha.7"
+    },
     "autoload": {
         "psr-4": {
             "Folklore\\": "src/Folklore/"

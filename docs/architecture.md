@@ -210,7 +210,7 @@ The module namespaces are named with the contracts. 1.x classes that move into a
 | Package | 2.0.0 | Alpha 1 |
 |---|---|---|
 | `illuminate/console`, `contracts`, `database`, `pagination`, `support` `^12.69\|^13.30` | Required | Required |
-| `folklore/laravel-mediatheque`, `folklore/laravel-image` | `^2.0`, suggested (medias module) | `^2.0@alpha`, suggested |
+| `folklore/laravel-mediatheque`, `folklore/laravel-image` | `^2.0`, suggested (medias module) | `^2.0@alpha`, suggested. `laravel-mediatheque` below 2.0.0-alpha.7 conflicts (since alpha 2) |
 | `folklore/laravel-locale ^8.1`, `cviebrock/eloquent-sluggable` | Suggested (pages module) | Same |
 | `laravel/fortify` | Suggested (auth module) | Same |
 | `folklore/laravel-panneau` | `^5.0`, suggested (Panneau plugin) | Not yet: the Panneau 1.x fields are removed, the plugin comes in alpha 2 |
