@@ -42,6 +42,8 @@
 | `Entities extends Panneau\Contracts\Repository` | `Entities` on its own | — (breaking) |
 | `get($params, $page, $count)` | Typed query | Kept |
 | `setGlobalQuery()` | `withGlobalQuery()`, default resolver | Kept |
+| `findById()`, `update()`, `destroy()`, `valueById()` ignore the global query | They apply it, without the default params ([decisions/0017](decisions/0017-finds-apply-the-query-context.md)) | — (breaking) |
+| `findById()` by `id` | By the model's entity key (`HasEntityKey`), or its key | — |
 | `$jsonAttributeName` | `$jsonAttributes` | Kept, deprecated |
 | `JsonDataCast::macro(...)`, `get`/`set`/`before_set` options | Reference handlers | Kept, deprecated |
 | `lazy` | `withJsonReferences()` | Kept, deprecated |

@@ -10,6 +10,8 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ### Breaking changes
 
+- `findById()`, `update()`, `destroy()` and `valueById()` apply the repository's query context (the global query, `withGlobalQuery()`, the default resolver), without its default params ([decision 0017](docs/decisions/0017-finds-apply-the-query-context.md)). In 1.x they ignored it.
+- The typed query method of `QueriesEntities` is `queryEntities()`, not `query()`, which 1.x repositories may define.
 - With the medias module on, a media reference resolves by its key whether or not the media is attached to the owner, as every mapped key does; in 1.x, only attached media resolved. `MediaReferences::allowUsing()` scopes it.
 - A string at a reference path that isn't a reference of its relation (a URL, `blocks://1` under a `medias` path) is no longer taken for an id: it is written `null` when the handler can't prepare it, read as is, and not synced. 1.x wrote `medias://https://…`, and synced a reference to the relation named in it.
 - Values written to a reference path are turned into references when the model is saved, not when they are assigned: until then, the raw attribute keeps the reference stored before. A model saved without events (`saveQuietly()`) keeps them pending.
@@ -28,6 +30,11 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ### Added
 
+- The base repository implements `QueriesEntities`: `queryEntities(EntitiesQuery)` gives a page of entities with the repository's params as filters, `search`, sorts, and ids and exclusions by entity key; `withGlobalQuery()` returns a scoped copy.
+- A `QueryContextResolver` bound in the container scopes every repository (a tenant from the request).
+- Repositories find by the model's entity key (`HasEntityKey`), or its key.
+- `Folklore\Testing\EntitiesRepositoryContractTests`, a trait that checks that a repository finds the entities it creates by their `id()`.
+- The base repository has `TModel` and `TEntity` templates, for `@extends Entities<Model, Entity>`.
 - `JsonData::load($models, $attributes)` resolves the references of a collection together: one call to each key's handler, and the relations of unmapped keys eager-loaded. Repositories do it for their results with `withJsonReferences()`, which returns a copy.
 - `JsonData::references($model)` lists the references stored in a model's JSON attributes, with their attribute, path and relation, whether they resolve or not.
 - `$jsonAttributes` on repositories: the JSON attributes after the first are given as a whole and merged into their stored value.
@@ -45,6 +52,6 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 - `Entities\ModelEntity`, an optional typed base for new entities, whose id is the model's entity key.
 - `Contracts\Entities\HasEntityKey`, for models whose entity's public id isn't their key (`getEntityKeyName()`, `getEntityKey()`).
 - `HasModel`, `ToEntity` and the `Entities` repository contract are generic, with defaults.
-- The typed query contract, `QueriesEntities` (`query(EntitiesQuery)`, `withGlobalQuery()`), with `EntitiesQuery`, `Sort` and `SortDirection`. Repositories implement it in alpha 1.
+- The typed query contract, `QueriesEntities` (`queryEntities(EntitiesQuery)`, `withGlobalQuery()`), with `EntitiesQuery`, `Sort` and `SortDirection`.
 - `QueryContextResolver`, the contract of the default query context.
 - `JsonData`, the registry of JSON reference keys: `map()`, `enforceMap()`, `keysFor()`, `keyFor()`, `parse()`, `reference()`; `JsonReference`, `JsonReferenceEntry`, and the `ReferenceHandler` contract with `ReferenceContext`. `JsonDataCast` uses them in alpha 1.

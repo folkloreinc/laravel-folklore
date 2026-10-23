@@ -107,10 +107,10 @@ The pilot writes its entities and repositories on a prototype of the core, to be
 `Repositories\Entities` stays the base class, with its protected API ([current-state.md](current-state.md#repositories)).
 
 - The `Entities` contract no longer extends Panneau's `Repository`.
-- **A typed query** is added next to `get($params, $page, $count)`: `query(EntitiesQuery $query): LengthAwarePaginator`, with `withGlobalQuery()`, in the `QueriesEntities` contract. `Repositories\Query\EntitiesQuery` is close to Panneau 5's `ResourceQuery`: filters (the 1.x params), search, sorts (`Sort`, `SortDirection`), `ids`, `except`, page and page size. It maps to the same `buildQueryFromParams()`, so a site's overrides apply to both. The Panneau plugin's adapter is built on it. The base class implements the contract in alpha 1; the `Entities` contract may then extend it.
+- **A typed query** is added next to `get($params, $page, $count)`: `queryEntities(EntitiesQuery $query): LengthAwarePaginator` (not `query()`, which 1.x repositories may already have), with `withGlobalQuery()`, in the `QueriesEntities` contract. `Repositories\Query\EntitiesQuery` is close to Panneau 5's `ResourceQuery`: filters (the 1.x params), search, sorts (`Sort`, `SortDirection`), `ids`, `except`, page and page size. It maps to the same `buildQueryFromParams()`, so a site's overrides apply to both. The Panneau plugin's adapter is built on it. The base class implements it. The `Entities` contract doesn't extend it, so that a site class that implements `Entities` without the base class keeps loading.
 - Existing methods get PHPDoc types, checked by Larastan; their signatures don't change.
 - Repositories list their JSON columns (`$jsonAttributes`), not only `data`, and can load the references of a whole result (`withJsonReferences()`) ([json-data.md](json-data.md#repositories)).
-- **Proposed:** `findById()`, `update()` and `destroy()` apply the global query context, as `get()` does. In 1.x they ignore it, which defeats tenant scoping; applying it changes what they return for a scoped repository, so it would be listed in the upgrade guide.
+- `findById()`, `update()`, `destroy()` and `valueById()` apply the query context, as `get()` does, but not the default params ([decisions/0017](decisions/0017-finds-apply-the-query-context.md)).
 - Repositories find by the model's entity key (`HasEntityKey::getEntityKeyName()`), or by its key name when the model doesn't implement the contract ([decisions/0015](decisions/0015-entity-key.md)).
 - A repository bound by the package or by `RepositoriesServiceProvider` stays a `bind()`, not a singleton.
 
@@ -124,10 +124,10 @@ $scoped = $games->withGlobalQuery(['contest' => $contest->id]); // a copy; $game
 
 // A default context, applied to every repository without an explicit one
 // QueryContextResolver::resolve(Entities $repository): array
-$this->app->bind(QueryContextResolver::class, CurrentTenantContext::class);
+$this->app->bind(QueryContextResolver::class, CurrentTenantContext::class);  // resolved for each query
 ```
 
-The context is merged into the params, as in 1.x: defaults, then the resolver's context, then the global query, then the call's params. Panneau 5's `scope()` maps to `withGlobalQuery()` in the plugin.
+The context is merged into the params: for lists, defaults, then the resolver's context, then the global query, then the call's params; for finds, the same without the defaults. `withGlobalQuery()` merges into the repository's global query. Panneau 5's `scope()` maps to `withGlobalQuery()` in the plugin.
 
 ## JSON data
 

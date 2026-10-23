@@ -19,7 +19,7 @@ interface QueriesEntities
      *
      * @return LengthAwarePaginator<int, TEntity>
      */
-    public function query(EntitiesQuery $query): LengthAwarePaginator;
+    public function queryEntities(EntitiesQuery $query): LengthAwarePaginator;
 
     /**
      * A copy of the repository with this context merged into every query. The repository

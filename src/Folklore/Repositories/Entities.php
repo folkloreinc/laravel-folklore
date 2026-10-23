@@ -4,18 +4,39 @@ namespace Folklore\Repositories;
 
 use Folklore\Contracts\Eloquent\HasJsonDataRelations;
 use Folklore\Contracts\Entities\Entity;
+use Folklore\Contracts\Entities\HasEntityKey;
 use Folklore\Contracts\Repositories\Entities as EntitiesContract;
+use Folklore\Contracts\Repositories\QueriesEntities;
+use Folklore\Contracts\Repositories\QueryContextResolver;
 use Folklore\Eloquent\JsonData;
 use Folklore\Eloquent\JsonDataCast;
+use Folklore\Repositories\Query\EntitiesQuery;
+use Folklore\Repositories\Query\Sort;
 use Folklore\Support\OffsetPaginator;
+use Illuminate\Container\Container;
 use Illuminate\Contracts\Database\Query\Expression;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\AbstractPaginator;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use Laravel\Scout\Builder as ScoutBuilder;
+use LogicException;
 
-abstract class Entities implements EntitiesContract
+/**
+ * The base of the repositories of entities over Eloquent models.
+ *
+ * Its templates let a repository say its model and entity (`@extends Entities<Brand,
+ * BrandEntity>`); the 1.x methods return untyped values, so it implements the contracts
+ * for any entity.
+ *
+ * @template TModel of Model = Model
+ * @template TEntity of Entity = Entity
+ */
+abstract class Entities implements EntitiesContract, QueriesEntities
 {
     protected $globalQuery = [];
 
@@ -60,6 +81,9 @@ abstract class Entities implements EntitiesContract
 
     protected $identifierHandleColumn = 'handle';
 
+    /**
+     * @return TModel
+     */
     abstract protected function newModel(): Model;
 
     protected function newQuery()
@@ -67,11 +91,69 @@ abstract class Entities implements EntitiesContract
         return $this->newModel()->newQuery();
     }
 
+    /**
+     * The entity whose public id is `$id`: the model's entity key (`HasEntityKey`), or its
+     * key, within the repository's query context (docs/decisions/0015, 0017).
+     */
     public function findById(string $id): ?Entity
     {
         $model = $this->findModelById($id);
 
         return $this->getEntityFromModel($model);
+    }
+
+    /**
+     * A page of the entities matching a typed query, within the repository's query
+     * context. Its filters are the repository's params, so `buildQueryFromParams()`
+     * applies; its ids and exclusions are entity keys.
+     *
+     * @return LengthAwarePaginator<int, Entity>
+     */
+    public function queryEntities(EntitiesQuery $query): LengthAwarePaginator
+    {
+        $builder = $this->newQueryWithParams($this->getParamsFromQuery($query));
+        if (! $builder instanceof Builder) {
+            throw new LogicException(static::class.'::buildQueryFromParams() must return an Eloquent query to be queried with queryEntities().');
+        }
+        $column = $this->getEntityKeyName();
+        if (! is_null($query->ids)) {
+            $builder->whereIn($column, $query->ids);
+        }
+        if (count($query->except) > 0) {
+            $builder->whereNotIn($column, $query->except);
+        }
+
+        $models = $builder->paginate($query->perPage, ['*'], 'page', $query->page);
+        if ($this->loadsJsonReferences) {
+            JsonData::load($models->getCollection());
+        }
+        $entities = [];
+        foreach ($models->getCollection() as $model) {
+            $entity = $this->getEntityFromModel($model);
+            if ($entity instanceof Entity) {
+                $entities[] = $entity;
+            }
+        }
+        $models->setCollection(new Collection($entities));
+
+        return $models;
+    }
+
+    /**
+     * A copy of the repository with this context merged into every query, finds included.
+     * The repository it is called on doesn't change (docs/decisions/0004).
+     *
+     * @param  array<string, mixed>  $context
+     */
+    public function withGlobalQuery(array $context): static
+    {
+        $repository = clone $this;
+        $repository->globalQuery = array_merge(
+            is_array($this->globalQuery) ? $this->globalQuery : [],
+            $context,
+        );
+
+        return $repository;
     }
 
     /**
@@ -138,8 +220,12 @@ abstract class Entities implements EntitiesContract
 
     public function valueById($id, $column)
     {
-        return $this->newQuery()
-            ->where('id', $id)
+        if (! is_string($column) && ! $column instanceof Expression) {
+            throw new InvalidArgumentException('The column must be a string or an expression.');
+        }
+
+        return $this->newQueryInContext()
+            ->where($this->getEntityKeyName(), $id)
             ->value($column);
     }
 
@@ -224,11 +310,85 @@ abstract class Entities implements EntitiesContract
         return true;
     }
 
+    /**
+     * The model whose entity key is `$id`, within the repository's query context, with the
+     * given params. The default params don't apply: they shape lists, not finds.
+     */
     protected function findModelById($id, $params = null)
     {
-        return $this->newQuery($params)
-            ->where('id', $id)
+        return $this->newQueryInContext(is_array($params) ? array_filter($params, 'is_string', ARRAY_FILTER_USE_KEY) : [])
+            ->where($this->getEntityKeyName(), $id)
             ->first();
+    }
+
+    /**
+     * The query of the model within the repository's query context: the default resolver's
+     * context, then the global query, then the given params.
+     *
+     * @param  array<string, mixed>  $params
+     * @return Builder<TModel>
+     */
+    protected function newQueryInContext(array $params = []): Builder
+    {
+        $query = $this->buildQueryFromParams(
+            $this->newQuery(),
+            array_merge($this->getContextParams(), $params),
+        );
+        if (! $query instanceof Builder) {
+            throw new LogicException(static::class.'::buildQueryFromParams() must return an Eloquent query.');
+        }
+
+        return $query;
+    }
+
+    /**
+     * The column that holds the public id of the entities: the model's entity key
+     * (`HasEntityKey::getEntityKeyName()`), or its key (docs/decisions/0015).
+     */
+    protected function getEntityKeyName(): string
+    {
+        $model = $this->newModel();
+
+        return $model instanceof HasEntityKey ? $model->getEntityKeyName() : $model->getKeyName();
+    }
+
+    /**
+     * The repository's params for a typed query: its filters, `search`, and `order` from
+     * its sorts.
+     *
+     * @return array<string, mixed>
+     */
+    protected function getParamsFromQuery(EntitiesQuery $query): array
+    {
+        $params = $query->filters;
+        if (! is_null($query->search)) {
+            $params['search'] = $query->search;
+        }
+        if (count($query->sorts) > 0) {
+            $params['order'] = array_map(
+                fn (Sort $sort) => [$sort->field, $sort->direction->value],
+                $query->sorts,
+            );
+        }
+
+        return $params;
+    }
+
+    /**
+     * The repository's query context: the default resolver's (`QueryContextResolver`, bound
+     * in the container), then the global query (`setGlobalQuery()`, `withGlobalQuery()`).
+     *
+     * @return array<string, mixed>
+     */
+    protected function getContextParams(): array
+    {
+        $container = Container::getInstance();
+        $resolved = $container->bound(QueryContextResolver::class)
+            ? $container->make(QueryContextResolver::class)->resolve($this)
+            : [];
+        $global = is_array($this->globalQuery) ? $this->globalQuery : [];
+
+        return array_filter(array_merge($resolved, $global), 'is_string', ARRAY_FILTER_USE_KEY);
     }
 
     protected function saveData($model, $data)
@@ -298,7 +458,7 @@ abstract class Entities implements EntitiesContract
 
     protected function newQueryWithParams($params = [])
     {
-        return $this->buildQueryFromParams($this->newQuery(), $this->getQueryParams($params));
+        return $this->buildQueryFromParams($this->newQuery(), $this->getQueryParams(is_array($params) ? $params : []));
     }
 
     protected function getDefaultParams(): array
@@ -308,7 +468,7 @@ abstract class Entities implements EntitiesContract
 
     protected function getQueryParams(array $params): array
     {
-        return array_merge($this->getDefaultParams(), $this->globalQuery, $params);
+        return array_merge($this->getDefaultParams(), $this->getContextParams(), $params);
     }
 
     public function setGlobalQuery(array $query)
