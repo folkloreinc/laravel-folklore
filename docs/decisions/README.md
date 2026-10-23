@@ -2,7 +2,7 @@
 
 One file per decision. A decision is not edited once accepted: a later one replaces it and links to it. A proposed decision can still change before it is accepted.
 
-Decisions 0002 to 0004 and 0009 to 0012 come from the plan of 2.0 ([#56](https://github.com/folkloreinc/laravel-folklore/issues/56#issuecomment-6271513875), 2026-10-19). Decisions 0005 to 0008 come from the `JsonDataCast` design of 2026-10-22 ([#56](https://github.com/folkloreinc/laravel-folklore/issues/56#issuecomment-6344885526)), which updated decision 4 of the plan. Decisions 0013 to 0015 settle open points of phase 0.
+Decisions 0002 to 0004 and 0009 to 0012 come from the plan of 2.0 ([#56](https://github.com/folkloreinc/laravel-folklore/issues/56#issuecomment-6271513875), 2026-10-19). Decisions 0005 to 0008 come from the `JsonDataCast` design of 2026-10-22 ([#56](https://github.com/folkloreinc/laravel-folklore/issues/56#issuecomment-6344885526)), which updated decision 4 of the plan. Decisions 0013 to 0015 settle open points of phase 0, and 0016 one of alpha 1.
 
 | # | Decision | Status |
 |---|---|---|
@@ -21,6 +21,7 @@ Decisions 0002 to 0004 and 0009 to 0012 come from the plan of 2.0 ([#56](https:/
 | [0013](0013-defer-prepare-until-saving.md) | Prepare JSON references when the model is saved | Accepted |
 | [0014](0014-names.md) | Names of the JSON data and query context API | Accepted |
 | [0015](0015-entity-key.md) | Models say which column holds their entity's public id | Accepted |
+| [0016](0016-scope-of-unmapped-keys.md) | Unmapped keys keep the scope of 1.x; mapped keys resolve by their column | Accepted |
 
 Template:
 
