@@ -41,7 +41,7 @@ What both pilots need first: Niche's brand images, and the contests platform bef
   - [ ] recursive wildcard `**`
   - [ ] repositories with several JSON columns
   - [ ] `folklore:json-references:rewrite`
-- [x] Medias module on `laravel-mediatheque ^2.0@alpha` (2.0.0-alpha.6, with `HasMedias`) and `laravel-image ^2.0@alpha`, moved from alpha 2:
+- [x] Medias module on `laravel-mediatheque ^2.0@alpha` (2.0.0-alpha.7: `HasMedias` since alpha.6, migrations that run on MySQL since alpha.7) and `laravel-image ^2.0@alpha`, moved from alpha 2:
   - [x] `Media` and `MediaFile` models on the mediatheque's, set in `config('mediatheque.models')` unless the site sets its own; the package no longer rebinds the mediatheque's model contracts
   - [x] `Entities\Media`, `Image`, `ImageSize`, `MediaFile` and the metadata entities on the mediatheque's contracts; image sizes are `laravel-image` presets (`Image::for($media)->preset(...)->variant()`); protected properties kept
   - [x] `createFromFile` and `updateFromFile` through `Mediatheque::ingest()` and `replaceOriginal()`; the download from a URL, with its limits, stays here

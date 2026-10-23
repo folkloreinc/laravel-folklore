@@ -37,7 +37,7 @@
         "fakerphp/faker": "^1.23",
         "folklore/laravel-image": "^2.0.0-alpha.1",
         "folklore/laravel-locale": "^8.1",
-        "folklore/laravel-mediatheque": "^2.0.0-alpha.6",
+        "folklore/laravel-mediatheque": "^2.0.0-alpha.7",
         "google/apiclient": "^2.18",
         "guzzlehttp/guzzle": "^7.15.2|^8.0.1",
         "larastan/larastan": "^3.0",
@@ -80,7 +80,7 @@
     },
     "suggest": {
         "laravel/framework": "The modules use parts of Laravel that a Laravel application has: HTTP, routing, auth, mail, broadcasting, views.",
-        "folklore/laravel-mediatheque": "The medias module (^2.0.0-alpha.6), and the pages module, whose models use its HasMedias.",
+        "folklore/laravel-mediatheque": "The medias module (^2.0.0-alpha.7), and the pages module, whose models use its HasMedias.",
         "folklore/laravel-image": "The image sizes of the medias module (^2.0.0-alpha.1).",
         "folklore/laravel-locale": "The pages module (^8.1).",
         "cviebrock/eloquent-sluggable": "The pages module.",
