@@ -4321,12 +4321,6 @@ parameters:
 			path: src/Folklore/Repositories/Entities.php
 
 		-
-			message: '#^Method Folklore\\Repositories\\Entities\:\:create\(\) should return Folklore\\Contracts\\Entities\\Entity but returns mixed\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Folklore/Repositories/Entities.php
-
-		-
 			message: '#^Method Folklore\\Repositories\\Entities\:\:fillModel\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
@@ -4359,12 +4353,6 @@ parameters:
 		-
 			message: '#^Method Folklore\\Repositories\\Entities\:\:fillModelJsonAttributes\(\) has parameter \$model with no type specified\.$#'
 			identifier: missingType.parameter
-			count: 1
-			path: src/Folklore/Repositories/Entities.php
-
-		-
-			message: '#^Method Folklore\\Repositories\\Entities\:\:findById\(\) should return Folklore\\Contracts\\Entities\\Entity\|null but returns mixed\.$#'
-			identifier: return.type
 			count: 1
 			path: src/Folklore/Repositories/Entities.php
 
@@ -4413,12 +4401,6 @@ parameters:
 		-
 			message: '#^Method Folklore\\Repositories\\Entities\:\:getEntitiesFromModels\(\) has parameter \$models with no type specified\.$#'
 			identifier: missingType.parameter
-			count: 1
-			path: src/Folklore/Repositories/Entities.php
-
-		-
-			message: '#^Method Folklore\\Repositories\\Entities\:\:getEntityFromModel\(\) has no return type specified\.$#'
-			identifier: missingType.return
 			count: 1
 			path: src/Folklore/Repositories/Entities.php
 
@@ -4671,12 +4653,6 @@ parameters:
 		-
 			message: '#^Method Folklore\\Repositories\\Entities\:\:update\(\) has parameter \$data with no type specified\.$#'
 			identifier: missingType.parameter
-			count: 1
-			path: src/Folklore/Repositories/Entities.php
-
-		-
-			message: '#^Method Folklore\\Repositories\\Entities\:\:update\(\) should return Folklore\\Contracts\\Entities\\Entity\|null but returns mixed\.$#'
-			identifier: return.type
 			count: 1
 			path: src/Folklore/Repositories/Entities.php
 

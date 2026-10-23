@@ -12,7 +12,7 @@ use LogicException;
  *
  * @extends Entities<Note, NoteEntity>
  */
-class Notes extends Entities
+class Notes extends Entities implements NotesContract
 {
     /**
      * @var list<string>
@@ -20,6 +20,11 @@ class Notes extends Entities
     protected $queryColumns = ['workspace', 'published'];
 
     public static bool $byUid = false;
+
+    public function findById(string $id): ?NoteEntity
+    {
+        return parent::findById($id);
+    }
 
     protected function newModel(): Model
     {
