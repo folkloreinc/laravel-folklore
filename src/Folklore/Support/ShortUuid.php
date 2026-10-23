@@ -136,7 +136,9 @@ final class ShortUuid
      * - 4e52c919-513e-4562-9248-7dd612c6c1ca becomes fpfyRTmt6XeE9ehEKZ5LwF
      * - 59a3e9ab-6b99-4936-928a-d8b465dd41e0 becomes BnxtX5wGumMUWXmnbey6xH
      *
-     *
+     * The string has 22 characters at most, and fewer when the UUID's high bits
+     * are zero (about one random UUID in 45 gives 21 characters). It isn't
+     * padded, so that a UUID always encodes to the id stored before.
      *
      * @throws MathException
      */
