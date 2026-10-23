@@ -17,8 +17,8 @@ final readonly class EntitiesQuery
     /**
      * @param  array<string, mixed>  $filters  Values keyed by param name.
      * @param  list<Sort>  $sorts
-     * @param  list<string>|null  $ids  Only these entities, by the id `findById()` takes. Null: no restriction.
-     * @param  list<string>  $except  Never these entities, by the id `findById()` takes.
+     * @param  list<string>|null  $ids  Only these entities, by entity key, as `findById()` takes them. Null: no restriction.
+     * @param  list<string>  $except  Never these entities, by entity key.
      */
     public function __construct(
         public array $filters = [],

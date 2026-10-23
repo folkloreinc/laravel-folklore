@@ -4,6 +4,7 @@ namespace Folklore\Tests\Unit\Contracts;
 
 use Folklore\Contracts\Entities\Block;
 use Folklore\Contracts\Entities\Entity;
+use Folklore\Contracts\Entities\HasEntityKey;
 use Folklore\Contracts\Entities\HasModel;
 use Folklore\Contracts\Entities\MediaFile;
 use Folklore\Contracts\Entities\Page;
@@ -29,6 +30,7 @@ class CoreContractsTest extends TestCase
         return [
             'Entity' => [Entity::class],
             'HasModel' => [HasModel::class],
+            'HasEntityKey' => [HasEntityKey::class],
             'ToEntity' => [ToEntity::class],
             'Entities' => [Entities::class],
             'QueriesEntities' => [QueriesEntities::class],
@@ -55,7 +57,7 @@ class CoreContractsTest extends TestCase
 
     public function test_the_core_contracts_only_use_php_laravel_and_this_package()
     {
-        $core = [Entity::class, HasModel::class, ToEntity::class, Entities::class, QueriesEntities::class, QueryContextResolver::class];
+        $core = [Entity::class, HasModel::class, HasEntityKey::class, ToEntity::class, Entities::class, QueriesEntities::class, QueryContextResolver::class];
         foreach ($core as $contract) {
             $file = (string) (new ReflectionClass($contract))->getFileName();
             preg_match_all('/^use ([^;]+);/m', (string) file_get_contents($file), $matches);

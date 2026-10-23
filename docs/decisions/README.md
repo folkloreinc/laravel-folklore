@@ -20,7 +20,7 @@ Decisions 0002 to 0004 and 0009 to 0012 come from the plan of 2.0 ([#56](https:/
 | [0012](0012-other-modules.md) | Other modules: kept, deprecated, removed | Accepted |
 | [0013](0013-defer-prepare-until-saving.md) | Prepare JSON references when the model is saved | Accepted |
 | [0014](0014-names.md) | Names of the JSON data and query context API | Accepted |
-| [0015](0015-id-column.md) | Repositories find by a configurable id column, `id` by default | Accepted |
+| [0015](0015-entity-key.md) | Models say which column holds their entity's public id | Accepted |
 
 Template:
 

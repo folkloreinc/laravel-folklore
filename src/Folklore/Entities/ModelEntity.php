@@ -3,12 +3,13 @@
 namespace Folklore\Entities;
 
 use Folklore\Contracts\Entities\Entity;
+use Folklore\Contracts\Entities\HasEntityKey;
 use Folklore\Contracts\Entities\HasModel;
 use Illuminate\Database\Eloquent\Model;
 
 /**
  * A typed base for new entities: an immutable object that reads a model. Its id is the
- * value of `$idColumn`, the same column its repository finds by (docs/decisions/0015).
+ * model's entity key, the same value its repository finds by (docs/decisions/0015).
  *
  * The 1.x entities don't extend it, so their protected properties keep working.
  *
@@ -19,21 +20,17 @@ use Illuminate\Database\Eloquent\Model;
 abstract class ModelEntity implements Entity, HasModel
 {
     /**
-     * The model's column that holds the public id. Set it to the repository's `$idColumn`.
-     */
-    protected string $idColumn = 'id';
-
-    /**
      * @param  TModel  $model
      */
     public function __construct(protected readonly Model $model) {}
 
     /**
-     * The value of `$idColumn`, or an empty string when the model has none yet.
+     * The model's entity key (`HasEntityKey`), or its key when it doesn't implement the
+     * contract. An empty string when the model has none yet.
      */
     public function id(): string
     {
-        $id = $this->model->getAttribute($this->idColumn);
+        $id = $this->model instanceof HasEntityKey ? $this->model->getEntityKey() : $this->model->getKey();
 
         return is_scalar($id) ? (string) $id : '';
     }

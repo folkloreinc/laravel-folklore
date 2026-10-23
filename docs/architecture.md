@@ -62,7 +62,8 @@ Modules are enabled in `config/site.php`, which 1.x already uses (`site.medias.d
 ## Entities
 
 - **Contracts keep their 1.x names and methods.** `Entity` (`id(): string`), `HasModel` and `ToEntity` stay, but `Entity` no longer extends Panneau's `ResourceItem` ([decisions/0003](decisions/0003-evolve-in-place.md)).
-- **An optional typed base entity** for new code, `Entities\ModelEntity`: built from a model, which it keeps in a readonly property, with `id()` as the value of its `$idColumn` (`id` by default, like the repositories', [decisions/0015](decisions/0015-id-column.md)) and `getModel()` for the edges that need a model (Fortify, Sanctum). It is the pilot's prototype, under the same name; the prototype's `id()` read the route key. The 1.x entities don't extend it, so their protected properties (`$model`, `$data`, `$metadata`, `$sizes`, `$files`) keep working.
+- **An optional typed base entity** for new code, `Entities\ModelEntity`: built from a model, which it keeps in a readonly property, with `id()` as the model's entity key ([decisions/0015](decisions/0015-entity-key.md)) and `getModel()` for the edges that need a model (Fortify, Sanctum). It is the pilot's prototype, under the same name; the prototype's `id()` read the route key. The 1.x entities don't extend it, so their protected properties (`$model`, `$data`, `$metadata`, `$sizes`, `$files`) keep working.
+- `HasEntityKey`, on models, says which column holds the entity's public id, for the models whose public id isn't their key ([decisions/0015](decisions/0015-entity-key.md)).
 - `HasModel`, `ToEntity` and the `Entities` repository contract are generic (`HasModel<TModel>`, `ToEntity<TEntity>`, `Entities<TEntity>`), with defaults, so 1.x classes that don't say their types keep passing Larastan.
 - `HasTypedEntity`, `to_entity()`, `to_id()` and `SerializesEntityModel` stay, with the same behaviour and payload.
 - The `make:entity` and `make:repository` generators produce typed classes on the 2.0 bases.
@@ -76,9 +77,9 @@ The pilot writes its entities and repositories on a prototype of the core, to be
 | `Contracts\Entities\Entity` (`id(): string`) | Same | Ready |
 | `HasModel<TModel>`, `ToEntity<TEntity>` (`toEntity(): Entity`) | Same, generic; `toEntity()` returns `?Entity`, which a model may narrow | Ready |
 | `Contracts\Repositories\Entities<TEntity>` with `findById()` only | The 1.x contract, generic: also `get()`, `count()`, `create()`… | Ready: the pilot's repositories extend the base class, which implements them |
-| `Entities\ModelEntity<TModel>`, `id()` = route key | Same, `id()` = `$idColumn`, `id` by default | Alpha 1: the pilot's entities set `$idColumn = 'uid'` |
+| `Entities\ModelEntity<TModel>`, `id()` = route key | Same, `id()` = the model's entity key (`HasEntityKey`), or its key | Ready once the pilot's models implement `HasEntityKey` |
 | `Repositories\Entities<TModel, TEntity>`: `newModel()`, `newQuery(): Builder`, `toEntity()` | The 1.x base class, not generic; `newQuery()` untyped, entities built by `getEntityFromModel()` | Alpha 1: the base class gets `@template TModel, TEntity` with defaults |
-| `findById()` by the model's route key (the public uid) | `findById()` by `$idColumn`, `id` by default ([decisions/0015](decisions/0015-id-column.md)) | Alpha 1: the pilot's repositories set `$idColumn = 'uid'` |
+| `findById()` by the model's route key (the public uid) | `findById()` by the model's entity key, or its key ([decisions/0015](decisions/0015-entity-key.md)) | Alpha 1, in the base class; the pilot implements `HasEntityKey` in the trait that gives its models their uid |
 
 ### Review against `laravel-mediatheque` 2
 
@@ -95,7 +96,7 @@ The pilot writes its entities and repositories on a prototype of the core, to be
 - Existing methods get PHPDoc types, checked by Larastan; their signatures don't change.
 - Repositories list their JSON columns (`$jsonAttributes`), not only `data`, and can load the references of a whole result (`withJsonReferences()`) ([json-data.md](json-data.md#repositories)).
 - **Proposed:** `findById()`, `update()` and `destroy()` apply the global query context, as `get()` does. In 1.x they ignore it, which defeats tenant scoping; applying it changes what they return for a scoped repository, so it would be listed in the upgrade guide.
-- Repositories find by `$idColumn`, `id` by default; a repository whose public id is another column sets it ([decisions/0015](decisions/0015-id-column.md)).
+- Repositories find by the model's entity key (`HasEntityKey::getEntityKeyName()`), or by its key name when the model doesn't implement the contract ([decisions/0015](decisions/0015-entity-key.md)).
 - A repository bound by the package or by `RepositoriesServiceProvider` stays a `bind()`, not a singleton.
 
 ### Global query context
