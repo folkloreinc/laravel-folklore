@@ -7,6 +7,9 @@ use {{ namespacedModel }} as {{ modelAlias }};
 use {{ namespacedContract }} as {{ contractAlias }};
 use {{ namespacedEntity }} as {{ entityAlias }};
 
+/**
+ * @extends Entities<{{ modelAlias }}, {{ entityAlias }}>
+ */
 class {{ class }} extends Entities implements {{ contractAlias }}
 {
     protected function newModel(): {{ modelAlias }}
@@ -14,23 +17,27 @@ class {{ class }} extends Entities implements {{ contractAlias }}
         return new {{ modelAlias }}();
     }
 
-    protected function newQuery()
-    {
-        return parent::newQuery();
-    }
-
     public function findById(string $id): ?{{ entityAlias }}
     {
-        return parent::findById($id);
+        $entity = parent::findById($id);
+
+        return $entity instanceof {{ entityAlias }} ? $entity : null;
     }
 
     public function create($data): {{ entityAlias }}
     {
-        return parent::create($data);
+        $entity = parent::create($data);
+        if (! $entity instanceof {{ entityAlias }}) {
+            throw new \LogicException({{ modelAlias }}::class.'::toEntity() must return a '.{{ entityAlias }}::class.'.');
+        }
+
+        return $entity;
     }
 
     public function update(string $id, $data): ?{{ entityAlias }}
     {
-        return parent::update($id, $data);
+        $entity = parent::update($id, $data);
+
+        return $entity instanceof {{ entityAlias }} ? $entity : null;
     }
 }

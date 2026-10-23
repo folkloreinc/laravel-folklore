@@ -32,7 +32,8 @@ What both pilots need first: Niche's brand images, and the contests platform bef
 - [x] Contracts without Panneau 1.x; optional typed base entity; typed query next to `get()` (`queryEntities()`); the base class's templates (`@extends Entities<TModel, TEntity>`). Typing the 1.x method bodies well enough to declare `TEntity` returns is left for the beta, with the deprecated API
 - [x] Global query context: `withGlobalQuery()`, default resolver ([decisions/0004](decisions/0004-global-query-context.md)); finds apply it ([decisions/0017](decisions/0017-finds-apply-the-query-context.md))
 - [x] The base repository finds by the model's entity key (`HasEntityKey`), or its key, in `findById()`, `update()`, `destroy()` and the `ids` of `EntitiesQuery`, with the contract test that `findById($entity->id())` finds the entity ([decisions/0015](decisions/0015-entity-key.md)); `@template TModel, TEntity` on the base class (`Folklore\Testing\EntitiesRepositoryContractTests`)
-- [ ] `make:entity` and `make:repository` on the 2.0 bases
+- [x] `make:entity` and `make:repository` on the 2.0 bases: entities on `ModelEntity`, repositories and their contracts with their types; the generated classes load again (1.x generated an entity and a repository that implemented themselves)
+- [x] Repositories save in a database transaction ([decisions/0013](decisions/0013-defer-prepare-until-saving.md))
 - [x] `JsonDataCast` ([json-data.md](json-data.md), decisions [0005](decisions/0005-json-reference-keys.md) to [0007](decisions/0007-batch-resolution-and-listing.md)):
   - [x] registry of keys, `map()`, `enforceMap()`, per-relation `key`, fallback to the relation name
   - [x] handlers per key, default handler (`ModelReferences`), `using` per path; 1.x macros and callables kept; values prepared on `saving` ([decisions/0013](decisions/0013-defer-prepare-until-saving.md))

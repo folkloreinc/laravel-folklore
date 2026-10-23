@@ -8,6 +8,10 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 1.x is released from the [`v1.1`](https://github.com/folkloreinc/laravel-folklore/tree/v1.1) branch; its changes are in its [GitHub releases](https://github.com/folkloreinc/laravel-folklore/releases).
 
+### Fixed
+
+- `make:entity` generated an entity and a repository that implemented themselves instead of their contracts, so they didn't load.
+
 ### Breaking changes
 
 - `findById()`, `update()`, `destroy()` and `valueById()` apply the repository's query context (the global query, `withGlobalQuery()`, the default resolver), without its default params ([decision 0017](docs/decisions/0017-finds-apply-the-query-context.md)). In 1.x they ignored it.
@@ -30,6 +34,8 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ### Added
 
+- Repositories run `saveData()` in a database transaction, in `create()` and `update()`: a save that fails after the model's `saving` event rolls back the media its JSON references ingested.
+- `make:entity` generates an entity on `ModelEntity` (`@extends ModelEntity<Model>`), and repositories and their contracts with their types (`@extends Entities<Model, Entity>`).
 - The base repository implements `QueriesEntities`: `queryEntities(EntitiesQuery)` gives a page of entities with the repository's params as filters, `search`, sorts, and ids and exclusions by entity key; `withGlobalQuery()` returns a scoped copy.
 - A `QueryContextResolver` bound in the container scopes every repository (a tenant from the request).
 - Repositories find by the model's entity key (`HasEntityKey`), or its key.

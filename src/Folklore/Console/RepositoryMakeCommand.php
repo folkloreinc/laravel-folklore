@@ -56,7 +56,9 @@ class RepositoryMakeCommand extends GeneratorCommand
 
         $full = $this->option('full');
         $entity = $this->option('entity') ?? Str::singular($name);
-        $stub = $full ? $this->replaceContract($stub, $name) : $stub;
+        // The contract of the repository, not the class being generated:
+        // App\Repositories\Brands implements App\Contracts\Repositories\Brands
+        $stub = $full ? $this->replaceContract($stub, class_basename($name)) : $stub;
         $stub = $full ? $this->replaceEntity($stub, $entity) : $stub;
 
         return $stub;
