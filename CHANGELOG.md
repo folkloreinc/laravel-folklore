@@ -12,6 +12,10 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 - `JsonDataCast` syncs the relations of a model's references when the model is saved with events, however it is saved, not only through the base repository. Only the relations declared in the JSON attributes that changed are synced. The base repository's `syncRelations()` no longer syncs, and no longer calls `refresh()` on the model: the synced relations are unset instead ([#97](https://github.com/folkloreinc/laravel-folklore/issues/97)).
 
+### Added
+
+- `JsonData::stored($model, $attribute)`: the decoded value of a JSON attribute with its references as stored, for APIs and front ends. A value that isn't saved yet reads as the reference stored before ([#88](https://github.com/folkloreinc/laravel-folklore/issues/88)).
+
 ### Fixed
 
 - `JsonDataCast` registered its `saving` listener once per event dispatcher by object id: a new dispatcher that reused the id of one that was gone, as between tests, got no listener, and pending values weren't prepared.
