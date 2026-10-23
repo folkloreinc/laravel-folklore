@@ -14,6 +14,13 @@ return [
     |
     */
 
+    'medias' => [
+        // The key written for media references in JSON data: `media` (`media://med_…`,
+        // by uid) for new projects, `medias` (`medias://12`, by id) for sites upgraded
+        // from 1.x, whose front ends read it. Both are read.
+        'reference_key' => 'media',
+    ],
+
     'modules' => [
         // Medias repository and entities, on laravel-mediatheque and laravel-image
         'medias' => false,

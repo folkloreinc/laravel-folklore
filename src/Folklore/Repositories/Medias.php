@@ -156,6 +156,15 @@ class Medias extends Entities implements MediasRepositoryContract
         return parent::update($id, $data);
     }
 
+    /**
+     * Downloads a URL to a temporary file, with the limits of `site.medias.download`, for
+     * the caller to ingest and delete. Null when the download is refused or fails.
+     */
+    public function downloadForIngest(string $url): ?string
+    {
+        return $this->downloadFile($url);
+    }
+
     protected function downloadFile(string $url): ?string
     {
         if (! $this->isAllowedDownloadUrl($url)) {
