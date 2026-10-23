@@ -101,9 +101,9 @@ class TestCase extends BaseTestCase
     }
 
     /**
-     * SQLite in memory by default. Set DB_DRIVER to `mysql`, with DB_HOST,
-     * DB_PORT, DB_DATABASE, DB_USERNAME and DB_PASSWORD, to run the tests
-     * against a MySQL server, as CI does.
+     * SQLite in memory by default. Set DB_DRIVER to `mysql` or `pgsql`, with
+     * DB_HOST, DB_PORT, DB_DATABASE, DB_USERNAME and DB_PASSWORD, to run the
+     * tests against a MySQL or PostgreSQL server, as CI does.
      */
     protected function getTestDatabaseConnection(): array
     {
@@ -113,6 +113,21 @@ class TestCase extends BaseTestCase
                 'driver' => 'sqlite',
                 'database' => ':memory:',
                 'prefix' => '',
+            ];
+        }
+
+        if ($driver === 'pgsql') {
+            return [
+                'driver' => 'pgsql',
+                'host' => env('DB_HOST', '127.0.0.1'),
+                'port' => env('DB_PORT', '5432'),
+                'database' => env('DB_DATABASE', 'testing'),
+                'username' => env('DB_USERNAME', 'postgres'),
+                'password' => env('DB_PASSWORD', ''),
+                'charset' => 'utf8',
+                'prefix' => '',
+                'search_path' => 'public',
+                'sslmode' => 'prefer',
             ];
         }
 

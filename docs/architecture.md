@@ -182,7 +182,7 @@ On `laravel-mediatheque` 2 and `laravel-image` 2 ([decisions/0008](decisions/000
 
 - The core's tests run with `illuminate/*` only. Each module's tests run with its dependencies, and check that the module stays off when they are missing.
 - Contract tests for the base entity and repository, that sites can run against their own classes.
-- `JsonDataCast` keeps the 1.1.8 characterization tests, on SQLite and MySQL.
+- `JsonDataCast` keeps the 1.1.8 characterization tests, on SQLite, MySQL and PostgreSQL (`jsonb`).
 
 ## Package layout
 

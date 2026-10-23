@@ -8,10 +8,15 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+### Added
+
+- CI runs the test suite on PostgreSQL 17, where the JSON fixtures' columns are `jsonb` ([#87](https://github.com/folkloreinc/laravel-folklore/issues/87)).
+
 ### Fixed
 
 - The base repository passes its `TEntity` to the `Entities` and `QueriesEntities` contracts. A repository contract typed on its entity (`@extends Entities<UserEntity>`) and the base class (`@extends Entities<User, UserEntity>`) no longer conflict in static analysis, and `findById()`, `update()`, `create()` and `queryEntities()` return `TEntity`.
 - `create()` throws a `LogicException` when the model it created gives no entity, instead of a `TypeError` on its return type.
+- On PostgreSQL, whose `LIKE` is case-sensitive, `findBySlug()` of the organisations repository, `findByEmail()` of the users repository (`whereLikeLiteral()`) and the `search` param of the medias repository are case-insensitive, as on SQLite and MySQL ([#87](https://github.com/folkloreinc/laravel-folklore/issues/87)).
 
 ## [2.0.0-alpha.1] - 2026-10-23
 

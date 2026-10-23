@@ -18,6 +18,7 @@ use Illuminate\Contracts\Database\Query\Expression;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Query\Grammars\PostgresGrammar;
 use Illuminate\Pagination\AbstractPaginator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
@@ -640,17 +641,27 @@ abstract class Entities implements EntitiesContract, QueriesEntities
 
     /**
      * Match a column against a value literally with LIKE: the comparison stays
-     * case-insensitive where the database makes it so, but `%` and `_` in the
-     * value are escaped instead of acting as wildcards.
+     * case-insensitive, but `%` and `_` in the value are escaped instead of
+     * acting as wildcards.
      */
     protected function whereLikeLiteral($query, string $column, string $value)
     {
         $escapedValue = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $value);
+        $column = $this->newModel()->getConnection()->getQueryGrammar()->wrap($column);
 
         return $query->whereRaw(
-            $query->getQuery()->getGrammar()->wrap($column)." LIKE ? ESCAPE '!'",
+            $column.' '.$this->caseInsensitiveLikeOperator()." ? ESCAPE '!'",
             [$escapedValue],
         );
+    }
+
+    /**
+     * LIKE is case-insensitive on SQLite and with MySQL's default collations,
+     * but case-sensitive on PostgreSQL, which has ILIKE.
+     */
+    protected function caseInsensitiveLikeOperator(): string
+    {
+        return $this->newModel()->getConnection()->getQueryGrammar() instanceof PostgresGrammar ? 'ILIKE' : 'LIKE';
     }
 
     protected function getQueryFromIdentifier(
