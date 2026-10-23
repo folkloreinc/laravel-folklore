@@ -29,9 +29,9 @@ What both pilots need first: Niche's brand images, and the contests platform bef
 
 - [x] Composer: the core requires only `illuminate/*`; the Folklore packages, Fortify, Guzzle, `google/apiclient`, `parsecsv` and `pubnub` move to `suggest` ([decisions/0002](decisions/0002-core-and-modules.md)). `google/apiclient` stays in `require-dev` for Places, until it moves to Laravel's HTTP client. A CI job runs the core's tests without the modules' packages
 - [x] Modules switched in `config/site.php`, all off by default; a module that is on checks its packages ([architecture.md](architecture.md#configuration-and-modules)); modules that alpha 1 doesn't port yet stay off and don't load their 1.x dependencies
-- [ ] Contracts without Panneau 1.x; optional typed base entity; typed query next to `get()`; PHPDoc types on the 1.x methods
-- [ ] Global query context: `withGlobalQuery()`, default resolver ([decisions/0004](decisions/0004-global-query-context.md))
-- [ ] The base repository finds by the model's entity key (`HasEntityKey`), or its key, in `findById()`, `update()`, `destroy()` and the `ids` of `EntitiesQuery`, with the contract test that `findById($entity->id())` finds the entity ([decisions/0015](decisions/0015-entity-key.md)); `@template TModel, TEntity` on the base class
+- [x] Contracts without Panneau 1.x; optional typed base entity; typed query next to `get()` (`queryEntities()`); the base class's templates (`@extends Entities<TModel, TEntity>`). Typing the 1.x method bodies well enough to declare `TEntity` returns is left for the beta, with the deprecated API
+- [x] Global query context: `withGlobalQuery()`, default resolver ([decisions/0004](decisions/0004-global-query-context.md)); finds apply it ([decisions/0017](decisions/0017-finds-apply-the-query-context.md))
+- [x] The base repository finds by the model's entity key (`HasEntityKey`), or its key, in `findById()`, `update()`, `destroy()` and the `ids` of `EntitiesQuery`, with the contract test that `findById($entity->id())` finds the entity ([decisions/0015](decisions/0015-entity-key.md)); `@template TModel, TEntity` on the base class (`Folklore\Testing\EntitiesRepositoryContractTests`)
 - [ ] `make:entity` and `make:repository` on the 2.0 bases
 - [x] `JsonDataCast` ([json-data.md](json-data.md), decisions [0005](decisions/0005-json-reference-keys.md) to [0007](decisions/0007-batch-resolution-and-listing.md)):
   - [x] registry of keys, `map()`, `enforceMap()`, per-relation `key`, fallback to the relation name

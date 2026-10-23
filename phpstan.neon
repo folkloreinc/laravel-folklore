@@ -6,3 +6,8 @@ parameters:
     level: max
     paths:
         - src
+        # The tests that use the contract test traits of src/Testing, so that they are analysed
+        - tests/Feature/Repositories/EntitiesContractTest.php
+        - tests/Feature/Repositories/EntitiesContractByUidTest.php
+        - tests/Feature/Repositories/NotesTestCase.php
+        - tests/Feature/Repositories/Fixtures
