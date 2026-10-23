@@ -34,11 +34,12 @@ What both pilots need first: Niche's brand images, and the contests platform bef
 - [ ] The base repository finds by the model's entity key (`HasEntityKey`), or its key, in `findById()`, `update()`, `destroy()` and the `ids` of `EntitiesQuery`, with the contract test that `findById($entity->id())` finds the entity ([decisions/0015](decisions/0015-entity-key.md)); `@template TModel, TEntity` on the base class
 - [ ] `make:entity` and `make:repository` on the 2.0 bases
 - [ ] `JsonDataCast` ([json-data.md](json-data.md), decisions [0005](decisions/0005-json-reference-keys.md) to [0007](decisions/0007-batch-resolution-and-listing.md)):
-  - [ ] registry of keys, `map()`, `enforceMap()`, per-relation `key`, fallback to the relation name
-  - [ ] handlers per key, default handler, `using` per path; 1.x macros and callables through the registry, deprecated
-  - [ ] batch resolution (`JsonData::load()`, `withJsonReferences()`), memoization
+  - [x] registry of keys, `map()`, `enforceMap()`, per-relation `key`, fallback to the relation name
+  - [x] handlers per key, default handler (`ModelReferences`), `using` per path; 1.x macros and callables kept; values prepared on `saving` ([decisions/0013](decisions/0013-defer-prepare-until-saving.md))
+  - [x] one query per key for a model, memoization by raw value
+  - [ ] batch resolution of a collection (`JsonData::load()`, `withJsonReferences()`)
   - [ ] reference listing, `JsonData::parse()`
-  - [ ] recursive wildcard `**`
+  - [x] recursive wildcard `**`
   - [ ] repositories with several JSON columns
   - [ ] `folklore:json-references:rewrite`
 - [x] Medias module on `laravel-mediatheque ^2.0@alpha` (2.0.0-alpha.7: `HasMedias` since alpha.6, migrations that run on MySQL since alpha.7) and `laravel-image ^2.0@alpha`, moved from alpha 2:
@@ -94,8 +95,6 @@ The auth and other modules are placed in the beta because the site that upgrades
 
 To settle before alpha 1 ships:
 
-- **Scope of the default handler:** resolve unmapped keys through the owner's relation, as 1.x did, or always by column, with scoping left to `allows()` ([json-data.md](json-data.md#batch-resolution)).
-- **`resolveMany()` signature:** references, as in the #56 design, or identifiers with a context, as in [json-data.md](json-data.md#handlers).
 - **Media ingested by a save that fails outside a transaction:** whether the mediatheque prunes media that were never used, through its usage graph ([json-data.md](json-data.md#when-the-save-fails-afterwards)).
 
 Later:

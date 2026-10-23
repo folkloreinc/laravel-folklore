@@ -1453,43 +1453,7 @@ parameters:
 			path: src/Folklore/Contracts/Site/Factory.php
 
 		-
-			message: '#^Argument of an invalid type array\|ArrayAccess\|\(TReduceInitial of mixed\)\|TReduceReturnType of mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 1
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
-			message: '#^Argument of an invalid type mixed supplied for foreach, only iterables are supported\.$#'
-			identifier: foreach.nonIterable
-			count: 2
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
-			message: '#^Binary operation "\." between mixed and ''\.ids'' results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
 			message: '#^Binary operation "\." between mixed and ''\://'' results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
-			message: '#^Binary operation "\." between mixed and ''\:before_set'' results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
-			message: '#^Binary operation "\." between mixed and ''\:get'' results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
-			message: '#^Binary operation "\." between mixed and ''\:set'' results in an error\.$#'
 			identifier: binaryOp.invalid
 			count: 1
 			path: src/Folklore/Eloquent/JsonDataCast.php
@@ -1497,7 +1461,7 @@ parameters:
 		-
 			message: '#^Binary operation "\." between non\-falsy\-string and mixed results in an error\.$#'
 			identifier: binaryOp.invalid
-			count: 4
+			count: 1
 			path: src/Folklore/Eloquent/JsonDataCast.php
 
 		-
@@ -1507,45 +1471,15 @@ parameters:
 			path: src/Folklore/Eloquent/JsonDataCast.php
 
 		-
-			message: '#^Cannot access offset ''ids'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
 			message: '#^Cannot access offset ''path'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 5
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
-			message: '#^Cannot access offset ''relation'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 5
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
-			message: '#^Cannot access offset ''skip'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 2
 			path: src/Folklore/Eloquent/JsonDataCast.php
 
 		-
-			message: '#^Cannot access offset ''sync'' on mixed\.$#'
+			message: '#^Cannot access offset ''relation'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
-			message: '#^Cannot access offset 0 on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
-			message: '#^Cannot access offset mixed on array\|ArrayAccess\|\(TReduceInitial of mixed\)\|TReduceReturnType of mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 3
 			path: src/Folklore/Eloquent/JsonDataCast.php
 
 		-
@@ -1639,36 +1573,6 @@ parameters:
 			path: src/Folklore/Eloquent/JsonDataCast.php
 
 		-
-			message: '#^Method Folklore\\Eloquent\\JsonDataCast\:\:getRelationsAndsIdsFromPaths\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
-			message: '#^Method Folklore\\Eloquent\\JsonDataCast\:\:getRelationsAndsIdsFromPaths\(\) has parameter \$data with no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
-			message: '#^Method Folklore\\Eloquent\\JsonDataCast\:\:getRelationsAndsIdsFromPaths\(\) has parameter \$paths with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
-			message: '#^Method Folklore\\Eloquent\\JsonDataCast\:\:isReferenceTo\(\) has parameter \$item with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
-			message: '#^Method Folklore\\Eloquent\\JsonDataCast\:\:isReferenceTo\(\) has parameter \$relationName with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
 			message: '#^Method Folklore\\Eloquent\\JsonDataCast\:\:normalizeJsonDataRelations\(\) has parameter \$relations with generic class Illuminate\\Support\\Collection but does not specify its types\: TKey, TValue$#'
 			identifier: missingType.generics
 			count: 1
@@ -1717,18 +1621,6 @@ parameters:
 			path: src/Folklore/Eloquent/JsonDataCast.php
 
 		-
-			message: '#^Method Folklore\\Eloquent\\JsonDataCast\:\:set\(\) should return string but returns array\<mixed\>\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
-			message: '#^Method Folklore\\Eloquent\\JsonDataCast\:\:set\(\) should return string but returns string\|false\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
 			message: '#^Method Folklore\\Eloquent\\JsonDataCast\:\:syncRelations\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
@@ -1747,33 +1639,9 @@ parameters:
 			path: src/Folklore/Eloquent/JsonDataCast.php
 
 		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<\(int\|string\),mixed\>\:\:filter\(\) expects \(callable\(mixed, int\|string\)\: bool\)\|null, Closure\(mixed\)\: mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
-			message: '#^Parameter \#1 \$ids of method Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<Illuminate\\Database\\Eloquent\\Model,Illuminate\\Database\\Eloquent\\Model,Illuminate\\Database\\Eloquent\\Relations\\Pivot,string\>\:\:sync\(\) expects array\|Illuminate\\Database\\Eloquent\\Model\|Illuminate\\Support\\Collection\|int\|string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
-			message: '#^Parameter \#1 \$items of method Illuminate\\Support\\Collection\<\(int\|string\),mixed\>\:\:merge\(\) expects Illuminate\\Contracts\\Support\\Arrayable\<\(int\|string\), mixed\>\|iterable\<\(int\|string\), mixed\>, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
 			message: '#^Parameter \#1 \$json of function json_decode expects string, mixed given\.$#'
 			identifier: argument.type
 			count: 2
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
-			message: '#^Parameter \#1 \$key of method Illuminate\\Database\\Eloquent\\Model\:\:relationLoaded\(\) expects string, mixed given\.$#'
-			identifier: argument.type
-			count: 1
 			path: src/Folklore/Eloquent/JsonDataCast.php
 
 		-
@@ -1783,25 +1651,7 @@ parameters:
 			path: src/Folklore/Eloquent/JsonDataCast.php
 
 		-
-			message: '#^Parameter \#1 \$relations of static method Folklore\\Eloquent\\JsonDataCast\:\:normalizeJsonDataRelations\(\) expects array\|Illuminate\\Support\\Collection, mixed given\.$#'
-			identifier: argument.type
-			count: 4
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
 			message: '#^Parameter \#1 \$value of function collect expects Illuminate\\Contracts\\Support\\Arrayable\<\(int\|string\), mixed\>\|iterable\<\(int\|string\), mixed\>\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 3
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
-			message: '#^Parameter \#1 \$value of function count expects array\|Countable, mixed given\.$#'
-			identifier: argument.type
-			count: 4
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
-			message: '#^Parameter \#1 \.\.\.\$arrays of function array_merge expects array, array\<mixed\>\|TReduceInitial\|TReduceReturnType given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/Folklore/Eloquent/JsonDataCast.php
@@ -1809,25 +1659,13 @@ parameters:
 		-
 			message: '#^Parameter \#2 \$key of function data_get expects array\|int\|string\|null, mixed given\.$#'
 			identifier: argument.type
-			count: 5
+			count: 4
 			path: src/Folklore/Eloquent/JsonDataCast.php
 
 		-
 			message: '#^Parameter \#2 \$key of function data_set expects array\|string, mixed given\.$#'
 			identifier: argument.type
-			count: 5
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
-			message: '#^Possibly invalid array key type mixed\.$#'
-			identifier: array.invalidKey
 			count: 1
-			path: src/Folklore/Eloquent/JsonDataCast.php
-
-		-
-			message: '#^Possibly invalid array key type mixed\.$#'
-			identifier: offsetAccess.invalidOffset
-			count: 4
 			path: src/Folklore/Eloquent/JsonDataCast.php
 
 		-
@@ -1839,13 +1677,13 @@ parameters:
 		-
 			message: '#^Unable to resolve the template type TKey in call to function collect$#'
 			identifier: argument.templateType
-			count: 3
+			count: 1
 			path: src/Folklore/Eloquent/JsonDataCast.php
 
 		-
 			message: '#^Unable to resolve the template type TValue in call to function collect$#'
 			identifier: argument.templateType
-			count: 3
+			count: 1
 			path: src/Folklore/Eloquent/JsonDataCast.php
 
 		-

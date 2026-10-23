@@ -10,6 +10,8 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ### Breaking changes
 
+- A string at a reference path that isn't a reference of its relation (a URL, `blocks://1` under a `medias` path) is no longer taken for an id: it is written `null` when the handler can't prepare it, read as is, and not synced. 1.x wrote `medias://https://…`, and synced a reference to the relation named in it.
+- Values written to a reference path are turned into references when the model is saved, not when they are assigned: until then, the raw attribute keeps the reference stored before. A model saved without events (`saveQuietly()`) keeps them pending.
 - Requires Laravel 12+ ([decision 0001](docs/decisions/0001-supported-versions.md)).
 - Requires only `illuminate/console`, `contracts`, `database`, `pagination` and `support`. `folklore/laravel-mediatheque`, `folklore/laravel-image`, `folklore/laravel-locale`, `cviebrock/eloquent-sluggable`, `laravel/fortify`, `guzzlehttp/guzzle`, `google/apiclient` and `parsecsv/php-parsecsv` are suggested: a site requires those its modules need ([decision 0002](docs/decisions/0002-core-and-modules.md)).
 - The medias and pages modules are on `laravel-mediatheque` 2 and `laravel-image` 2 (`^2.0@alpha`), instead of their 1.x:
@@ -25,6 +27,13 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ### Added
 
+- `JsonDataCast` on the registry of keys ([json-data.md](docs/json-data.md)):
+  - stored references are `{key}://{identifier}`, where the key is mapped with `JsonData::map()`, or, when it isn't, the name of the relation, as in 1.x;
+  - a relation writes its `key` option, else the first key mapped to its related model, else its name; on read, every mapped key of the related model is accepted;
+  - values other than references (models, entities, identifiers) are prepared when the model is saved, by the key's handler, which checks that the owner may refer to them (`ReferenceNotAllowed`);
+  - the references of a mapped key resolve in one query per key, through its handler (`ModelReferences` by default, or `using`), and are memoized for the raw value;
+  - `body.**` matches references at any depth, where only mapped keys are references;
+  - `JsonData::enforceMap()` rejects unmapped keys.
 - Module switches in `config/site.php` (`site.modules`), with the package's defaults merged. A module that is on throws `ModuleRequirementMissing` when a package it needs isn't installed.
 - `Entities\ModelEntity`, an optional typed base for new entities, whose id is the model's entity key.
 - `Contracts\Entities\HasEntityKey`, for models whose entity's public id isn't their key (`getEntityKeyName()`, `getEntityKey()`).
