@@ -4087,12 +4087,6 @@ parameters:
 			path: src/Folklore/Repositories/Entities.php
 
 		-
-			message: '#^Binary operation "\." between mixed and '' LIKE \? ESCAPE \\''\!\\'''' results in an error\.$#'
-			identifier: binaryOp.invalid
-			count: 1
-			path: src/Folklore/Repositories/Entities.php
-
-		-
 			message: '#^Call to an undefined method Folklore\\Contracts\\Eloquent\\HasJsonDataRelations\:\:refresh\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -4177,18 +4171,6 @@ parameters:
 			path: src/Folklore/Repositories/Entities.php
 
 		-
-			message: '#^Cannot call method getGrammar\(\) on mixed\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: src/Folklore/Repositories/Entities.php
-
-		-
-			message: '#^Cannot call method getQuery\(\) on mixed\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: src/Folklore/Repositories/Entities.php
-
-		-
 			message: '#^Cannot call method map\(\) on mixed\.$#'
 			identifier: method.nonObject
 			count: 1
@@ -4268,12 +4250,6 @@ parameters:
 
 		-
 			message: '#^Cannot call method whereRaw\(\) on mixed\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: src/Folklore/Repositories/Entities.php
-
-		-
-			message: '#^Cannot call method wrap\(\) on mixed\.$#'
 			identifier: method.nonObject
 			count: 1
 			path: src/Folklore/Repositories/Entities.php

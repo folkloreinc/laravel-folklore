@@ -382,8 +382,9 @@ class Medias extends Entities implements MediasRepositoryContract
                 $search = explode(' ', $params['search']);
                 foreach ($search as $term) {
                     $word = Str::slug($term);
-                    $query->where(function ($q) use ($word) {
-                        $q->where('name', 'LIKE', '%'.$word.'%');
+                    $operator = $this->caseInsensitiveLikeOperator();
+                    $query->where(function ($q) use ($word, $operator) {
+                        $q->where('name', $operator, '%'.$word.'%');
                     });
                 }
             }

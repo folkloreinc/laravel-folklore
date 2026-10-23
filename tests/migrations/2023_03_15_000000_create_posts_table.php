@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('posts', function (Blueprint $table) {
             $table->id();
             $table->string('title')->nullable();
-            $table->json('data')->nullable();
+            $table->jsonb('data')->nullable();
             $table->timestamps();
             $table->softDeletes();
         });

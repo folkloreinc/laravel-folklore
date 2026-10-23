@@ -51,7 +51,7 @@ class Notes extends Entities implements NotesContract
             throw new LogicException('An Eloquent query was expected.');
         }
         if (isset($params['search']) && is_string($params['search'])) {
-            $query->where('title', 'like', '%'.$params['search'].'%');
+            $query->whereLike('title', '%'.$params['search'].'%');
         }
 
         return $query;
