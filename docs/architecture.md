@@ -98,7 +98,7 @@ The pilot writes its entities and repositories on a prototype of the core, to be
 
 ### Review against `laravel-mediatheque` 2
 
-- `MediaReference` (`media://` by uid, `medias://` by id, with `SCHEME` and `LEGACY_SCHEME`) and `Mediatheque::resolveMany()`, keyed by the reference as given, fit `MediaReferences::resolveMany()`: it builds the references of its key from the identifiers, resolves them in one call, and keys the result by identifier.
+- `MediaReference` (`media://` by uid, `medias://` by id, with `SCHEME` and `LEGACY_SCHEME`) fits `MediaReferences`: it parses the values it prepares. `MediaReferences::resolveMany()` resolves the identifiers of its key in one query on the key's column, with the media's files, as `Mediatheque::resolveMany()` does, but without the facade, so that it works under `Mediatheque::fake()` ([#98](https://github.com/folkloreinc/laravel-folklore/issues/98)).
 - `JsonData::parse()` is more lenient than `MediaReference::tryParse()`, which checks the uid's format. The handler checks it; the registry only checks the key.
 - The usage graph (`HasMedias`, `usages()`) shipped in the mediatheque's 2.0.0-alpha.6. JSON references sync into it with `syncMedias()`, under one handle, `json`, for every JSON column of a model ([json-data.md](json-data.md#syncing)). Settled in alpha 1.
 
