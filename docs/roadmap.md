@@ -90,6 +90,7 @@ Once `laravel-mediatheque` 2 has them:
 
 Not scheduled yet: each item goes into the alpha or beta that needs it.
 
+- [ ] A fluent schema for each JSON column: references, filling from a flat input, unknown keys refused, column extraction, then validation rules and a JSON Schema export ([#105](https://github.com/folkloreinc/laravel-folklore/issues/105), [decisions/0020](decisions/0020-json-schema.md), proposed). Its first slice replaces [#104](https://github.com/folkloreinc/laravel-folklore/issues/104)
 - [ ] Reference paths with a key and no Eloquent relation ([#84](https://github.com/folkloreinc/laravel-folklore/issues/84)). The pilot moves its provenance references to foreign key columns instead
 - [ ] `folklore:json-references:sync`: sync the relations of stored JSON references, for rows written without model events ([#86](https://github.com/folkloreinc/laravel-folklore/issues/86)). Not needed while the pilot starts from empty databases; needed before its first import, and for upgraded sites
 - An idea, not planned: rows computed from JSON entries, for list items that repeat the same related model with different attributes (one person with two roles)
