@@ -1,6 +1,6 @@
 # 0011: A Panneau 5 plugin, as an opt-in module
 
-- Status: accepted
+- Status: replaced by [0018](0018-panneau-plugin-php-only.md)
 - Date: 2026-10-19
 
 ## Context
