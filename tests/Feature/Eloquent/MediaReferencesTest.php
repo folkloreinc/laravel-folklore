@@ -2,6 +2,7 @@
 
 namespace Folklore\Tests\Feature\Eloquent;
 
+use Folklore\Eloquent\Exceptions\InvalidJsonReference;
 use Folklore\Eloquent\Exceptions\ReferenceNotAllowed;
 use Folklore\Eloquent\JsonData;
 use Folklore\Eloquent\JsonDataCast;
@@ -21,6 +22,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\File\File;
 
 /**
@@ -31,11 +33,14 @@ class MediaReferencesTest extends JsonDataTestCase
 {
     private string $referenceKey = 'medias';
 
+    private bool $otherKey = true;
+
     protected function resolveApplicationConfiguration($app)
     {
         parent::resolveApplicationConfiguration($app);
 
         $app['config']->set('site.medias.reference_key', $this->referenceKey);
+        $app['config']->set('site.medias.references.other_key', $this->otherKey);
     }
 
     protected function setUp(): void
@@ -205,6 +210,122 @@ class MediaReferencesTest extends JsonDataTestCase
         $game->data = ['image' => ['fr' => $private]];
 
         $this->expectException(ReferenceNotAllowed::class);
+
+        $game->save();
+    }
+
+    public function test_every_form_is_accepted_by_default_without_enforce_map()
+    {
+        $this->assertSame(MediaReferences::FORMS, (new MediaReferences)->acceptedForms());
+
+        JsonData::enforceMap();
+
+        $this->assertSame(MediaReferences::STRICT, (new MediaReferences)->acceptedForms());
+    }
+
+    public function test_strict_forms_refuse_a_url_a_file_and_an_internal_id_under_enforce_map()
+    {
+        $this->useKey('media');
+        JsonData::enforceMap();
+        $media = $this->makeMedia();
+        $this->app->instance(Medias::class, $this->mediasDownloading(new Response(500)));
+
+        $game = new Game;
+        $game->data = ['image' => ['model' => $media, 'entity' => $media->toEntity(), 'uid' => $media->uid, 'reference' => 'media://'.$media->uid, 'panneau' => ['id' => $media->uid]]];
+        $game->save();
+
+        // PostgreSQL's jsonb and MySQL's JSON type order the keys of an object
+        $this->assertEquals(array_fill_keys(['model', 'entity', 'uid', 'reference', 'panneau'], 'media://'.$media->uid), $this->rawData($game)['image']);
+
+        foreach ([
+            'url' => 'https://cdn.example.com/folklore.png',
+            'file' => new File(public_path('folklore.png')),
+            'uploaded file' => UploadedFile::fake()->image('cover.png', 40, 30),
+            'id' => (string) $media->id,
+            'int' => $media->id,
+            'panneau id' => ['id' => $media->id],
+        ] as $form => $value) {
+            $game = new Game;
+            $game->data = ['image' => ['fr' => $value]];
+
+            try {
+                $game->save();
+                $this->fail("The {$form} was accepted.");
+            } catch (InvalidJsonReference $e) {
+                $this->assertStringContainsString('site.medias.references.accept', $e->getMessage(), $form);
+            }
+        }
+
+        // Nothing was downloaded nor ingested
+        $this->assertSame(1, Media::query()->count());
+    }
+
+    public function test_a_form_that_isnt_accepted_is_written_as_null_without_enforce_map()
+    {
+        $this->app['config']->set('site.medias.references.accept', MediaReferences::STRICT);
+        $media = $this->makeMedia();
+
+        $game = new Game;
+        $game->data = ['image' => ['fr' => $media->uid, 'en' => new File(public_path('folklore.png')), 'es' => (string) $media->id]];
+        $game->save();
+
+        $this->assertEquals(['fr' => 'medias://'.$media->id, 'en' => null, 'es' => null], $this->rawData($game)['image']);
+        $this->assertSame(1, Media::query()->count());
+    }
+
+    public function test_the_accepted_forms_are_set_one_by_one()
+    {
+        $this->app['config']->set('site.medias.references.accept', ['uid', 'file']);
+        $media = $this->makeMedia();
+
+        $game = new Game;
+        $game->data = ['image' => ['fr' => $media->uid, 'en' => new File(public_path('folklore.png')), 'es' => $media]];
+        $game->save();
+
+        $ingested = Media::query()->whereKeyNot($media->id)->sole();
+        $this->assertEquals(['fr' => 'medias://'.$media->id, 'en' => 'medias://'.$ingested->id, 'es' => null], $this->rawData($game)['image']);
+    }
+
+    public function test_an_unknown_form_is_an_error()
+    {
+        $this->app['config']->set('site.medias.references.accept', ['uid', 'path']);
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('[path]');
+
+        (new MediaReferences)->acceptedForms();
+    }
+
+    public function test_the_medias_module_can_map_only_the_key_it_writes()
+    {
+        $this->otherKey = false;
+        $this->useKey('media');
+
+        $this->assertSame(['media'], JsonData::keysFor(Media::class));
+        $this->assertNull(JsonData::target('medias'));
+    }
+
+    public function test_a_reference_of_the_other_key_is_refused_once_it_isnt_mapped()
+    {
+        $this->useKey('media');
+        JsonData::enforceMap();
+        $media = $this->makeMedia();
+
+        // A reference of a mapped key is kept as it is, without prepare()
+        $game = new Game;
+        $game->data = ['image' => ['fr' => 'medias://'.$media->id]];
+        $game->save();
+        $this->assertSame('medias://'.$media->id, $this->rawData($game)['image']['fr']);
+
+        $this->otherKey = false;
+        $this->useKey('media');
+        JsonData::enforceMap();
+
+        $game = new Game;
+        $game->data = ['image' => ['fr' => 'medias://'.$media->id]];
+
+        $this->expectException(InvalidJsonReference::class);
+        $this->expectExceptionMessage('legacy_id');
 
         $game->save();
     }

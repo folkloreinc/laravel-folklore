@@ -11,10 +11,12 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 ### Breaking changes
 
 - `JsonDataCast` syncs the relations of a model's references when the model is saved with events, however it is saved, not only through the base repository. Only the relations declared in the JSON attributes that changed are synced. The base repository's `syncRelations()` no longer syncs, and no longer calls `refresh()` on the model: the synced relations are unset instead ([#97](https://github.com/folkloreinc/laravel-folklore/issues/97)).
+- Under `JsonData::enforceMap()`, `MediaReferences` takes only media models and entities, `media://` references and uids by default (`MediaReferences::STRICT`): a URL, a file or an internal id throws `InvalidJsonReference`. Set `site.medias.references.accept` to `MediaReferences::FORMS` to keep every form. Without `enforceMap()`, every form is still taken ([#85](https://github.com/folkloreinc/laravel-folklore/issues/85)).
 
 ### Added
 
 - `JsonData::stored($model, $attribute)`: the decoded value of a JSON attribute with its references as stored, for APIs and front ends. A value that isn't saved yet reads as the reference stored before ([#88](https://github.com/folkloreinc/laravel-folklore/issues/88)).
+- `site.medias.references.accept` lists the forms that `MediaReferences` takes (`model`, `reference`, `uid`, `legacy_id`, `file`, `url`); a value of another form throws `InvalidJsonReference` under `JsonData::enforceMap()`, and is written `null` otherwise, without being downloaded or ingested. `site.medias.references.other_key` set to `false` maps only the key of `site.medias.reference_key` ([#85](https://github.com/folkloreinc/laravel-folklore/issues/85)).
 
 ### Fixed
 

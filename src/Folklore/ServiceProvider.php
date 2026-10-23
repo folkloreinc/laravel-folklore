@@ -211,12 +211,19 @@ class ServiceProvider extends BaseServiceProvider
 
         // `media://med_…` by uid, and `medias://12` by id (1.x). The first one is written:
         // `media` for new projects, `medias` for upgraded sites (site.medias.reference_key).
+        // `site.medias.references.other_key` false maps only that one.
         $media = MediathequeModels::media();
         $keys = [
             'media' => JsonReference::to($media)->by('uid')->using(MediaReferences::class),
             'medias' => JsonReference::to($media)->using(MediaReferences::class),
         ];
-        JsonData::map($config->get('site.medias.reference_key', 'media') === 'medias' ? array_reverse($keys, true) : $keys);
+        if ($config->get('site.medias.reference_key', 'media') === 'medias') {
+            $keys = array_reverse($keys, true);
+        }
+        if ($config->get('site.medias.references.other_key', true) === false) {
+            $keys = array_slice($keys, 0, 1, true);
+        }
+        JsonData::map($keys);
     }
 
     protected function registerSite()
