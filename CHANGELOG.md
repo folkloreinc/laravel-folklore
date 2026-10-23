@@ -11,10 +11,13 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 ### Breaking changes
 
 - Requires Laravel 12+ ([decision 0001](docs/decisions/0001-supported-versions.md)).
+- Requires only `illuminate/console`, `contracts`, `database`, `pagination` and `support`. `folklore/laravel-mediatheque`, `folklore/laravel-image`, `folklore/laravel-panneau`, `folklore/laravel-locale`, `cviebrock/eloquent-sluggable`, `laravel/fortify`, `guzzlehttp/guzzle`, `google/apiclient` and `parsecsv/php-parsecsv` are suggested: a site requires those its modules need ([decision 0002](docs/decisions/0002-core-and-modules.md)).
+- Everything the service provider booted is behind a module, off by default: the medias, pages, users and organisations repositories, the mediatheque model bindings, the `repository` auth provider and the Fortify callbacks, the site manager, the `routeForReactRouter` macro, the `pixel` and `csv` responses and the offset page resolver, `assets:view` and `LocalMiddleware`, `users:create`, Customer.io, Google, the `pubnub` driver and PubSubHubbub. Turn on the modules a site uses in `config/site.php` (`modules`).
 - The `Entity` contract no longer extends Panneau 1.x's `ResourceItem`, and the `Entities` repository contract no longer extends Panneau 1.x's `Repository` ([decision 0003](docs/decisions/0003-evolve-in-place.md)). Neither do the `Page`, `Block` and `MediaFile` entity contracts. Code that passes an entity or a repository to Panneau 1.x as one of its contracts no longer type-checks.
 
 ### Added
 
+- Module switches in `config/site.php` (`site.modules`), with the package's defaults merged. A module that is on throws `ModuleRequirementMissing` when a package it needs isn't installed.
 - `Entities\ModelEntity`, an optional typed base for new entities, whose id is the model's entity key.
 - `Contracts\Entities\HasEntityKey`, for models whose entity's public id isn't their key (`getEntityKeyName()`, `getEntityKey()`).
 - `HasModel`, `ToEntity` and the `Entities` repository contract are generic, with defaults.

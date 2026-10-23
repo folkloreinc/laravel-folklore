@@ -22,6 +22,32 @@ class TestCase extends BaseTestCase
         $app->usePublicPath(__DIR__.'/fixture');
     }
 
+    /**
+     * Sets the modules before the service provider registers, as a site's
+     * config/site.php does: Testbench only calls getEnvironmentSetUp() after.
+     *
+     * @param  Application  $app
+     */
+    protected function resolveApplicationConfiguration($app)
+    {
+        parent::resolveApplicationConfiguration($app);
+
+        foreach (array_keys(ServiceProvider::MODULES) as $module) {
+            $app['config']->set('site.modules.'.$module, in_array($module, $this->modules(), true));
+        }
+    }
+
+    /**
+     * The modules turned on. The 1.x tests cover every module but PubNub, whose
+     * SDK isn't installed: its broadcaster is tested without the service provider.
+     *
+     * @return list<string>
+     */
+    protected function modules(): array
+    {
+        return array_values(array_diff(array_keys(ServiceProvider::MODULES), ['pubnub']));
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -65,7 +91,10 @@ class TestCase extends BaseTestCase
 
     protected function getPackageProviders($app)
     {
-        return [ServiceProvider::class, \Folklore\Mediatheque\ServiceProvider::class];
+        // laravel-mediatheque is only installed for the modules' tests
+        return class_exists(\Folklore\Mediatheque\ServiceProvider::class)
+            ? [ServiceProvider::class, \Folklore\Mediatheque\ServiceProvider::class]
+            : [ServiceProvider::class];
     }
 
     protected function getPackageAliases($app)

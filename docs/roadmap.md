@@ -27,8 +27,8 @@ Tracking issues: [#1](https://github.com/folkloreinc/laravel-folklore/issues/1) 
 
 What both pilots need first: Niche's brand images, and the contests platform before it rewrites its JSON data.
 
-- [ ] Composer: the core requires only `illuminate/*`; the Folklore packages, Fortify, Guzzle, `parsecsv` and `pubnub` move to `suggest`; `google/apiclient` and Panneau 1.x are dropped ([decisions/0002](decisions/0002-core-and-modules.md))
-- [ ] Modules switched in `config/site.php`; modules that alpha 1 doesn't port yet stay off and don't load their 1.x dependencies
+- [x] Composer: the core requires only `illuminate/*`; the Folklore packages, Fortify, Guzzle, `google/apiclient`, `parsecsv` and `pubnub` move to `suggest` ([decisions/0002](decisions/0002-core-and-modules.md)). `google/apiclient` and Panneau 1.x stay in `require-dev` for the 1.x code still in the package: Places until it moves to Laravel's HTTP client, the Panneau 1.x fields until alpha 3. A CI job runs the core's tests without the modules' packages
+- [x] Modules switched in `config/site.php`, all off by default; a module that is on checks its packages ([architecture.md](architecture.md#configuration-and-modules)); modules that alpha 1 doesn't port yet stay off and don't load their 1.x dependencies
 - [ ] Contracts without Panneau 1.x; optional typed base entity; typed query next to `get()`; PHPDoc types on the 1.x methods
 - [ ] Global query context: `withGlobalQuery()`, default resolver ([decisions/0004](decisions/0004-global-query-context.md))
 - [ ] The base repository finds by the model's entity key (`HasEntityKey`), or its key, in `findById()`, `update()`, `destroy()` and the `ids` of `EntitiesQuery`, with the contract test that `findById($entity->id())` finds the entity ([decisions/0015](decisions/0015-entity-key.md)); `@template TModel, TEntity` on the base class

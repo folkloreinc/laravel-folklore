@@ -13,6 +13,7 @@ use Folklore\Contracts\Repositories\Entities;
 use Folklore\Contracts\Repositories\QueriesEntities;
 use Folklore\Contracts\Repositories\QueryContextResolver;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
@@ -20,6 +21,7 @@ use ReflectionClass;
  * The core contracts don't depend on Panneau, the mediatheque or laravel-image
  * (docs/decisions/0002 and 0003).
  */
+#[Group('core')]
 class CoreContractsTest extends TestCase
 {
     /**

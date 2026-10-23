@@ -16,6 +16,7 @@ use Folklore\Console\RepositoryMakeCommand;
 use Folklore\Console\UsersCreateCommand;
 use Folklore\Contracts\Services\CustomerIo;
 use Folklore\Contracts\Services\PubSubHubbub\Factory;
+use Folklore\Exceptions\ModuleRequirementMissing;
 use Folklore\Http\Middleware\LocalMiddleware;
 use Folklore\Mediatheque\Contracts\Models\File;
 use Folklore\Models\Media;
@@ -38,6 +39,7 @@ use Folklore\Support\Csv;
 use Folklore\Support\OffsetPaginator;
 use Illuminate\Broadcasting\BroadcastManager;
 use Illuminate\Contracts\Auth\StatefulGuard;
+use Illuminate\Contracts\Config\Repository;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Http\Request;
@@ -59,55 +61,131 @@ class ServiceProvider extends BaseServiceProvider
     use RegistersBindings;
 
     /**
+     * The modules a site turns on in `config/site.php` (`site.modules`), with the
+     * classes each one needs and the package that has them. A module that is off
+     * registers and boots nothing (docs/decisions/0002).
+     *
+     * @var array<string, array<string, string>>
+     */
+    public const MODULES = [
+        'medias' => [
+            'Folklore\\Mediatheque\\Contracts\\Models\\Media' => 'folklore/laravel-mediatheque',
+            'Folklore\\Image\\Facade' => 'folklore/laravel-image',
+        ],
+        'pages' => [
+            'Folklore\\Mediatheque\\Support\\Traits\\HasMedias' => 'folklore/laravel-mediatheque',
+            'Cviebrock\\EloquentSluggable\\Sluggable' => 'cviebrock/eloquent-sluggable',
+            'Folklore\\Locale\\LocaleManager' => 'folklore/laravel-locale',
+        ],
+        'auth' => [
+            'Laravel\\Fortify\\Fortify' => 'laravel/fortify',
+        ],
+        'organisations' => [],
+        'sites' => [],
+        'http' => [],
+        'assets' => [],
+        'customerio' => [],
+        'google' => [],
+        'pubnub' => [
+            'PubNub\\PubNub' => 'pubnub/pubnub',
+        ],
+        'pubsubhubbub' => [],
+    ];
+
+    /**
      * Register any application services.
      *
      * @return void
      */
     public function register()
     {
+        $this->mergeConfigFrom(__DIR__.'/../../config/site.php', 'site');
+
+        $this->checkModuleRequirements();
+
         $this->registerRepositories();
 
-        $this->registerMediatheque();
+        if ($this->moduleEnabled('medias')) {
+            $this->registerMediatheque();
+        }
 
-        $this->registerSite();
+        if ($this->moduleEnabled('sites')) {
+            $this->registerSite();
+        }
 
-        if ($this->app['config']->get('services.customerio') !== null) {
+        if ($this->moduleEnabled('customerio') && $this->app['config']->get('services.customerio') !== null) {
             $this->registerCustomerIo();
         }
 
-        if ($this->app['config']->get('pubsubhubbub') !== null) {
+        if ($this->moduleEnabled('pubsubhubbub') && $this->app['config']->get('pubsubhubbub') !== null) {
             $this->registerPubsubHubbub();
         }
 
-        $this->registerGoogle();
+        if ($this->moduleEnabled('google')) {
+            $this->registerGoogle();
+        }
+    }
+
+    /**
+     * Whether a site turned a module on in `config/site.php`.
+     */
+    public function moduleEnabled(string $module): bool
+    {
+        return (bool) $this->app->make(Repository::class)->get('site.modules.'.$module, false);
+    }
+
+    /**
+     * Fails early, with the package to require, when an enabled module needs one
+     * that isn't installed.
+     */
+    protected function checkModuleRequirements(): void
+    {
+        foreach (self::MODULES as $module => $requirements) {
+            if (! $this->moduleEnabled($module)) {
+                continue;
+            }
+            foreach ($requirements as $class => $package) {
+                if (! class_exists($class) && ! interface_exists($class) && ! trait_exists($class)) {
+                    throw ModuleRequirementMissing::for($module, $package);
+                }
+            }
+        }
     }
 
     protected function registerRepositories()
     {
-        $this->app->bind(
-            Contracts\Repositories\Users::class,
-            Users::class
-        );
+        if ($this->moduleEnabled('auth')) {
+            $this->app->bind(
+                Contracts\Repositories\Users::class,
+                Users::class
+            );
+        }
 
-        $this->app->bind(
-            Contracts\Repositories\Medias::class,
-            Medias::class
-        );
+        if ($this->moduleEnabled('medias')) {
+            $this->app->bind(
+                Contracts\Repositories\Medias::class,
+                Medias::class
+            );
+        }
 
-        $this->app->bind(
-            Contracts\Repositories\Pages::class,
-            Pages::class
-        );
+        if ($this->moduleEnabled('pages')) {
+            $this->app->bind(
+                Contracts\Repositories\Pages::class,
+                Pages::class
+            );
 
-        $this->app->bind(
-            Contracts\Repositories\Blocks::class,
-            Blocks::class
-        );
+            $this->app->bind(
+                Contracts\Repositories\Blocks::class,
+                Blocks::class
+            );
+        }
 
-        $this->app->bind(
-            Contracts\Repositories\Organisations::class,
-            Organisations::class
-        );
+        if ($this->moduleEnabled('organisations')) {
+            $this->app->bind(
+                Contracts\Repositories\Organisations::class,
+                Organisations::class
+            );
+        }
 
         $repositories = $this->app['config']->get('app.repositories', []);
         foreach ($repositories as $contract => $implementation) {
@@ -212,24 +290,46 @@ class ServiceProvider extends BaseServiceProvider
      */
     public function boot()
     {
-        $this->bootHttp();
+        if ($this->moduleEnabled('http')) {
+            $this->bootHttp();
+        }
 
-        $this->bootAuth();
+        if ($this->moduleEnabled('auth')) {
+            $this->bootAuth();
+        }
 
-        $this->bootPubNubBroadcaster();
+        if ($this->moduleEnabled('pubnub')) {
+            $this->bootPubNubBroadcaster();
+        }
 
-        $this->bootMail();
+        if ($this->moduleEnabled('customerio')) {
+            $this->bootMail();
+        }
 
         // Console
         if ($this->app->runningInConsole()) {
             $this->commands([
-                AssetsViewCommand::class,
-                UsersCreateCommand::class,
                 DaemonRestartCommand::class,
             ]);
+
+            if ($this->moduleEnabled('assets')) {
+                $this->commands([
+                    AssetsViewCommand::class,
+                ]);
+            }
+
+            if ($this->moduleEnabled('auth')) {
+                $this->commands([
+                    UsersCreateCommand::class,
+                ]);
+            }
         }
 
-        if ($this->app['config']->get('pubsubhubbub') !== null && $this->app->runningInConsole()) {
+        if (
+            $this->moduleEnabled('pubsubhubbub') &&
+            $this->app['config']->get('pubsubhubbub') !== null &&
+            $this->app->runningInConsole()
+        ) {
             $this->commands([
                 PubSubHubbubSubscribe::class,
                 PubSubHubbubUnsubscribe::class,
@@ -434,9 +534,11 @@ class ServiceProvider extends BaseServiceProvider
             'migrations'
         );
 
-        $this->app[Kernel::class]->pushMiddleware(
-            LocalMiddleware::class
-        );
+        if ($this->moduleEnabled('assets')) {
+            $this->app[Kernel::class]->pushMiddleware(
+                LocalMiddleware::class
+            );
+        }
 
         if ($this->app->runningInConsole()) {
             $this->commands([

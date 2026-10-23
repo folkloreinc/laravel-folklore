@@ -6,8 +6,10 @@ use Folklore\Entities\ModelEntity;
 use Folklore\Tests\Unit\Eloquent\Fixtures\MediaWithUid;
 use Folklore\Tests\Unit\Eloquent\Fixtures\ReferencedMedia;
 use Illuminate\Database\Eloquent\Model;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
+#[Group('core')]
 class ModelEntityTest extends TestCase
 {
     public function test_the_id_is_the_model_key_by_default()
