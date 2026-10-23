@@ -30,11 +30,15 @@ use LogicException;
  * The base of the repositories of entities over Eloquent models.
  *
  * Its templates let a repository say its model and entity (`@extends Entities<Brand,
- * BrandEntity>`); the 1.x methods return untyped values, so it implements the contracts
- * for any entity.
+ * BrandEntity>`), which it passes to its contracts: a repository contract that extends
+ * `Entities<BrandEntity>` and this class agree. The entities come from
+ * `getEntityFromModel()`; the other 1.x methods return untyped values.
  *
  * @template TModel of Model = Model
  * @template TEntity of Entity = Entity
+ *
+ * @implements EntitiesContract<TEntity>
+ * @implements QueriesEntities<TEntity>
  */
 abstract class Entities implements EntitiesContract, QueriesEntities
 {
@@ -94,6 +98,8 @@ abstract class Entities implements EntitiesContract, QueriesEntities
     /**
      * The entity whose public id is `$id`: the model's entity key (`HasEntityKey`), or its
      * key, within the repository's query context (docs/decisions/0015, 0017).
+     *
+     * @return TEntity|null
      */
     public function findById(string $id): ?Entity
     {
@@ -107,7 +113,7 @@ abstract class Entities implements EntitiesContract, QueriesEntities
      * context. Its filters are the repository's params, so `buildQueryFromParams()`
      * applies; its ids and exclusions are entity keys.
      *
-     * @return LengthAwarePaginator<int, Entity>
+     * @return LengthAwarePaginator<int, TEntity>
      */
     public function queryEntities(EntitiesQuery $query): LengthAwarePaginator
     {
@@ -280,14 +286,24 @@ abstract class Entities implements EntitiesContract, QueriesEntities
         return $collection;
     }
 
+    /**
+     * @return TEntity
+     */
     public function create($data): Entity
     {
         $model = $this->newModel();
         $this->saveDataInTransaction($model, $data);
+        $entity = $this->getEntityFromModel($model);
+        if (is_null($entity)) {
+            throw new LogicException(static::class.' made no entity of the model it created.');
+        }
 
-        return $this->getEntityFromModel($model);
+        return $entity;
     }
 
+    /**
+     * @return TEntity|null
+     */
     public function update(string $id, $data): ?Entity
     {
         $model = $this->findModelById($id);
@@ -727,9 +743,18 @@ abstract class Entities implements EntitiesContract, QueriesEntities
         return $this->jsonAttributeExclude;
     }
 
+    /**
+     * The entity of one of the repository's models, as `to_entity()` makes it: the
+     * model's `toEntity()`, which gives the repository's `TEntity`.
+     *
+     * @return TEntity|null
+     */
     public function getEntityFromModel($model)
     {
-        return to_entity($model);
+        /** @var TEntity|null $entity */
+        $entity = to_entity($model);
+
+        return $entity;
     }
 
     public function getEntitiesFromModels($models)

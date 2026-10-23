@@ -8,6 +8,11 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+### Fixed
+
+- The base repository passes its `TEntity` to the `Entities` and `QueriesEntities` contracts. A repository contract typed on its entity (`@extends Entities<UserEntity>`) and the base class (`@extends Entities<User, UserEntity>`) no longer conflict in static analysis, and `findById()`, `update()`, `create()` and `queryEntities()` return `TEntity`.
+- `create()` throws a `LogicException` when the model it created gives no entity, instead of a `TypeError` on its return type.
+
 ## [2.0.0-alpha.1] - 2026-10-23
 
 The core and `JsonDataCast`, and the medias module on `laravel-mediatheque` 2 and `laravel-image` 2 ([roadmap](docs/roadmap.md#alpha-1-the-core-and-jsondatacast)). The breaking changes are those since 1.1.8; the [upgrade guide](docs/upgrade.md) lists what a site changes.
