@@ -2,9 +2,7 @@
 
 namespace Folklore\Contracts\Entities;
 
-use Panneau\Contracts\ResourceItem;
-
-interface MediaFile extends Entity, ResourceItem
+interface MediaFile extends Entity
 {
     public function id(): string;
 

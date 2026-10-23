@@ -2,9 +2,7 @@
 
 namespace Folklore\Contracts\Entities;
 
-use Panneau\Contracts\ResourceItem;
-
-interface Block extends Entity, ResourceItem
+interface Block extends Entity
 {
     public function type(): string;
 

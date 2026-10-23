@@ -18,10 +18,10 @@ Tracking issues: [#1](https://github.com/folkloreinc/laravel-folklore/issues/1) 
 - [x] `v2.x` branch, created from `v1.1` (`v1.1.8`)
 - [x] `docs/`: current state, architecture, `JsonDataCast` spec, decisions, this roadmap, upgrade guide ([#67](https://github.com/folkloreinc/laravel-folklore/pull/67))
 - [x] Settle the open points of phase 0: supported versions ([decisions/0001](decisions/0001-supported-versions.md)), deferring `prepare()` ([decisions/0013](decisions/0013-defer-prepare-until-saving.md)), names ([decisions/0014](decisions/0014-names.md))
-- [ ] Tooling: PSR-4, PHP 8.3+, Laravel 12+, CI matrix (PHP 8.3 to 8.5 × Laravel 12 and 13, SQLite and MySQL), Pint, Larastan at the maximum level for new code (the 1.x baseline stays for 1.x code)
+- [x] Tooling: PSR-4, PHP 8.3+, Laravel 12+, CI matrix (PHP 8.3 to 8.5 × Laravel 12 and 13, SQLite and MySQL), Pint, Larastan at the maximum level for new code (the 1.x baseline stays for 1.x code)
 - [x] Release process: changelog, `v2.0.0-alpha.N` tags from a green CI, as `laravel-image` 2 does (see "Releases" in [AGENTS.md](../AGENTS.md))
-- [ ] Contracts and their tests: `Entity`, `HasModel`, `ToEntity` without Panneau; the `Entities` repository contract and its typed query; the query context resolver; `JsonData`, `JsonReference`, `ReferenceHandler`, `ReferenceContext`
-- [ ] Review the contracts against the pilot's prototype of the core and against `laravel-mediatheque` 2's references and usage graph
+- [x] Contracts and their tests: `Entity`, `HasModel`, `ToEntity` without Panneau; the `Entities` repository contract and its typed query; the query context resolver; `JsonData`, `JsonReference`, `ReferenceHandler`, `ReferenceContext`
+- [x] Review the contracts against the pilot's prototype of the core and against `laravel-mediatheque` 2's references and usage graph ([architecture.md](architecture.md#review-against-the-pilots-prototype))
 
 ## Alpha 1: the core and `JsonDataCast`
 
@@ -31,6 +31,7 @@ What both pilots need first: Niche's brand images, and the contests platform bef
 - [ ] Modules switched in `config/site.php`; modules that alpha 1 doesn't port yet stay off and don't load their 1.x dependencies
 - [ ] Contracts without Panneau 1.x; optional typed base entity; typed query next to `get()`; PHPDoc types on the 1.x methods
 - [ ] Global query context: `withGlobalQuery()`, default resolver ([decisions/0004](decisions/0004-global-query-context.md))
+- [ ] The base repository finds by the model's entity key (`HasEntityKey`), or its key, in `findById()`, `update()`, `destroy()` and the `ids` of `EntitiesQuery`, with the contract test that `findById($entity->id())` finds the entity ([decisions/0015](decisions/0015-entity-key.md)); `@template TModel, TEntity` on the base class
 - [ ] `make:entity` and `make:repository` on the 2.0 bases
 - [ ] `JsonDataCast` ([json-data.md](json-data.md), decisions [0005](decisions/0005-json-reference-keys.md) to [0007](decisions/0007-batch-resolution-and-listing.md)):
   - [ ] registry of keys, `map()`, `enforceMap()`, per-relation `key`, fallback to the relation name
@@ -93,8 +94,6 @@ To settle before alpha 1 ships:
 - **Scope of the default handler:** resolve unmapped keys through the owner's relation, as 1.x did, or always by column, with scoping left to `allows()` ([json-data.md](json-data.md#batch-resolution)).
 - **`resolveMany()` signature:** references, as in the #56 design, or identifiers with a context, as in [json-data.md](json-data.md#handlers).
 - **Syncing to `medias_pivot`** without detaching media attached otherwise ([json-data.md](json-data.md#syncing)).
-- **`findById()` by route key**, as the pilot's prototype does, or by `id`, as 1.x does, for the typed base classes.
-- **Names of the typed query and the typed base entity**, with the contracts ([decisions/0014](decisions/0014-names.md)).
 - **Media ingested by a save that fails outside a transaction:** whether the mediatheque prunes media that were never used, through its usage graph ([json-data.md](json-data.md#when-the-save-fails-afterwards)).
 
 Later:
