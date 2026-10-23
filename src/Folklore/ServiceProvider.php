@@ -9,6 +9,7 @@ use Folklore\Console\DaemonRestartCommand;
 use Folklore\Console\EntityContractMakeCommand;
 use Folklore\Console\EntityMakeCommand;
 use Folklore\Console\EntityModelMakeCommand;
+use Folklore\Console\JsonReferencesRewriteCommand;
 use Folklore\Console\PubSubHubbubSubscribe;
 use Folklore\Console\PubSubHubbubUnsubscribe;
 use Folklore\Console\RepositoryContractMakeCommand;
@@ -326,6 +327,7 @@ class ServiceProvider extends BaseServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 DaemonRestartCommand::class,
+                JsonReferencesRewriteCommand::class,
             ]);
 
             if ($this->moduleEnabled('assets')) {

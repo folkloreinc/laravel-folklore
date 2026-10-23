@@ -5,11 +5,13 @@ namespace Folklore\Repositories;
 use Folklore\Contracts\Eloquent\HasJsonDataRelations;
 use Folklore\Contracts\Entities\Entity;
 use Folklore\Contracts\Repositories\Entities as EntitiesContract;
+use Folklore\Eloquent\JsonData;
 use Folklore\Eloquent\JsonDataCast;
 use Folklore\Support\OffsetPaginator;
 use Illuminate\Contracts\Database\Query\Expression;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\AbstractPaginator;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Laravel\Scout\Builder as ScoutBuilder;
 
@@ -17,7 +19,30 @@ abstract class Entities implements EntitiesContract
 {
     protected $globalQuery = [];
 
+    /**
+     * The JSON attribute that the data which isn't fillable goes into
+     * (`$jsonAttributeFillable`).
+     *
+     * @deprecated List the JSON attributes in `$jsonAttributes`; the first one is this one.
+     */
     protected $jsonAttributeName = 'data';
+
+    /**
+     * The JSON attributes of the model that updates merge into, instead of replacing them:
+     * `['data', 'images']`. Null: only `$jsonAttributeName`. The first one takes the data
+     * that isn't fillable, as `$jsonAttributeName` does.
+     *
+     * @var list<string>|null
+     */
+    protected $jsonAttributes = null;
+
+    /**
+     * Whether the references of the JSON attributes of each result are resolved together
+     * (`withJsonReferences()`).
+     *
+     * @var bool
+     */
+    protected $loadsJsonReferences = false;
 
     protected $jsonAttributeFillable = null;
 
@@ -47,6 +72,18 @@ abstract class Entities implements EntitiesContract
         $model = $this->findModelById($id);
 
         return $this->getEntityFromModel($model);
+    }
+
+    /**
+     * A copy of the repository that resolves the references in the JSON attributes of its
+     * results together, with one query per key for a whole page (`JsonData::load()`).
+     */
+    public function withJsonReferences(): static
+    {
+        $repository = clone $this;
+        $repository->loadsJsonReferences = true;
+
+        return $repository;
     }
 
     public function get(array $params = [], ?int $page = null, ?int $count = null)
@@ -139,6 +176,13 @@ abstract class Entities implements EntitiesContract
             $models = $query->take($count)->get();
         }
 
+        if ($this->loadsJsonReferences) {
+            $loaded = $models instanceof AbstractPaginator ? $models->getCollection() : $models;
+            if (is_iterable($loaded)) {
+                JsonData::load($loaded);
+            }
+        }
+
         $collection = $this->getEntitiesFromModels($models);
 
         if ($models instanceof AbstractPaginator) {
@@ -189,7 +233,8 @@ abstract class Entities implements EntitiesContract
 
     protected function saveData($model, $data)
     {
-        $this->fillModel($model, $data);
+        // The other JSON attributes are merged into, not filled
+        $this->fillModel($model, is_array($data) ? Arr::except($data, $this->getMergedJsonAttributes()) : $data);
         $this->fillModelJsonAttributes($model, $data);
         $model->save();
         $this->syncRelations($model, $data);
@@ -202,6 +247,12 @@ abstract class Entities implements EntitiesContract
 
     protected function fillModelJsonAttributes($model, $data)
     {
+        if ($model instanceof Model && is_array($data)) {
+            $this->mergeJsonAttributes($model, $data);
+            // The other JSON attributes are merged into themselves, not into this one
+            $data = Arr::except($data, $this->getMergedJsonAttributes());
+        }
+
         $jsonAttributeFillable = $this->getJsonAttributeFillable();
         if (is_null($jsonAttributeFillable)) {
             return;
@@ -446,7 +497,52 @@ abstract class Entities implements EntitiesContract
 
     protected function getJsonAttributeName()
     {
-        return $this->jsonAttributeName;
+        return $this->jsonAttributes[0] ?? $this->jsonAttributeName;
+    }
+
+    /**
+     * The JSON attributes that updates merge into.
+     *
+     * @return list<string>
+     */
+    protected function getJsonAttributes(): array
+    {
+        return $this->jsonAttributes ?? (is_string($this->jsonAttributeName) ? [$this->jsonAttributeName] : []);
+    }
+
+    /**
+     * The JSON attributes, other than the first, that an update gives as a whole: their
+     * keys are merged into the stored value (docs/json-data.md, "Repositories").
+     *
+     * @return list<string>
+     */
+    protected function getMergedJsonAttributes(): array
+    {
+        return array_slice($this->getJsonAttributes(), 1);
+    }
+
+    /**
+     * Merges the keys an update gives for each of the other JSON attributes into its stored
+     * value. The references that don't resolve are put back first, so they aren't lost.
+     *
+     * @param  array<array-key, mixed>  $data
+     */
+    protected function mergeJsonAttributes(Model $model, array $data): void
+    {
+        foreach ($this->getMergedJsonAttributes() as $attribute) {
+            if (! array_key_exists($attribute, $data)) {
+                continue;
+            }
+            $update = $data[$attribute];
+            if (! is_array($update)) {
+                $model->setAttribute($attribute, $update);
+
+                continue;
+            }
+            $current = JsonDataCast::getValueWithUnresolvedReferences($model, $attribute);
+            $merged = array_replace(is_array($current) ? $current : [], $update);
+            $model->setAttribute($attribute, count($merged) > 0 ? $merged : null);
+        }
     }
 
     protected function getJsonAttributeFillable()

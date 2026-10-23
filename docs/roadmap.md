@@ -33,15 +33,15 @@ What both pilots need first: Niche's brand images, and the contests platform bef
 - [ ] Global query context: `withGlobalQuery()`, default resolver ([decisions/0004](decisions/0004-global-query-context.md))
 - [ ] The base repository finds by the model's entity key (`HasEntityKey`), or its key, in `findById()`, `update()`, `destroy()` and the `ids` of `EntitiesQuery`, with the contract test that `findById($entity->id())` finds the entity ([decisions/0015](decisions/0015-entity-key.md)); `@template TModel, TEntity` on the base class
 - [ ] `make:entity` and `make:repository` on the 2.0 bases
-- [ ] `JsonDataCast` ([json-data.md](json-data.md), decisions [0005](decisions/0005-json-reference-keys.md) to [0007](decisions/0007-batch-resolution-and-listing.md)):
+- [x] `JsonDataCast` ([json-data.md](json-data.md), decisions [0005](decisions/0005-json-reference-keys.md) to [0007](decisions/0007-batch-resolution-and-listing.md)):
   - [x] registry of keys, `map()`, `enforceMap()`, per-relation `key`, fallback to the relation name
   - [x] handlers per key, default handler (`ModelReferences`), `using` per path; 1.x macros and callables kept; values prepared on `saving` ([decisions/0013](decisions/0013-defer-prepare-until-saving.md))
   - [x] one query per key for a model, memoization by raw value
-  - [ ] batch resolution of a collection (`JsonData::load()`, `withJsonReferences()`)
-  - [ ] reference listing, `JsonData::parse()`
+  - [x] batch resolution of a collection (`JsonData::load()`, `withJsonReferences()`)
+  - [x] reference listing (`JsonData::references()`), `JsonData::parse()`
   - [x] recursive wildcard `**`
-  - [ ] repositories with several JSON columns
-  - [ ] `folklore:json-references:rewrite`
+  - [x] repositories with several JSON columns (`$jsonAttributes`)
+  - [x] `folklore:json-references:rewrite`
 - [x] Medias module on `laravel-mediatheque ^2.0@alpha` (2.0.0-alpha.7: `HasMedias` since alpha.6, migrations that run on MySQL since alpha.7) and `laravel-image ^2.0@alpha`, moved from alpha 2:
   - [x] `Media` and `MediaFile` models on the mediatheque's, set in `config('mediatheque.models')` unless the site sets its own; the package no longer rebinds the mediatheque's model contracts
   - [x] `Entities\Media`, `Image`, `ImageSize`, `MediaFile` and the metadata entities on the mediatheque's contracts; image sizes are `laravel-image` presets (`Image::for($media)->preset(...)->variant()`); protected properties kept
@@ -50,7 +50,7 @@ What both pilots need first: Niche's brand images, and the contests platform bef
 - [x] Medias module, references: the `media` and `medias` keys and `MediaReferences`, with `site.medias.reference_key` ([decisions/0008](decisions/0008-media-references.md))
 - [x] Panneau 1.x removed: its fields and resources, and `folklore/laravel-panneau` 1.x
 - [ ] Panneau 5 plugin, moved from alpha 3: `ResourceRepository` adapter on the typed query, `scope()`, the `Page`, `Pages`, `Blocks` and `PageSlug` fields and their JavaScript ([decisions/0011](decisions/0011-panneau-plugin.md)); `laravel-panneau`'s architecture updated for the adapter
-- [ ] The 1.1.8 characterization tests of `JsonDataCast` pass unchanged, but one: a string that isn't an id is no longer synced to the media pivot
+- [x] The 1.1.8 characterization tests of `JsonDataCast` pass, but three that the spec changes on purpose: a string that isn't a reference of its relation is neither written nor synced as an id, a reference is synced only to the relation of its path, and a media reference resolves before it is attached ([CHANGELOG](../CHANGELOG.md))
 - [ ] Niche replaces its prototype with `^2.0@alpha`
 
 ## Alpha 2: the rest of the medias module
