@@ -8,6 +8,7 @@ use Folklore\Eloquent\JsonData;
 use Folklore\Eloquent\JsonDataCast;
 use Folklore\Eloquent\MediaReferences;
 use Folklore\Mediatheque\Contracts\Models\Media as MediaContract;
+use Folklore\Mediatheque\Facades\Mediatheque;
 use Folklore\Mediatheque\Jobs\ProbeMedia;
 use Folklore\Models\Media;
 use Folklore\Repositories\Medias;
@@ -328,6 +329,29 @@ class MediaReferencesTest extends JsonDataTestCase
         $this->expectExceptionMessage('legacy_id');
 
         $game->save();
+    }
+
+    public function test_media_of_the_database_resolve_under_the_mediatheque_s_fake()
+    {
+        $this->useKey('media');
+        $byUid = $this->makeMedia();
+        $byId = $this->makeMedia();
+        Mediatheque::fake();
+
+        $game = new Game;
+        $game->data = ['image' => ['fr' => $byUid, 'en' => 'medias://'.$byId->id, 'es' => $byUid->uid]];
+        $game->save();
+
+        $this->assertSame('media://'.$byUid->uid, $this->rawData($game)['image']['fr']);
+        $this->assertSame('media://'.$byUid->uid, $this->rawData($game)['image']['es']);
+        $read = Game::find($game->id);
+        $this->assertTrue($read?->data['image']['fr']->is($byUid));
+        $this->assertTrue($read?->data['image']['en']->is($byId));
+        $this->assertTrue($read?->data['image']['fr']->relationLoaded('mediaFiles'));
+
+        $games = Game::query()->whereKey($game->id)->get();
+        JsonData::load($games);
+        $this->assertTrue($games->first()?->data['image']['es']->is($byUid));
     }
 
     private function mediasDownloading(Response $response): Medias

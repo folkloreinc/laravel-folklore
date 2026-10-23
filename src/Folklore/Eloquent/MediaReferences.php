@@ -11,6 +11,7 @@ use Folklore\Mediatheque\References\MediaReference;
 use Folklore\Mediatheque\Support\Uid;
 use Folklore\Repositories\Medias;
 use Illuminate\Container\Container;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use InvalidArgumentException;
@@ -20,7 +21,8 @@ use Symfony\Component\HttpFoundation\File\File;
  * The reference handler of the media, in the medias module, for the `media` (by uid) and
  * `medias` (by id, 1.x) keys (docs/json-data.md, "Media references", decisions/0008).
  * It takes what forms and seeders give, ingests files and URLs with the mediatheque, and
- * resolves references with `Mediatheque::resolveMany()`.
+ * resolves references through the media model's query, as `Mediatheque::resolveMany()`
+ * does, so that they resolve under `Mediatheque::fake()` too.
  */
 class MediaReferences extends ModelReferences
 {
@@ -196,30 +198,16 @@ class MediaReferences extends ModelReferences
     }
 
     /**
-     * Resolves the identifiers of the context's key in one call to
-     * `Mediatheque::resolveMany()`.
+     * Resolves the identifiers of the context's key with one query on its column, as
+     * `Mediatheque::resolveMany()` does. Not through the facade: `Mediatheque::fake()`
+     * only knows the media it ingested, in memory, which aren't models.
      */
     public function resolveMany(array $identifiers, ReferenceContext $context): array
     {
-        $references = [];
-        foreach (array_unique($identifiers) as $identifier) {
-            $reference = $this->referenceOf($identifier, $context);
-            if (! is_null($reference)) {
-                $references[(string) $reference] = $identifier;
-            }
-        }
-        if (count($references) === 0) {
-            return [];
-        }
-
-        $models = [];
-        foreach (Mediatheque::resolveMany(array_keys($references)) as $reference => $media) {
-            if ($media instanceof Model && isset($references[$reference]) && $context->target->accepts($media)) {
-                $models[$references[$reference]] = $media;
-            }
-        }
-
-        return $models;
+        return parent::resolveMany(array_values(array_filter(
+            $identifiers,
+            fn (string $identifier) => ! is_null($this->referenceOf($identifier, $context)),
+        )), $context);
     }
 
     public function allows(Model $resolved, ReferenceContext $context): bool
@@ -245,9 +233,22 @@ class MediaReferences extends ModelReferences
 
     protected function resolveReference(MediaReference $reference, ReferenceContext $context): ?Model
     {
-        $media = Mediatheque::resolve($reference);
+        $query = $this->query($context->target);
+        $media = $reference->isLegacy()
+            ? $query->whereKey($reference->id)->first()
+            : $query->where('uid', $reference->uid)->first();
 
         return $media instanceof Model && $context->target->accepts($media) ? $media : null;
+    }
+
+    /**
+     * The media model's query, with its files, as the mediatheque resolves media.
+     *
+     * @return Builder<Model>
+     */
+    protected function query(JsonReference $target): Builder
+    {
+        return parent::query($target)->with('mediaFiles');
     }
 
     /**

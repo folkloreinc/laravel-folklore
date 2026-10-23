@@ -21,6 +21,7 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 ### Fixed
 
 - `JsonDataCast` registered its `saving` listener once per event dispatcher by object id: a new dispatcher that reused the id of one that was gone, as between tests, got no listener, and pending values weren't prepared.
+- `MediaReferences` resolves media through the media model's query instead of the `Mediatheque` facade, so that references to media of the database resolve under `Mediatheque::fake()`, which only knows the media it ingested ([#98](https://github.com/folkloreinc/laravel-folklore/issues/98)).
 
 ## [2.0.0-alpha.2] - 2026-10-23
 
