@@ -15,6 +15,7 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 ### Changed
 
 - `folklore/laravel-mediatheque` below 2.0.0-alpha.7 conflicts with the package: the medias and pages modules need its `HasMedias` (alpha.6) and its migrations that run on MySQL (alpha.7), and `suggest` didn't enforce a version.
+- The [roadmap](docs/roadmap.md) gets two alphas before the Panneau adapter, for what the pilot needs on alpha 1: alpha 2 adds checks for its database, alpha 3 moves its JSON references onto the cast. The Panneau adapter and the rest of the medias module move to alpha 4, the pages module and the Panneau page fields to alpha 5 ([#89](https://github.com/folkloreinc/laravel-folklore/issues/89)).
 
 ### Fixed
 

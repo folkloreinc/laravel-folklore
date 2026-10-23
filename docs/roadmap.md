@@ -53,19 +53,44 @@ What both pilots need first: Niche's brand images, and the contests platform bef
 - [x] The 1.1.8 characterization tests of `JsonDataCast` pass, but three that the spec changes on purpose: a string that isn't a reference of its relation is neither written nor synced as an id, a reference is synced only to the relation of its path, and a media reference resolves before it is attached ([CHANGELOG](../CHANGELOG.md))
 - [ ] Niche replaces its prototype with `^2.0@alpha`, once `v2.0.0-alpha.1` is tagged
 
-## Alpha 2: the rest of the medias module, and the Panneau adapter
+## Alpha 2: checks for the pilot's database
 
-- [ ] Panneau 5 plugin, its first part: the `ResourceRepository` adapter on the typed query, and `scope()` on the query context ([decisions/0018](decisions/0018-panneau-plugin-php-only.md)); `laravel-panneau`'s architecture updated for the adapter. Moved from alpha 1, which Niche needs without Panneau
+The pilot replaces its prototype on alpha 1. It runs PostgreSQL with `jsonb` columns, which neither this package nor the mediatheque tested. Alpha 2 adds checks and docs, not new APIs ([#89](https://github.com/folkloreinc/laravel-folklore/issues/89)). The `Entities` contract stays as it is ([#83](https://github.com/folkloreinc/laravel-folklore/issues/83), closed).
+
+- [ ] The test suite on PostgreSQL 17, where the JSON fixtures' columns are `jsonb` ([#87](https://github.com/folkloreinc/laravel-folklore/issues/87))
+- [ ] `conflict` with `laravel-mediatheque` below 2.0.0-alpha.7: the medias module needs `HasMedias` (alpha.6) and the migrations that run on MySQL (alpha.7), and `suggest` doesn't enforce a version
+- [ ] The base repository passes its `TEntity` to its contracts, so that a repository contract typed on its entity passes static analysis ([#90](https://github.com/folkloreinc/laravel-folklore/pull/90))
+- [ ] The `ShortUuid` test that failed at random, on `v2.x` and `v1.1` ([#66](https://github.com/folkloreinc/laravel-folklore/issues/66))
+- [ ] Docs: the usage graph and the JSON sync settled, and the limits of the repository contract found in the review of the prototype ([architecture.md](architecture.md#review-against-the-pilots-prototype)); `resolveMany()` taking identifiers settled, and the three 1.1.8 tests that change on purpose ([json-data.md](json-data.md))
+
+## Alpha 3: JSON references on the cast
+
+What the pilot needs to move its JSON references onto `JsonDataCast`.
+
+- [ ] `MediaReferences`: the forms of references it accepts, with a strict mode ([#85](https://github.com/folkloreinc/laravel-folklore/issues/85))
+- [ ] `JsonData::stored()`: a JSON column with its references as stored ([#88](https://github.com/folkloreinc/laravel-folklore/issues/88))
+
+## Alpha 4: the rest of the medias module, and the Panneau adapter
+
+- [ ] Panneau 5 plugin, its first part: the `ResourceRepository` adapter on the typed query, `scope()` on the query context, and `ChecksSlugs` (`slugExists()`) for the checks of Panneau's slug fields ([decisions/0018](decisions/0018-panneau-plugin-php-only.md), `laravel-panneau`'s [decision 0011](https://github.com/folkloreinc/laravel-panneau/blob/v5.x/docs/decisions/0011-slug-checks.md), proposed); `laravel-panneau`'s architecture updated for the adapter. Moved from alpha 1, which Niche needs without Panneau, then after the checks and the JSON references that it needs first
 
 Once `laravel-mediatheque` 2 has them:
 
 - [ ] `MediaResource` on the mediatheque's canonical resource, with the `legacy` shape (its alpha 2)
 - [ ] The download from a URL moved to the mediatheque, behind its SSRF guard (its alpha 3)
 
-## Alpha 3: pages
+## Alpha 5: pages
 
 - [ ] Pages module: blocks in the page's JSON, type registry, configurable route names ([decisions/0009](decisions/0009-pages-and-blocks.md))
 - [ ] The Panneau plugin's page fields: `Page`, `Pages`, `Blocks` and `PageSlug`, in PHP on Panneau 5's built-in types, with the URL of a slug from the pages module ([decisions/0018](decisions/0018-panneau-plugin-php-only.md)); `PageSlug` on Panneau's generic slug field ([folkloreinc/panneau-js#109](https://github.com/folkloreinc/panneau-js/issues/109))
+
+## Later
+
+Not scheduled yet: each item goes into the alpha or beta that needs it.
+
+- [ ] Reference paths with a key and no Eloquent relation ([#84](https://github.com/folkloreinc/laravel-folklore/issues/84)). The pilot moves its provenance references to foreign key columns instead
+- [ ] `folklore:json-references:sync`: sync the relations of stored JSON references, for rows written without model events ([#86](https://github.com/folkloreinc/laravel-folklore/issues/86)). Not needed while the pilot starts from empty databases; needed before its first import, and for upgraded sites
+- An idea, not planned: rows computed from JSON entries, for list items that repeat the same related model with different attributes (one person with two roles)
 
 ## Beta: upgrade path
 
@@ -96,5 +121,5 @@ The auth and other modules are placed in the beta because the site that upgrades
 
 ## Open questions
 
-- How `Page` restricts the pages it offers to some types, as `withTypes()` did in 1.x: a relation filter in Panneau 5, or a pages resource per type (alpha 3).
+- How `Page` restricts the pages it offers to some types, as `withTypes()` did in 1.x: a relation filter in Panneau 5, or a pages resource per type (alpha 5).
 - Whether a 1.2 accepts `^1.1|^2.0` of the mediatheque and `laravel-image`, so that sites upgrade them before this package (decided at the mediatheque's beta).

@@ -71,7 +71,7 @@ Modules are turned on in `config/site.php`, which 1.x already uses (`site.medias
   Google Places still needs `google/apiclient` when it is used, until it moves to Laravel's HTTP client.
 - The modules use parts of Laravel that the core doesn't require (HTTP, routing, auth, mail, broadcasting, views, and `Foundation` for the auth module's `User` model): a Laravel application has them.
 - For now, the package's service provider registers each module's part. A module gets its own service provider when it gets its namespace, with its alpha.
-- The panneau module, for the Panneau 5 plugin, comes in alpha 2 with its repository adapter, and gets its page fields in alpha 3 with the pages module. The Panneau 1.x fields and resources are removed.
+- The panneau module, for the Panneau 5 plugin, comes in alpha 4 with its repository adapter, and gets its page fields in alpha 5 with the pages module. The Panneau 1.x fields and resources are removed.
 - `folklore:upgrade` writes the modules an upgraded site uses into its config. Until it exists (beta), an upgraded site turns them on by hand.
 
 ## Entities
@@ -91,7 +91,7 @@ The pilot writes its entities and repositories on a prototype of the core, to be
 |---|---|---|
 | `Contracts\Entities\Entity` (`id(): string`) | Same | Ready |
 | `HasModel<TModel>`, `ToEntity<TEntity>` (`toEntity(): Entity`) | Same, generic; `toEntity()` returns `?Entity`, which a model may narrow | Ready |
-| `Contracts\Repositories\Entities<TEntity>` with `findById()` only | The 1.x contract, generic: also `get()`, `count()`, `create()`… | Ready: the pilot's repositories extend the base class, which implements them |
+| `Contracts\Repositories\Entities<TEntity>` with `findById()` only | The 1.x contract, generic: also `get()`, `count()`, `create()`… | Ready for repositories whose methods match its signatures: they extend the base class, which implements them. A repository that declares `create(array $data)` or `update(Model $model, array $data)` doesn't load, since PHP refuses a narrower parameter type: it renames those methods, or keeps the contract's signatures and types them in PHPDoc. The contract stays as it is ([#83](https://github.com/folkloreinc/laravel-folklore/issues/83), closed) |
 | `Entities\ModelEntity<TModel>`, `id()` = route key | Same, `id()` = the model's entity key (`HasEntityKey`), or its key | Ready once the pilot's models implement `HasEntityKey` |
 | `Repositories\Entities<TModel, TEntity>`: `newModel()`, `newQuery(): Builder`, `toEntity()` | The 1.x base class, not generic; `newQuery()` untyped, entities built by `getEntityFromModel()` | Alpha 1: the base class gets `@template TModel, TEntity` with defaults |
 | `findById()` by the model's route key (the public uid) | `findById()` by the model's entity key, or its key ([decisions/0015](decisions/0015-entity-key.md)) | Alpha 1, in the base class; the pilot implements `HasEntityKey` in the trait that gives its models their uid |
@@ -100,7 +100,7 @@ The pilot writes its entities and repositories on a prototype of the core, to be
 
 - `MediaReference` (`media://` by uid, `medias://` by id, with `SCHEME` and `LEGACY_SCHEME`) and `Mediatheque::resolveMany()`, keyed by the reference as given, fit `MediaReferences::resolveMany()`: it builds the references of its key from the identifiers, resolves them in one call, and keys the result by identifier.
 - `JsonData::parse()` is more lenient than `MediaReference::tryParse()`, which checks the uid's format. The handler checks it; the registry only checks the key.
-- The usage graph (`HasMedias`, `usages()`) is planned in the mediatheque's alpha 2. How JSON references sync into it stays open ([json-data.md](json-data.md#syncing)).
+- The usage graph (`HasMedias`, `usages()`) shipped in the mediatheque's 2.0.0-alpha.6. JSON references sync into it with `syncMedias()`, under one handle, `json`, for every JSON column of a model ([json-data.md](json-data.md#syncing)). Settled in alpha 1.
 
 ## Repositories
 
@@ -143,7 +143,7 @@ On `laravel-mediatheque` 2 and `laravel-image` 2 ([decisions/0008](decisions/000
 - **Creating media:** `createFromFile` goes through `Mediatheque::ingest()`, `updateFromFile` through `replaceOriginal()`. Downloading from a URL, with its host and size limits, stays here until `laravel-mediatheque` imports URLs behind its SSRF guard.
 - **JSON references** sync into the mediatheque's `medias_pivot` under their own handle ([json-data.md](json-data.md#syncing)).
 - **Reference keys:** the module maps `media` (by uid) and `medias` (by id) to its media model, with `MediaReferences`, and writes the one of `site.medias.reference_key` ([json-data.md](json-data.md#media-references)).
-- **Alpha 2:** `MediaResource` on the mediatheque's canonical resource, once it has one, with its `legacy` shape.
+- **Alpha 4:** `MediaResource` on the mediatheque's canonical resource, once it has one, with its `legacy` shape.
 
 ## Pages module
 
@@ -213,7 +213,7 @@ The module namespaces are named with the contracts. 1.x classes that move into a
 | `folklore/laravel-mediatheque`, `folklore/laravel-image` | `^2.0`, suggested (medias module) | `^2.0@alpha`, suggested. `laravel-mediatheque` below 2.0.0-alpha.7 conflicts (since alpha 2) |
 | `folklore/laravel-locale ^8.1`, `cviebrock/eloquent-sluggable` | Suggested (pages module) | Same |
 | `laravel/fortify` | Suggested (auth module) | Same |
-| `folklore/laravel-panneau` | `^5.0`, suggested (Panneau plugin) | Not yet: the Panneau 1.x fields are removed, the plugin comes in alpha 2 |
+| `folklore/laravel-panneau` | `^5.0`, suggested (Panneau plugin) | Not yet: the Panneau 1.x fields are removed, the plugin comes in alpha 4 |
 | `guzzlehttp/guzzle`, `parsecsv/php-parsecsv`, `pubnub/pubnub` | Suggested (services) | Same |
 | `google/apiclient` | Removed | Suggested, for Places until it moves to Laravel's HTTP client |
 
