@@ -5,8 +5,10 @@ namespace Folklore\Tests\Unit\Repositories\Query;
 use Folklore\Repositories\Query\EntitiesQuery;
 use Folklore\Repositories\Query\Sort;
 use InvalidArgumentException;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
+#[Group('core')]
 class EntitiesQueryTest extends TestCase
 {
     public function test_a_query_has_defaults()

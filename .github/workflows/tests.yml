@@ -53,8 +53,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
-          composer require --dev "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
+          composer require --dev "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
           composer update --prefer-dist --no-interaction --no-progress
 
       - name: Show installed versions
@@ -62,6 +61,57 @@ jobs:
 
       - name: Run tests
         run: vendor/bin/phpunit
+
+  core:
+    name: PHP ${{ matrix.php }} - Laravel 13 - core only
+
+    # The core requires only illuminate/* (docs/decisions/0002). This job removes
+    # the packages the modules need, and runs the tests of the core.
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.3', '8.5']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: dom, curl, libxml, mbstring, zip, pdo, sqlite, pdo_sqlite, fileinfo
+          coverage: none
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer packages
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-php${{ matrix.php }}-core-${{ hashFiles('composer.json') }}
+          restore-keys: composer-${{ runner.os }}-php${{ matrix.php }}-core-
+
+      - name: Install dependencies
+        run: |
+          composer remove --dev folklore/laravel-panneau folklore/laravel-mediatheque folklore/laravel-image folklore/laravel-locale cviebrock/eloquent-sluggable google/apiclient guzzlehttp/guzzle laravel/fortify parsecsv/php-parsecsv --no-interaction --no-update
+          composer require --dev "laravel/framework:13.*" "orchestra/testbench:11.*" --no-interaction --no-update
+          composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Show installed versions
+        run: |
+          composer show | grep -E "^(laravel/framework|orchestra/testbench|phpunit/phpunit|guzzlehttp/[a-z-]+|folklore/[a-z-]+) " || true
+          if composer show | grep -qE "^(folklore/laravel-(mediatheque|image|panneau|locale)|laravel/fortify|google/apiclient) "; then
+            echo "A package of the modules is installed." >&2
+            exit 1
+          fi
+
+      - name: Run the tests of the core
+        run: vendor/bin/phpunit --group core
 
   panneau:
     name: PHP 8.4 - Laravel ${{ matrix.laravel }} - Panneau 1.3
@@ -103,8 +153,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" "folklore/laravel-panneau:~1.3.0" --no-interaction --no-update
-          composer require --dev "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
+          composer require --dev "laravel/framework:${{ matrix.laravel }}" "folklore/laravel-panneau:~1.3.0" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
           composer update --prefer-dist --no-interaction --no-progress
 
       - name: Show installed versions
@@ -151,8 +200,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:13.*" "guzzlehttp/guzzle:${{ matrix.guzzle }}" --no-interaction --no-update
-          composer require --dev "orchestra/testbench:11.*" --no-interaction --no-update
+          composer require --dev "laravel/framework:13.*" "guzzlehttp/guzzle:${{ matrix.guzzle }}" "orchestra/testbench:11.*" --no-interaction --no-update
           composer update --prefer-dist --no-interaction --no-progress
 
       - name: Show installed versions
@@ -213,8 +261,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
-          composer require --dev "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
+          composer require --dev "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
           composer update --prefer-dist --no-interaction --no-progress
 
       - name: Show installed versions

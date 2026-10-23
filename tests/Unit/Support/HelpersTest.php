@@ -5,8 +5,10 @@ namespace Folklore\Tests\Unit\Support;
 use Folklore\Contracts\Entities\Entity;
 use Folklore\Contracts\Entities\ToEntity;
 use Illuminate\Database\Eloquent\Model;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
+#[Group('core')]
 class HelpersTest extends TestCase
 {
     public function test_to_id_returns_scalars_as_is()

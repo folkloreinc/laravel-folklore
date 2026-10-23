@@ -40,24 +40,39 @@ folklore/laravel-folklore
 
 ## Configuration and modules
 
-Modules are enabled in `config/site.php`, which 1.x already uses (`site.medias.download`). The shape is **proposed**:
+Modules are turned on in `config/site.php`, which 1.x already uses (`site.medias.download`). The package merges its defaults (`config/site.php` in the package), where every module is off:
 
 ```php
 'modules' => [
-    'medias' => true,
-    'pages' => false,
-    'auth' => false,
-    'panneau' => false,
-    'customerio' => false,
-    'google' => false,
-    'pubnub' => false,
+    'medias' => false,        // Medias repository, mediatheque model bindings
+    'pages' => false,         // Pages and blocks repositories
+    'auth' => false,          // `repository` auth provider, users repository, Fortify callbacks, `users:create`
+    'organisations' => false, // Organisations repository (removed in 2.0)
+    'sites' => false,         // Site manager (removed in 2.0)
+    'http' => false,          // `routeForReactRouter`, `pixel` and `csv` responses, OffsetPaginator's page resolver
+    'assets' => false,        // `assets:view`, and LocalMiddleware in the local environment (deprecated)
+    'customerio' => false,    // Customer.io client and mail transport, when `services.customerio` is set
+    'google' => false,        // Google Maps, Places and Drive
+    'pubnub' => false,        // `pubnub` broadcast driver
+    'pubsubhubbub' => false,  // PubSubHubbub client and commands, when `pubsubhubbub` is set (removed in 2.0)
 ],
 ```
 
-- Each module has a service provider that the package's provider registers only when the module is on.
-- A module checks that the packages it needs are installed when it boots, and throws a `ModuleRequirementMissing` exception that names the package to require.
-- With every module off, the package registers the core bindings and nothing else: no route, macro, middleware, listener, auth provider or global override ([decisions/0002](decisions/0002-core-and-modules.md)).
-- `folklore:upgrade` writes the modules an upgraded site uses into its config.
+- With every module off, the package registers the core and nothing else: the repositories of `config('app.repositories')`, `daemon:restart`, and, in the local environment, the `make:*` generators and the publishing of the migrations. No binding of its own repositories, macro, middleware, auth provider, broadcast driver or global override ([decisions/0002](decisions/0002-core-and-modules.md)).
+- A module that is on checks, when the package registers, that the packages it needs are installed (`ServiceProvider::MODULES`), and throws `Exceptions\ModuleRequirementMissing` with the package to require:
+
+  | Module | Needs |
+  |---|---|
+  | `medias` | `folklore/laravel-mediatheque`, `folklore/laravel-image` |
+  | `pages` | `folklore/laravel-mediatheque` (its models use `HasMedias`), `cviebrock/eloquent-sluggable`, `folklore/laravel-locale` |
+  | `auth` | `laravel/fortify` |
+  | `pubnub` | `pubnub/pubnub` |
+
+  Google Places still needs `google/apiclient` when it is used, until it moves to Laravel's HTTP client.
+- The modules use parts of Laravel that the core doesn't require (HTTP, routing, auth, mail, broadcasting, views, and `Foundation` for the auth module's `User` model): a Laravel application has them.
+- For now, the package's service provider registers each module's part. A module gets its own service provider when it gets its namespace, with its alpha.
+- The panneau module, for the Panneau 5 plugin, comes in alpha 3. The Panneau 1.x fields and resources boot nothing: sites reference them.
+- `folklore:upgrade` writes the modules an upgraded site uses into its config. Until it exists (beta), an upgraded site turns them on by hand.
 
 ## Entities
 
@@ -188,16 +203,15 @@ The module namespaces are named with the contracts. 1.x classes that move into a
 
 ## Dependencies
 
-| Package | 2.0 |
-|---|---|
-| `illuminate/*` `^12.0\|^13.0` | Required |
-| `folklore/laravel-mediatheque ^2.0`, `folklore/laravel-image ^2.0` | Suggested (medias module) |
-| `folklore/laravel-locale ^8.1`, `cviebrock/eloquent-sluggable` | Suggested (pages module) |
-| `laravel/fortify` | Suggested (auth module) |
-| `folklore/laravel-panneau ^5.0` | Suggested (Panneau plugin) |
-| `guzzlehttp/guzzle`, `parsecsv/php-parsecsv`, `pubnub/pubnub` | Suggested (services) |
-| `google/apiclient` | Removed |
-| `folklore/laravel-panneau` 1.x | Removed |
+| Package | 2.0.0 | Alpha 1 |
+|---|---|---|
+| `illuminate/console`, `contracts`, `database`, `pagination`, `support` `^12.69\|^13.30` | Required | Required |
+| `folklore/laravel-mediatheque`, `folklore/laravel-image` | `^2.0`, suggested (medias module) | `^1.1`, suggested: the medias module is ported in alpha 2 |
+| `folklore/laravel-locale ^8.1`, `cviebrock/eloquent-sluggable` | Suggested (pages module) | Same |
+| `laravel/fortify` | Suggested (auth module) | Same |
+| `folklore/laravel-panneau` | `^5.0`, suggested (Panneau plugin) | 1.x, suggested, for the 1.x fields until alpha 3 |
+| `guzzlehttp/guzzle`, `parsecsv/php-parsecsv`, `pubnub/pubnub` | Suggested (services) | Same |
+| `google/apiclient` | Removed | Suggested, for Places until it moves to Laravel's HTTP client |
 
 ## Supported versions
 

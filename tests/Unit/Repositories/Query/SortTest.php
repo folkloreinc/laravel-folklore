@@ -4,8 +4,10 @@ namespace Folklore\Tests\Unit\Repositories\Query;
 
 use Folklore\Repositories\Query\Sort;
 use Folklore\Repositories\Query\SortDirection;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
+#[Group('core')]
 class SortTest extends TestCase
 {
     public function test_a_sort_is_parsed_with_its_direction()

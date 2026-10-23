@@ -15,7 +15,7 @@
 
 1. **Require the new version:** `composer require folklore/laravel-folklore:^2.0`, and the packages of the modules the site uses (they are suggested, no longer required).
 2. **Check the site:** `php artisan folklore:upgrade --check`. It lists the modules the site uses, removed modules it still uses, block data to convert, JSON reference keys that aren't mapped, and deprecated macros.
-3. **Upgrade:** `php artisan folklore:upgrade`. It enables the site's modules in `config/site.php`, sets the media reference key that the site writes (`medias://`), and converts block data.
+3. **Upgrade:** `php artisan folklore:upgrade`. It enables the site's modules in `config/site.php`, sets the media reference key that the site writes (`medias://`), and converts block data. Every module is off by default: until the command exists, list the modules the site uses under `modules` in `config/site.php` ([architecture.md](architecture.md#configuration-and-modules)).
 4. **Run the Rector rules.**
 5. **Run the site's tests**, and check pages, forms with media, and logins.
 6. **Fix the deprecations** at your own pace. They are logged on the `deprecations` channel.

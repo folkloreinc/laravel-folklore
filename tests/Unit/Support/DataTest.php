@@ -3,8 +3,10 @@
 namespace Folklore\Tests\Unit\Support;
 
 use Folklore\Support\Data;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase;
 
+#[Group('core')]
 class DataTest extends TestCase
 {
     protected array $data = [

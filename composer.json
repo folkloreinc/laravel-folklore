@@ -26,23 +26,28 @@
     ],
     "require": {
         "php": "^8.3",
-        "laravel/framework": "^12.69|^13.30",
-        "folklore/laravel-panneau": "~1.3.0|~1.4.0",
-        "folklore/laravel-mediatheque": "^1.1",
-        "folklore/laravel-image": "^1.1",
-        "folklore/laravel-locale": "^8.1",
-        "cviebrock/eloquent-sluggable": "^11.0|^12.0|^13.0",
-        "google/apiclient": "^2.18",
-        "guzzlehttp/guzzle": "^7.15.2|^8.0.1",
-        "laravel/fortify": "^1.13",
-        "parsecsv/php-parsecsv": "^1.3"
+        "illuminate/console": "^12.69|^13.30",
+        "illuminate/contracts": "^12.69|^13.30",
+        "illuminate/database": "^12.69|^13.30",
+        "illuminate/pagination": "^12.69|^13.30",
+        "illuminate/support": "^12.69|^13.30"
     },
     "require-dev": {
+        "cviebrock/eloquent-sluggable": "^11.0|^12.0|^13.0",
         "fakerphp/faker": "^1.23",
+        "folklore/laravel-image": "^1.1",
+        "folklore/laravel-locale": "^8.1",
+        "folklore/laravel-mediatheque": "^1.1",
+        "folklore/laravel-panneau": "~1.3.0|~1.4.0",
+        "google/apiclient": "^2.18",
+        "guzzlehttp/guzzle": "^7.15.2|^8.0.1",
         "larastan/larastan": "^3.0",
+        "laravel/fortify": "^1.13",
+        "laravel/framework": "^12.69|^13.30",
         "laravel/pint": "^1.18",
         "mockery/mockery": "^1.6",
         "orchestra/testbench": "^10.0|^11.0",
+        "parsecsv/php-parsecsv": "^1.3",
         "phpunit/phpunit": "^11.5|^12.0"
     },
     "autoload": {
@@ -75,7 +80,18 @@
         }
     },
     "suggest": {
-        "pubnub/pubnub": "Allows broadcasting events via pubnub."
+        "laravel/framework": "The modules use parts of Laravel that a Laravel application has: HTTP, routing, auth, mail, broadcasting, views.",
+        "folklore/laravel-mediatheque": "The medias module (^1.1 until alpha 2 moves it to ^2.0), and the pages module, whose models use its HasMedias.",
+        "folklore/laravel-image": "The medias module (^1.1 until alpha 2 moves it to ^2.0).",
+        "folklore/laravel-locale": "The pages module (^8.1).",
+        "cviebrock/eloquent-sluggable": "The pages module.",
+        "laravel/fortify": "The auth module (^1.13).",
+        "folklore/laravel-panneau": "The Panneau 1.x fields and resources (~1.3.0|~1.4.0), until alpha 3 replaces them with a Panneau 5 plugin.",
+        "guzzlehttp/guzzle": "Downloading media from a URL, Google Places and Customer.io (^7.15.2|^8.0.1).",
+        "google/apiclient": "Google Places (^2.18), until it moves to Laravel's HTTP client.",
+        "parsecsv/php-parsecsv": "The CSV export of Google Drive (^1.3).",
+        "pubnub/pubnub": "The pubnub module: broadcasting events through PubNub.",
+        "ramsey/uuid": "Support\\ShortUuid, which every Laravel application has."
     },
     "minimum-stability": "dev",
     "prefer-stable": true
