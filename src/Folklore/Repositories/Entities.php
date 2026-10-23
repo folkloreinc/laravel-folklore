@@ -2,7 +2,6 @@
 
 namespace Folklore\Repositories;
 
-use Folklore\Contracts\Eloquent\HasJsonDataRelations;
 use Folklore\Contracts\Entities\Entity;
 use Folklore\Contracts\Entities\HasEntityKey;
 use Folklore\Contracts\Repositories\Entities as EntitiesContract;
@@ -475,14 +474,14 @@ abstract class Entities implements EntitiesContract, QueriesEntities
         $model->{$jsonAttributeName} = ! empty($newAttributeValue) ? $newAttributeValue : null;
     }
 
+    /**
+     * Runs after saveData() saved the model. The cast has already synced the relations of
+     * its JSON references, when the model was saved (docs/json-data.md, "Syncing"): this
+     * is a hook for a repository's own relations.
+     */
     protected function syncRelations($model, $data)
     {
-        if ($model instanceof HasJsonDataRelations) {
-            $ids = JsonDataCast::syncRelations($model);
-            if (! is_null($ids) && count($ids) > 0) {
-                $model->refresh();
-            }
-        }
+        //
     }
 
     protected function newQueryWithParams($params = [])
