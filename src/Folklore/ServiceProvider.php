@@ -16,10 +16,14 @@ use Folklore\Console\RepositoryMakeCommand;
 use Folklore\Console\UsersCreateCommand;
 use Folklore\Contracts\Services\CustomerIo;
 use Folklore\Contracts\Services\PubSubHubbub\Factory;
+use Folklore\Eloquent\JsonData;
+use Folklore\Eloquent\JsonReference;
+use Folklore\Eloquent\MediaReferences;
 use Folklore\Exceptions\ModuleRequirementMissing;
 use Folklore\Http\Middleware\LocalMiddleware;
 use Folklore\Mediatheque\Models\File as MediathequeFile;
 use Folklore\Mediatheque\Models\Media as MediathequeMedia;
+use Folklore\Mediatheque\Support\Models as MediathequeModels;
 use Folklore\Models\Media;
 use Folklore\Models\MediaFile;
 use Folklore\Repositories\Blocks;
@@ -192,7 +196,7 @@ class ServiceProvider extends BaseServiceProvider
 
     /**
      * Sets the models of the medias module in `config('mediatheque.models')`, unless the
-     * site sets its own there.
+     * site sets its own there, and maps the media reference keys.
      */
     protected function bootMediatheque(): void
     {
@@ -203,6 +207,15 @@ class ServiceProvider extends BaseServiceProvider
                 $config->set('mediatheque.models.'.$key, $model);
             }
         }
+
+        // `media://med_…` by uid, and `medias://12` by id (1.x). The first one is written:
+        // `media` for new projects, `medias` for upgraded sites (site.medias.reference_key).
+        $media = MediathequeModels::media();
+        $keys = [
+            'media' => JsonReference::to($media)->by('uid')->using(MediaReferences::class),
+            'medias' => JsonReference::to($media)->using(MediaReferences::class),
+        ];
+        JsonData::map($config->get('site.medias.reference_key', 'media') === 'medias' ? array_reverse($keys, true) : $keys);
     }
 
     protected function registerSite()

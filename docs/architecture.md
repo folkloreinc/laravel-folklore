@@ -142,7 +142,7 @@ On `laravel-mediatheque` 2 and `laravel-image` 2 ([decisions/0008](decisions/000
 - **Image sizes** are `laravel-image` 2 presets (`config('image.presets')`): one `ImageSize` per preset, with the variant's URL, dimensions and type (`Image::for($media)->preset(...)->variant()`). An image that `laravel-image` can't render (no dimensions, an unknown preset) falls back to its original's URL. `setFilters()` is deprecated, and only understands a preset name, `width`, `height`, `fit`, `format` and `quality`.
 - **Creating media:** `createFromFile` goes through `Mediatheque::ingest()`, `updateFromFile` through `replaceOriginal()`. Downloading from a URL, with its host and size limits, stays here until `laravel-mediatheque` imports URLs behind its SSRF guard.
 - **JSON references** sync into the mediatheque's `medias_pivot` under their own handle ([json-data.md](json-data.md#syncing)).
-- **Next, in alpha 1:** the `media` and `medias` reference keys and their handler, `MediaReferences`.
+- **Reference keys:** the module maps `media` (by uid) and `medias` (by id) to its media model, with `MediaReferences`, and writes the one of `site.medias.reference_key` ([json-data.md](json-data.md#media-references)).
 - **Alpha 2:** `MediaResource` on the mediatheque's canonical resource, once it has one, with its `legacy` shape.
 
 ## Pages module

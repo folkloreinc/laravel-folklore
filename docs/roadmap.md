@@ -47,7 +47,7 @@ What both pilots need first: Niche's brand images, and the contests platform bef
   - [x] `Entities\Media`, `Image`, `ImageSize`, `MediaFile` and the metadata entities on the mediatheque's contracts; image sizes are `laravel-image` presets (`Image::for($media)->preset(...)->variant()`); protected properties kept
   - [x] `createFromFile` and `updateFromFile` through `Mediatheque::ingest()` and `replaceOriginal()`; the download from a URL, with its limits, stays here
   - [x] the pages models and the JSON media sync on the mediatheque's `HasMedias`, by handle ([json-data.md](json-data.md#syncing))
-- [ ] Medias module, references: the `media` and `medias` keys and `MediaReferences` ([decisions/0008](decisions/0008-media-references.md))
+- [x] Medias module, references: the `media` and `medias` keys and `MediaReferences`, with `site.medias.reference_key` ([decisions/0008](decisions/0008-media-references.md))
 - [x] Panneau 1.x removed: its fields and resources, and `folklore/laravel-panneau` 1.x
 - [ ] Panneau 5 plugin, moved from alpha 3: `ResourceRepository` adapter on the typed query, `scope()`, the `Page`, `Pages`, `Blocks` and `PageSlug` fields and their JavaScript ([decisions/0011](decisions/0011-panneau-plugin.md)); `laravel-panneau`'s architecture updated for the adapter
 - [ ] The 1.1.8 characterization tests of `JsonDataCast` pass unchanged, but one: a string that isn't an id is no longer synced to the media pivot

@@ -10,6 +10,7 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ### Breaking changes
 
+- With the medias module on, a media reference resolves by its key whether or not the media is attached to the owner, as every mapped key does; in 1.x, only attached media resolved. `MediaReferences::allowUsing()` scopes it.
 - A string at a reference path that isn't a reference of its relation (a URL, `blocks://1` under a `medias` path) is no longer taken for an id: it is written `null` when the handler can't prepare it, read as is, and not synced. 1.x wrote `medias://https://…`, and synced a reference to the relation named in it.
 - Values written to a reference path are turned into references when the model is saved, not when they are assigned: until then, the raw attribute keeps the reference stored before. A model saved without events (`saveQuietly()`) keeps them pending.
 - Requires Laravel 12+ ([decision 0001](docs/decisions/0001-supported-versions.md)).
@@ -27,6 +28,8 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ### Added
 
+- Media references: the medias module maps `media` (`media://med_…`, by uid) and `medias` (`medias://12`, by id) to its media model, with `Folklore\Eloquent\MediaReferences`, and writes the key of `site.medias.reference_key` (`media` by default; `medias` for upgraded sites). `MediaReferences` takes media, entities, references, uids, 1.x ids, Panneau 5 values, uploaded files, files and URLs, which it ingests when the owner is saved; `ingestUsing()` and `allowUsing()` plug a tenancy into it.
+- `Repositories\Medias::downloadForIngest()`, which downloads a URL with the repository's limits.
 - `JsonDataCast` on the registry of keys ([json-data.md](docs/json-data.md)):
   - stored references are `{key}://{identifier}`, where the key is mapped with `JsonData::map()`, or, when it isn't, the name of the relation, as in 1.x;
   - a relation writes its `key` option, else the first key mapped to its related model, else its name; on read, every mapped key of the related model is accepted;

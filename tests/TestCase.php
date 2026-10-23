@@ -2,8 +2,11 @@
 
 namespace Folklore\Tests;
 
+use Folklore\Eloquent\JsonData;
+use Folklore\Eloquent\MediaReferences;
 use Folklore\Image\ImageServiceProvider;
 use Folklore\Mediatheque\Console\InstallCommand;
+use Folklore\Mediatheque\Contracts\Models\Media;
 use Folklore\ServiceProvider;
 use Illuminate\Foundation\Application;
 use Orchestra\Testbench\TestCase as BaseTestCase;
@@ -37,6 +40,31 @@ class TestCase extends BaseTestCase
         foreach (array_keys(ServiceProvider::MODULES) as $module) {
             $app['config']->set('site.modules.'.$module, in_array($module, $this->modules(), true));
         }
+
+        // As a site upgraded from 1.x, which writes `medias://12`
+        $app['config']->set('site.medias.reference_key', 'medias');
+    }
+
+    /**
+     * The registry of keys is static: a new application maps its keys again.
+     */
+    protected function refreshApplication()
+    {
+        JsonData::flush();
+
+        parent::refreshApplication();
+    }
+
+    protected function tearDown(): void
+    {
+        // The registry of keys and the media handler's callbacks are static
+        JsonData::flush();
+        if (class_exists(MediaReferences::class) && interface_exists(Media::class)) {
+            MediaReferences::ingestUsing(null);
+            MediaReferences::allowUsing(null);
+        }
+
+        parent::tearDown();
     }
 
     /**
