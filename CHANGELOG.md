@@ -12,6 +12,10 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 - CI runs the test suite on PostgreSQL 17, where the JSON fixtures' columns are `jsonb` ([#87](https://github.com/folkloreinc/laravel-folklore/issues/87)).
 
+### Changed
+
+- `folklore/laravel-mediatheque` below 2.0.0-alpha.7 conflicts with the package: the medias and pages modules need its `HasMedias` (alpha.6) and its migrations that run on MySQL (alpha.7), and `suggest` didn't enforce a version.
+
 ### Fixed
 
 - The base repository passes its `TEntity` to the `Entities` and `QueriesEntities` contracts. A repository contract typed on its entity (`@extends Entities<UserEntity>`) and the base class (`@extends Entities<User, UserEntity>`) no longer conflict in static analysis, and `findById()`, `update()`, `create()` and `queryEntities()` return `TEntity`.
