@@ -8,13 +8,20 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+## [2.0.0-alpha.2] - 2026-10-23
+
+Checks for the pilot's database, and docs: no new APIs ([roadmap](docs/roadmap.md#alpha-2-checks-for-the-pilots-database), [#89](https://github.com/folkloreinc/laravel-folklore/issues/89)). The `Entities` contract stays as it is ([#83](https://github.com/folkloreinc/laravel-folklore/issues/83)).
+
+### Breaking changes
+
+- `folklore/laravel-mediatheque` below 2.0.0-alpha.7 conflicts with the package: the medias and pages modules need its `HasMedias` (alpha.6) and its migrations that run on MySQL (alpha.7), and `suggest` didn't enforce a version. A project on an older mediatheque updates it with this package.
+
 ### Added
 
 - CI runs the test suite on PostgreSQL 17, where the JSON fixtures' columns are `jsonb` ([#87](https://github.com/folkloreinc/laravel-folklore/issues/87)).
 
 ### Changed
 
-- `folklore/laravel-mediatheque` below 2.0.0-alpha.7 conflicts with the package: the medias and pages modules need its `HasMedias` (alpha.6) and its migrations that run on MySQL (alpha.7), and `suggest` didn't enforce a version.
 - The [roadmap](docs/roadmap.md) gets two alphas before the Panneau adapter, for what the pilot needs on alpha 1: alpha 2 adds checks for its database, alpha 3 moves its JSON references onto the cast. The Panneau adapter and the rest of the medias module move to alpha 4, the pages module and the Panneau page fields to alpha 5 ([#89](https://github.com/folkloreinc/laravel-folklore/issues/89)).
 
 ### Fixed
@@ -81,5 +88,6 @@ The core and `JsonDataCast`, and the medias module on `laravel-mediatheque` 2 an
 
 - `make:entity` generated an entity and a repository that implemented themselves instead of their contracts, so they didn't load.
 
-[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.1...v2.x
+[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.2...v2.x
+[2.0.0-alpha.2]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.2
 [2.0.0-alpha.1]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.1
