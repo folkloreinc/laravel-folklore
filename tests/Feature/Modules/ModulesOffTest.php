@@ -10,10 +10,9 @@ use Folklore\Contracts\Repositories\Users;
 use Folklore\Contracts\Services\Google\Maps;
 use Folklore\Contracts\Site\Factory as SiteFactory;
 use Folklore\Http\Middleware\LocalMiddleware;
-use Folklore\Mediatheque\Contracts\Models\Media as MediaContract;
-use Folklore\Models\Media;
+use Folklore\Mediatheque\Models\File as MediathequeFile;
+use Folklore\Mediatheque\Models\Media as MediathequeMedia;
 use Folklore\Repositories\Pages as PagesRepository;
-use Folklore\ServiceProvider;
 use Folklore\Tests\TestCase;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Pagination\Paginator;
@@ -85,12 +84,10 @@ class ModulesOffTest extends TestCase
         $this->assertFalse($this->app->bound(Blocks::class));
     }
 
-    public function test_the_mediatheque_models_are_not_rebound()
+    public function test_the_mediatheque_models_are_left_as_they_are()
     {
-        // Registered again, after laravel-mediatheque's provider, which binds its own model
-        $this->app->register(ServiceProvider::class, true);
-
-        $this->assertNotInstanceOf(Media::class, $this->app->make(MediaContract::class));
+        $this->assertSame(MediathequeMedia::class, $this->app['config']->get('mediatheque.models.media'));
+        $this->assertSame(MediathequeFile::class, $this->app['config']->get('mediatheque.models.file'));
     }
 
     public function test_no_site_manager_and_no_google_service_is_bound()

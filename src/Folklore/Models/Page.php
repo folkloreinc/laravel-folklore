@@ -8,7 +8,7 @@ use Folklore\Contracts\Entities\Page as PageContract;
 use Folklore\Contracts\Entities\ToEntity;
 use Folklore\Eloquent\JsonDataCast;
 use Folklore\Entities\Page as PageEntity;
-use Folklore\Mediatheque\Support\Traits\HasMedias;
+use Folklore\Mediatheque\Concerns\HasMedias;
 use Folklore\Models\Concerns\SluggableWithFallback;
 use Folklore\Support\Concerns\HasTypedEntity;
 use Illuminate\Database\Eloquent\Model;

@@ -8,8 +8,8 @@ class DocumentMetadata extends MediaMetadata implements DocumentMetadataContract
 {
     public function pagesCount(): ?int
     {
-        $metadata = $this->getMetadatas()->get('pages_count');
+        $pagesCount = $this->value('pages_count');
 
-        return ! is_null($metadata) ? $metadata->getValue() : null;
+        return is_numeric($pagesCount) ? (int) $pagesCount : null;
     }
 }

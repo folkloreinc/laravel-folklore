@@ -3,6 +3,7 @@
 namespace Folklore\Tests\Feature;
 
 use Folklore\Eloquent\JsonDataCast;
+use Folklore\Models\Media;
 use Folklore\Tests\TestCase;
 
 class PostsTest extends TestCase
@@ -12,6 +13,7 @@ class PostsTest extends TestCase
         parent::setUp();
 
         $this->artisan('migrate', ['--database' => 'testbench']);
+        $this->migrateMediatheque();
         $this->artisan('migrate', [
             '--database' => 'testbench',
             '--path' => __DIR__.'/../migrations',
@@ -31,8 +33,8 @@ class PostsTest extends TestCase
 
     public function test_create_post()
     {
-        $media = media(public_path('folklore.png'));
-        $media->save();
+        $media = new Media;
+        $media->forceFill(['type' => 'image', 'name' => 'folklore', 'status' => 'ready', 'visibility' => 'public'])->save();
         $post = new Post;
         $post->data = [
             'image' => $media,

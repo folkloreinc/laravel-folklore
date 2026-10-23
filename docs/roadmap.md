@@ -27,7 +27,7 @@ Tracking issues: [#1](https://github.com/folkloreinc/laravel-folklore/issues/1) 
 
 What both pilots need first: Niche's brand images, and the contests platform before it rewrites its JSON data.
 
-- [x] Composer: the core requires only `illuminate/*`; the Folklore packages, Fortify, Guzzle, `google/apiclient`, `parsecsv` and `pubnub` move to `suggest` ([decisions/0002](decisions/0002-core-and-modules.md)). `google/apiclient` and Panneau 1.x stay in `require-dev` for the 1.x code still in the package: Places until it moves to Laravel's HTTP client, the Panneau 1.x fields until alpha 3. A CI job runs the core's tests without the modules' packages
+- [x] Composer: the core requires only `illuminate/*`; the Folklore packages, Fortify, Guzzle, `google/apiclient`, `parsecsv` and `pubnub` move to `suggest` ([decisions/0002](decisions/0002-core-and-modules.md)). `google/apiclient` stays in `require-dev` for Places, until it moves to Laravel's HTTP client. A CI job runs the core's tests without the modules' packages
 - [x] Modules switched in `config/site.php`, all off by default; a module that is on checks its packages ([architecture.md](architecture.md#configuration-and-modules)); modules that alpha 1 doesn't port yet stay off and don't load their 1.x dependencies
 - [ ] Contracts without Panneau 1.x; optional typed base entity; typed query next to `get()`; PHPDoc types on the 1.x methods
 - [ ] Global query context: `withGlobalQuery()`, default resolver ([decisions/0004](decisions/0004-global-query-context.md))
@@ -41,24 +41,27 @@ What both pilots need first: Niche's brand images, and the contests platform bef
   - [ ] recursive wildcard `**`
   - [ ] repositories with several JSON columns
   - [ ] `folklore:json-references:rewrite`
-- [ ] Medias module, references only: the `media` and `medias` keys and `MediaReferences` on `laravel-mediatheque ^2.0@alpha` ([decisions/0008](decisions/0008-media-references.md))
-- [ ] The 1.1.8 characterization tests of `JsonDataCast` pass unchanged
+- [x] Medias module on `laravel-mediatheque ^2.0@alpha` (2.0.0-alpha.7: `HasMedias` since alpha.6, migrations that run on MySQL since alpha.7) and `laravel-image ^2.0@alpha`, moved from alpha 2:
+  - [x] `Media` and `MediaFile` models on the mediatheque's, set in `config('mediatheque.models')` unless the site sets its own; the package no longer rebinds the mediatheque's model contracts
+  - [x] `Entities\Media`, `Image`, `ImageSize`, `MediaFile` and the metadata entities on the mediatheque's contracts; image sizes are `laravel-image` presets (`Image::for($media)->preset(...)->variant()`); protected properties kept
+  - [x] `createFromFile` and `updateFromFile` through `Mediatheque::ingest()` and `replaceOriginal()`; the download from a URL, with its limits, stays here
+  - [x] the pages models and the JSON media sync on the mediatheque's `HasMedias`, by handle ([json-data.md](json-data.md#syncing))
+- [ ] Medias module, references: the `media` and `medias` keys and `MediaReferences` ([decisions/0008](decisions/0008-media-references.md))
+- [x] Panneau 1.x removed: its fields and resources, and `folklore/laravel-panneau` 1.x
+- [ ] Panneau 5 plugin, moved from alpha 3: `ResourceRepository` adapter on the typed query, `scope()`, the `Page`, `Pages`, `Blocks` and `PageSlug` fields and their JavaScript ([decisions/0011](decisions/0011-panneau-plugin.md)); `laravel-panneau`'s architecture updated for the adapter
+- [ ] The 1.1.8 characterization tests of `JsonDataCast` pass unchanged, but one: a string that isn't an id is no longer synced to the media pivot
 - [ ] Niche replaces its prototype with `^2.0@alpha`
 
-## Alpha 2: medias
+## Alpha 2: the rest of the medias module
 
-- [ ] `Entities\Media`, `Image` and `ImageSize` on the mediatheque's contracts and `laravel-image` 2, with their protected properties
-- [ ] `MediaResource` on the mediatheque's canonical resource, with the `legacy` shape
-- [ ] `createFromFile` and `createFromPath` through `Mediatheque::ingest()`; URL download moved to the mediatheque
-- [ ] Models declared in `config('mediatheque.models')`
+Once `laravel-mediatheque` 2 has them:
 
-## Alpha 3: pages and the Panneau 5 plugin
+- [ ] `MediaResource` on the mediatheque's canonical resource, with the `legacy` shape (its alpha 2)
+- [ ] The download from a URL moved to the mediatheque, behind its SSRF guard (its alpha 3)
 
-Must ship before Panneau 5's betas end ([laravel-panneau#35](https://github.com/folkloreinc/laravel-panneau/issues/35)).
+## Alpha 3: pages
 
 - [ ] Pages module: blocks in the page's JSON, type registry, configurable route names ([decisions/0009](decisions/0009-pages-and-blocks.md))
-- [ ] Panneau plugin: `ResourceRepository` adapter on the typed query, `scope()`, the `Page`, `Pages`, `Blocks` and `PageSlug` fields and their JavaScript ([decisions/0011](decisions/0011-panneau-plugin.md))
-- [ ] `laravel-panneau`'s architecture updated for the adapter
 
 ## Beta: upgrade path
 
@@ -93,10 +96,9 @@ To settle before alpha 1 ships:
 
 - **Scope of the default handler:** resolve unmapped keys through the owner's relation, as 1.x did, or always by column, with scoping left to `allows()` ([json-data.md](json-data.md#batch-resolution)).
 - **`resolveMany()` signature:** references, as in the #56 design, or identifiers with a context, as in [json-data.md](json-data.md#handlers).
-- **Syncing to `medias_pivot`** without detaching media attached otherwise ([json-data.md](json-data.md#syncing)).
 - **Media ingested by a save that fails outside a transaction:** whether the mediatheque prunes media that were never used, through its usage graph ([json-data.md](json-data.md#when-the-save-fails-afterwards)).
 
 Later:
 
-- Where the Panneau plugin's JavaScript lives: `folklore-js` or this repository (alpha 3).
+- Where the Panneau plugin's JavaScript lives: `folklore-js` or this repository (alpha 1).
 - Whether a 1.2 accepts `^1.1|^2.0` of the mediatheque and `laravel-image`, so that sites upgrade them before this package (decided at the mediatheque's beta).

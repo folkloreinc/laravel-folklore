@@ -2,6 +2,8 @@
 
 namespace Folklore\Tests;
 
+use Folklore\Image\ImageServiceProvider;
+use Folklore\Mediatheque\Console\InstallCommand;
 use Folklore\ServiceProvider;
 use Illuminate\Foundation\Application;
 use Orchestra\Testbench\TestCase as BaseTestCase;
@@ -60,6 +62,17 @@ class TestCase extends BaseTestCase
     }
 
     /**
+     * Runs laravel-mediatheque 2's migrations, which a site publishes with
+     * `mediatheque:install`: the media, their files and `medias_pivot`.
+     */
+    protected function migrateMediatheque(): void
+    {
+        foreach (InstallCommand::migrations() as $migration) {
+            $this->artisan('migrate', ['--database' => 'testbench', '--path' => $migration, '--realpath' => true]);
+        }
+    }
+
+    /**
      * SQLite in memory by default. Set DB_DRIVER to `mysql`, with DB_HOST,
      * DB_PORT, DB_DATABASE, DB_USERNAME and DB_PASSWORD, to run the tests
      * against a MySQL server, as CI does.
@@ -91,10 +104,12 @@ class TestCase extends BaseTestCase
 
     protected function getPackageProviders($app)
     {
-        // laravel-mediatheque is only installed for the modules' tests
-        return class_exists(\Folklore\Mediatheque\ServiceProvider::class)
-            ? [ServiceProvider::class, \Folklore\Mediatheque\ServiceProvider::class]
-            : [ServiceProvider::class];
+        // laravel-mediatheque and laravel-image are only installed for the modules' tests
+        return array_values(array_filter([
+            ServiceProvider::class,
+            \Folklore\Mediatheque\ServiceProvider::class,
+            ImageServiceProvider::class,
+        ], fn (string $provider) => class_exists($provider)));
     }
 
     protected function getPackageAliases($app)

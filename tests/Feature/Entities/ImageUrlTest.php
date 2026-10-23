@@ -2,122 +2,131 @@
 
 namespace Folklore\Tests\Feature\Entities;
 
-use Folklore\Contracts\Entities\Image as ImageContract;
-use Folklore\Contracts\Entities\ImageMetadata as ImageMetadataContract;
-use Folklore\Contracts\Entities\MediaFile as MediaFileContract;
-use Folklore\Entities\Image as ImageEntity;
+use Folklore\Entities\Image;
 use Folklore\Entities\ImageSize;
-use Folklore\Image\ServiceProvider as ImageServiceProvider;
-use Folklore\Models\Media as MediaModel;
+use Folklore\Image\Facades\Image as ImageFacade;
+use Folklore\Mediatheque\Models\File;
+use Folklore\Models\Media;
 use Folklore\Tests\TestCase;
-use Illuminate\Support\Collection;
 
+/**
+ * The sizes of an image are laravel-image 2's presets, rendered from the media.
+ */
 class ImageUrlTest extends TestCase
 {
     protected function getEnvironmentSetUp($app)
     {
         parent::getEnvironmentSetUp($app);
 
-        $app['config']->set('app.image_url', 'https://images.example.com/');
+        $app['config']->set('image.strict', false);
+        $app['config']->set('image.presets', [
+            'thumbnail' => ['width' => 200, 'height' => 200],
+            'card' => ['width' => 800, 'format' => 'jpeg'],
+        ]);
     }
 
-    protected function getPackageProviders($app)
+    protected function setUp(): void
     {
-        return array_merge(parent::getPackageProviders($app), [ImageServiceProvider::class]);
-    }
+        parent::setUp();
 
-    public function test_an_image_with_filters_uses_the_image_url_format()
-    {
-        $image = $this->makeImage('https://example.com/uploads/photo.jpg');
-
-        $this->assertSame(
-            'https://images.example.com/uploads/photo-filters(large).jpg',
-            $image->setFilters(['large'])->url()
-        );
-        $this->assertSame('https://example.com/uploads/photo.jpg', $image->urlWithoutFilters());
+        $this->migrateMediatheque();
     }
 
     public function test_an_image_without_filters_keeps_its_original_url()
     {
-        $image = $this->makeImage('https://example.com/uploads/photo.jpg');
+        $image = $this->makeImage();
 
-        $this->assertSame('https://example.com/uploads/photo.jpg', $image->url());
+        $this->assertSame($image->urlWithoutFilters(), $image->url());
+        $this->assertStringEndsWith('/photo.jpg', $image->url());
     }
 
-    public function test_an_image_size_adds_its_filter()
+    public function test_an_image_has_a_size_per_preset()
     {
-        $size = new ImageSize(
-            $this->makeImageStub('https://example.com/uploads/photo.jpg', 'image/jpeg'),
-            ['id' => 'large', 'maxWidth' => 1000]
-        );
+        $image = $this->makeImage();
 
-        $this->assertSame('https://images.example.com/uploads/photo-filters(large).jpg', $size->url());
+        $this->assertSame(['thumbnail', 'card'], $image->sizes()->map(fn (ImageSize $size) => $size->id())->all());
     }
 
-    public function test_an_image_size_converts_to_its_format()
+    public function test_a_size_is_the_variant_of_its_preset()
     {
-        $size = new ImageSize(
-            $this->makeImageStub('https://example.com/uploads/photo.jpg', 'image/jpeg'),
-            ['id' => 'large', 'maxWidth' => 1000],
-            'webp',
-            ['grayscale']
-        );
+        $image = $this->makeImage();
+        $card = $image->sizes()->firstWhere(fn (ImageSize $size) => $size->id() === 'card');
+
+        $this->assertSame(ImageFacade::for($image->getModel())->preset('card')->url(), $card->url());
+        $this->assertSame(800, $card->width());
+        $this->assertSame(400, $card->height());
+        $this->assertSame('image/jpeg', $card->mime());
+    }
+
+    public function test_a_size_can_be_in_another_format()
+    {
+        $image = $this->makeImage();
+        $size = new ImageSize($image, 'card', 'webp');
+
+        $this->assertSame(ImageFacade::for($image->getModel())->preset('card')->webp()->url(), $size->url());
+        $this->assertSame('image/webp', $size->mime());
+    }
+
+    public function test_a_filter_with_a_preset_uses_its_url()
+    {
+        $image = $this->makeImage();
 
         $this->assertSame(
-            'https://images.example.com/uploads/photo-filters(grayscale-large).jpg.webp',
-            $size->url()
+            ImageFacade::for($image->getModel())->preset('thumbnail')->url(),
+            $image->setFilters('thumbnail')->url(),
+        );
+        $this->assertStringEndsWith('/photo.jpg', $image->urlWithoutFilters());
+    }
+
+    public function test_filters_with_a_width_and_a_format_use_laravel_image()
+    {
+        $image = $this->makeImage();
+
+        $this->assertSame(
+            ImageFacade::for($image->getModel())->width(400)->format('webp')->url(),
+            $image->setFilters(['width' => 400, 'format' => 'webp', 'colorize' => 'red'])->url(),
         );
     }
 
-    public function test_an_original_image_size_without_filters_keeps_its_url()
+    public function test_a_size_of_an_image_without_dimensions_falls_back_to_the_original()
     {
-        $size = new ImageSize(
-            $this->makeImageStub('https://example.com/uploads/photo.jpg', 'image/jpeg'),
-            ['id' => 'original']
-        );
+        $image = $this->makeImage(width: null, height: null);
+        $size = new ImageSize($image, 'card');
 
-        $this->assertSame('https://example.com/uploads/photo.jpg', $size->url());
+        $this->assertSame($image->urlWithoutFilters(), $size->url());
+        $this->assertSame(0, $size->width());
+        $this->assertSame('image/jpeg', $size->mime());
     }
 
-    public function test_an_svg_image_size_keeps_its_url()
+    public function test_a_size_of_an_unknown_preset_falls_back_to_the_original()
     {
-        $size = new ImageSize(
-            $this->makeImageStub('https://example.com/uploads/logo.svg', 'image/svg+xml'),
-            ['id' => 'large', 'maxWidth' => 1000],
-            'webp'
-        );
+        $image = $this->makeImage();
+        $size = new ImageSize($image, 'missing');
 
-        $this->assertSame('https://example.com/uploads/logo.svg', $size->url());
+        $this->assertSame($image->urlWithoutFilters(), $size->url());
+        $this->assertSame(2000, $size->width());
     }
 
-    protected function makeImage(string $url): ImageEntity
+    private function makeImage(?int $width = 2000, ?int $height = 1000): Image
     {
-        $file = $this->createStub(MediaFileContract::class);
-        $file->method('handle')->willReturn('original');
-        $file->method('url')->willReturn($url);
+        $media = new Media;
+        $media->forceFill(['type' => 'image', 'name' => 'Photo', 'status' => 'ready', 'visibility' => 'public'])->save();
+        $file = new File;
+        $file->forceFill([
+            'media_id' => $media->id,
+            'handle' => 'original',
+            'role' => 'original',
+            'source' => 'public',
+            'path' => 'medias/photo.jpg',
+            'mime' => 'image/jpeg',
+            'size' => 1024,
+            'checksum' => hash('sha256', 'photo'),
+            'width' => $width,
+            'height' => $height,
+        ])->save();
 
-        return new class(new MediaModel, collect([$file])) extends ImageEntity
-        {
-            public function __construct(MediaModel $model, protected Collection $testFiles)
-            {
-                parent::__construct($model);
-            }
-
-            public function files(): Collection
-            {
-                return $this->testFiles;
-            }
-        };
-    }
-
-    protected function makeImageStub(string $url, string $mime): ImageContract
-    {
-        $metadata = $this->createStub(ImageMetadataContract::class);
-        $metadata->method('mime')->willReturn($mime);
-
-        $image = $this->createStub(ImageContract::class);
-        $image->method('urlWithoutFilters')->willReturn($url);
-        $image->method('metadata')->willReturn($metadata);
+        $image = $media->fresh('mediaFiles')?->toEntity();
+        $this->assertInstanceOf(Image::class, $image);
 
         return $image;
     }

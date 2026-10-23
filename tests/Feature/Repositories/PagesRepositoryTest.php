@@ -32,6 +32,7 @@ class PagesRepositoryTest extends TestCase
         parent::setUp();
 
         $this->artisan('migrate', ['--database' => 'testbench']);
+        $this->migrateMediatheque();
         foreach (['000000_create_pages_table', '000001_create_blocks_table', '000002_create_blocks_pivot'] as $migration) {
             $this->artisan('migrate', [
                 '--database' => 'testbench',

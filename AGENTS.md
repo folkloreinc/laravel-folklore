@@ -19,7 +19,7 @@ User-facing text belongs in translation keys (`trans('...')`), never hardcoded i
 The shared foundation of the Laravel sites built by Folklore. It is a toolbox:
 
 - **Core**, used by every site: entities and repositories (`src/Folklore/Contracts`, `src/Folklore/Entities`, `src/Folklore/Repositories`), `JsonDataCast` (`src/Folklore/Eloquent`), pages and blocks, medias (built on `folklore/laravel-mediatheque`), users and the `repository` auth provider.
-- **Optional modules**, available "just in case": Customer.io, Google (Maps, Places, Drive), the PubNub broadcaster, PubSubHubbub, organisations, Panneau fields and resources, view composers, `make:*` generators.
+- **Optional modules**, available "just in case": Customer.io, Google (Maps, Places, Drive), the PubNub broadcaster, PubSubHubbub, organisations, the Panneau 5 plugin, view composers, `make:*` generators.
 
 ## Working rules
 
@@ -63,7 +63,7 @@ A tag that fails the checks publishes nothing: delete it (`git push origin :refs
 - Modules: `tests/TestCase.php` turns on every module but PubNub before the package registers; a test class overrides `modules()` to choose. Tests of the core, which must pass without the modules' packages, are in the `core` group (`#[Group('core')]`).
 - Format code: `composer format` (Laravel Pint, `laravel` preset, see `pint.json`); check it with `composer lint`.
 - Static analysis: `composer analyse` (Larastan at the maximum level, see `phpstan.neon`). The errors of the 1.x code are listed in `phpstan-baseline.neon`: never add new errors to it, fix them instead. New code passes the maximum level without a baseline entry. When a change fixes baselined errors, regenerate it with `vendor/bin/phpstan analyse --generate-baseline --memory-limit=2G`. If Larastan reports unmatched baseline entries after a dependency update, refresh Testbench's package discovery (`vendor/bin/testbench package:discover`) and clear the result cache (`vendor/bin/phpstan clear-result-cache`) before regenerating.
-- CI (GitHub Actions): `.github/workflows/tests.yml` runs the tests on PHP 8.3 to 8.5 × Laravel 12 and 13 with SQLite, on PHP 8.3 and 8.5 × Laravel 13 without the packages of the modules (the `core` group only), and on PHP 8.4 × Laravel 12 and 13 with laravel-panneau 1.3 and with MySQL 8.4, and on PHP 8.4 × Laravel 13 with the lowest accepted Guzzle 7 and 8 releases; `.github/workflows/code-quality.yml` runs `composer validate`, Pint and Larastan.
+- CI (GitHub Actions): `.github/workflows/tests.yml` runs the tests on PHP 8.3 to 8.5 × Laravel 12 and 13 with SQLite, on PHP 8.3 and 8.5 × Laravel 13 without the packages of the modules (the `core` group only), and on PHP 8.4 × Laravel 12 and 13 with MySQL 8.4, and on PHP 8.4 × Laravel 13 with the lowest accepted Guzzle 7 and 8 releases; `.github/workflows/code-quality.yml` runs `composer validate`, Pint and Larastan.
 - The commit that applied Pint to the whole codebase is listed in `.git-blame-ignore-revs`; run `git config blame.ignoreRevsFile .git-blame-ignore-revs` to skip it in `git blame`.
 - Layout: `src/Folklore` (PSR-4, namespace `Folklore\`), `src/migrations`, `src/stubs`, `tests`.
 - 2.0 is developed on `v2.x`; 1.x fixes go to `v1.1`.

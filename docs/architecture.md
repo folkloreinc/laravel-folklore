@@ -63,15 +63,15 @@ Modules are turned on in `config/site.php`, which 1.x already uses (`site.medias
 
   | Module | Needs |
   |---|---|
-  | `medias` | `folklore/laravel-mediatheque`, `folklore/laravel-image` |
-  | `pages` | `folklore/laravel-mediatheque` (its models use `HasMedias`), `cviebrock/eloquent-sluggable`, `folklore/laravel-locale` |
+  | `medias` | `folklore/laravel-mediatheque` 2, `folklore/laravel-image` 2 |
+  | `pages` | `folklore/laravel-mediatheque` 2 (its models use `HasMedias`), `cviebrock/eloquent-sluggable`, `folklore/laravel-locale` |
   | `auth` | `laravel/fortify` |
   | `pubnub` | `pubnub/pubnub` |
 
   Google Places still needs `google/apiclient` when it is used, until it moves to Laravel's HTTP client.
 - The modules use parts of Laravel that the core doesn't require (HTTP, routing, auth, mail, broadcasting, views, and `Foundation` for the auth module's `User` model): a Laravel application has them.
 - For now, the package's service provider registers each module's part. A module gets its own service provider when it gets its namespace, with its alpha.
-- The panneau module, for the Panneau 5 plugin, comes in alpha 3. The Panneau 1.x fields and resources boot nothing: sites reference them.
+- The panneau module, for the Panneau 5 plugin, comes later in alpha 1. The Panneau 1.x fields and resources are removed.
 - `folklore:upgrade` writes the modules an upgraded site uses into its config. Until it exists (beta), an upgraded site turns them on by hand.
 
 ## Entities
@@ -137,12 +137,13 @@ The context is merged into the params, as in 1.x: defaults, then the resolver's 
 
 On `laravel-mediatheque` 2 and `laravel-image` 2 ([decisions/0008](decisions/0008-media-references.md)).
 
-- **Alpha 1:** the `media` and `medias` reference keys and their handler, `MediaReferences`.
-- **Alpha 2:**
-  - `Entities\Media`, `Image` and `ImageSize` delegate to the mediatheque's contracts and to `Image::for($media)->preset(...)->variant()`. Their protected properties are kept.
-  - `MediaResource` delegates to the mediatheque's canonical resource, with its `legacy` shape for upgraded sites.
-  - `createFromFile` and `createFromPath` go through `Mediatheque::ingest()`. Downloading from a URL, with its host and size limits, moves to `laravel-mediatheque` ([laravel-mediatheque#1](https://github.com/folkloreinc/laravel-mediatheque/issues/1)).
-  - Sites declare their models in `config('mediatheque.models')`; the package no longer rebinds the mediatheque's model contracts.
+- **Models:** `Models\Media` and `Models\MediaFile` extend the mediatheque's. The module sets them in `config('mediatheque.models')` when the site keeps the mediatheque's defaults; a site with its own models sets them there. The package no longer rebinds the mediatheque's model contracts.
+- **Entities:** `Entities\Media`, `Image`, `MediaFile` and the metadata entities read the mediatheque's contracts (`original()`, `files()`, `metadata()`), and keep their 1.x contracts and protected properties. `id()` stays the internal id, which `medias://` references and the 1.x JSON shape use; `uid()` gives the public one.
+- **Image sizes** are `laravel-image` 2 presets (`config('image.presets')`): one `ImageSize` per preset, with the variant's URL, dimensions and type (`Image::for($media)->preset(...)->variant()`). An image that `laravel-image` can't render (no dimensions, an unknown preset) falls back to its original's URL. `setFilters()` is deprecated, and only understands a preset name, `width`, `height`, `fit`, `format` and `quality`.
+- **Creating media:** `createFromFile` goes through `Mediatheque::ingest()`, `updateFromFile` through `replaceOriginal()`. Downloading from a URL, with its host and size limits, stays here until `laravel-mediatheque` imports URLs behind its SSRF guard.
+- **JSON references** sync into the mediatheque's `medias_pivot` under their own handle ([json-data.md](json-data.md#syncing)).
+- **Next, in alpha 1:** the `media` and `medias` reference keys and their handler, `MediaReferences`.
+- **Alpha 2:** `MediaResource` on the mediatheque's canonical resource, once it has one, with its `legacy` shape.
 
 ## Pages module
 
@@ -206,10 +207,10 @@ The module namespaces are named with the contracts. 1.x classes that move into a
 | Package | 2.0.0 | Alpha 1 |
 |---|---|---|
 | `illuminate/console`, `contracts`, `database`, `pagination`, `support` `^12.69\|^13.30` | Required | Required |
-| `folklore/laravel-mediatheque`, `folklore/laravel-image` | `^2.0`, suggested (medias module) | `^1.1`, suggested: the medias module is ported in alpha 2 |
+| `folklore/laravel-mediatheque`, `folklore/laravel-image` | `^2.0`, suggested (medias module) | `^2.0@alpha`, suggested |
 | `folklore/laravel-locale ^8.1`, `cviebrock/eloquent-sluggable` | Suggested (pages module) | Same |
 | `laravel/fortify` | Suggested (auth module) | Same |
-| `folklore/laravel-panneau` | `^5.0`, suggested (Panneau plugin) | 1.x, suggested, for the 1.x fields until alpha 3 |
+| `folklore/laravel-panneau` | `^5.0`, suggested (Panneau plugin) | Not yet: the Panneau 1.x fields are removed, the plugin comes later in alpha 1 |
 | `guzzlehttp/guzzle`, `parsecsv/php-parsecsv`, `pubnub/pubnub` | Suggested (services) | Same |
 | `google/apiclient` | Removed | Suggested, for Places until it moves to Laravel's HTTP client |
 

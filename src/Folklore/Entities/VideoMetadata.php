@@ -8,28 +8,16 @@ class VideoMetadata extends MediaMetadata implements VideoMetadataContract
 {
     public function width(): int
     {
-        return once(function () {
-            $metadata = $this->getMetadatas()->get('width');
-
-            return ! is_null($metadata) ? $metadata->getValue() : 0;
-        });
+        return (int) ($this->getOriginalFile()?->width() ?? $this->number('width') ?? 0);
     }
 
     public function height(): int
     {
-        return once(function () {
-            $metadata = $this->getMetadatas()->get('height');
-
-            return ! is_null($metadata) ? $metadata->getValue() : 0;
-        });
+        return (int) ($this->getOriginalFile()?->height() ?? $this->number('height') ?? 0);
     }
 
     public function duration(): float
     {
-        return once(function () {
-            $metadata = $this->getMetadatas()->get('duration');
-
-            return ! is_null($metadata) ? $metadata->getValue() : 0;
-        });
+        return (float) ($this->getOriginalFile()?->duration() ?? $this->number('duration') ?? 0);
     }
 }

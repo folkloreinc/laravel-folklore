@@ -10,9 +10,10 @@ use Folklore\Contracts\Repositories\Users;
 use Folklore\Contracts\Services\Google\Maps;
 use Folklore\Contracts\Site\Factory as SiteFactory;
 use Folklore\Exceptions\ModuleRequirementMissing;
-use Folklore\Mediatheque\Contracts\Models\Media as MediaContract;
 use Folklore\Models\Media;
+use Folklore\Models\MediaFile;
 use Folklore\ServiceProvider;
+use Folklore\Tests\Feature\Modules\Fixtures\SiteMedia;
 use Folklore\Tests\TestCase;
 use Illuminate\Routing\ResponseFactory;
 use Illuminate\Routing\UrlGenerator;
@@ -29,9 +30,20 @@ class ModulesOnTest extends TestCase
      */
     private ?array $enabled = null;
 
+    private ?string $siteMediaModel = null;
+
     protected function modules(): array
     {
         return $this->enabled ?? parent::modules();
+    }
+
+    protected function resolveApplicationConfiguration($app)
+    {
+        parent::resolveApplicationConfiguration($app);
+
+        if (! is_null($this->siteMediaModel)) {
+            $app['config']->set('mediatheque.models.media', $this->siteMediaModel);
+        }
     }
 
     public function test_the_config_lists_every_module()
@@ -52,9 +64,8 @@ class ModulesOnTest extends TestCase
 
     public function test_each_module_registers_its_services()
     {
-        // Registered again, after laravel-mediatheque's provider, which binds its own model
-        $this->app->register(ServiceProvider::class, true);
-        $this->assertInstanceOf(Media::class, $this->app->make(MediaContract::class));
+        $this->assertSame(Media::class, $this->app['config']->get('mediatheque.models.media'));
+        $this->assertSame(MediaFile::class, $this->app['config']->get('mediatheque.models.file'));
         $this->assertTrue($this->app->bound(SiteFactory::class));
         $this->assertTrue($this->app->bound(Maps::class));
         $this->assertTrue(ResponseFactory::hasMacro('pixel'));
@@ -65,6 +76,15 @@ class ModulesOnTest extends TestCase
         $commands = array_keys(Artisan::all());
         $this->assertContains('assets:view', $commands);
         $this->assertContains('users:create', $commands);
+    }
+
+    public function test_the_medias_module_keeps_the_models_a_site_sets()
+    {
+        $this->siteMediaModel = SiteMedia::class;
+        $this->refreshApplication();
+
+        $this->assertSame(SiteMedia::class, $this->app['config']->get('mediatheque.models.media'));
+        $this->assertSame(MediaFile::class, $this->app['config']->get('mediatheque.models.file'));
     }
 
     public function test_a_module_turned_on_alone_registers_only_its_own_services()
