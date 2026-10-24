@@ -8,7 +8,7 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
-JSON data comes from [`folklore/laravel-json-data`](https://github.com/folkloreinc/laravel-json-data), which the core requires ([decision 0021](docs/decisions/0021-json-data-package.md), [#108](https://github.com/folkloreinc/laravel-folklore/issues/108)). Sites change nothing: the 1.x names, declarations and macros keep working on top of it.
+JSON data comes from [`folklore/laravel-json-data`](https://github.com/folkloreinc/laravel-json-data), which the core requires (`^1.0@alpha`, from [v1.0.0-alpha.1](https://github.com/folkloreinc/laravel-json-data/releases/tag/v1.0.0-alpha.1); [decision 0021](docs/decisions/0021-json-data-package.md), [#108](https://github.com/folkloreinc/laravel-folklore/issues/108)). Sites change nothing: the 1.x names, declarations and macros keep working on top of it.
 
 ### Changed
 

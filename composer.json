@@ -24,15 +24,9 @@
             "role": "Developer"
         }
     ],
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/folkloreinc/laravel-json-data"
-        }
-    ],
     "require": {
         "php": "^8.3",
-        "folklore/laravel-json-data": "dev-feature/1-extract as 1.0.0-alpha.1",
+        "folklore/laravel-json-data": "^1.0@alpha",
         "illuminate/console": "^12.69|^13.30",
         "illuminate/contracts": "^12.69|^13.30",
         "illuminate/database": "^12.69|^13.30",
