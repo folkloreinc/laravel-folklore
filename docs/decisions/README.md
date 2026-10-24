@@ -2,7 +2,7 @@
 
 One file per decision. A decision is not edited once accepted: a later one replaces it and links to it. A proposed decision can still change before it is accepted.
 
-Decisions 0002 to 0004 and 0009 to 0012 come from the plan of 2.0 ([#56](https://github.com/folkloreinc/laravel-folklore/issues/56#issuecomment-6271513875), 2026-10-19). Decisions 0005 to 0008 come from the `JsonDataCast` design of 2026-10-22 ([#56](https://github.com/folkloreinc/laravel-folklore/issues/56#issuecomment-6344885526)), which updated decision 4 of the plan. Decisions 0013 to 0015 settle open points of phase 0, 0016 to 0019 ones of alpha 1, and 0020 and 0021 come from the schema of JSON columns ([#105](https://github.com/folkloreinc/laravel-folklore/issues/105)).
+Decisions 0002 to 0004 and 0009 to 0012 come from the plan of 2.0 ([#56](https://github.com/folkloreinc/laravel-folklore/issues/56#issuecomment-6271513875), 2026-10-19). Decisions 0005 to 0008 come from the `JsonDataCast` design of 2026-10-22 ([#56](https://github.com/folkloreinc/laravel-folklore/issues/56#issuecomment-6344885526)), which updated decision 4 of the plan. Decisions 0013 to 0015 settle open points of phase 0, 0016 to 0019 ones of alpha 1, and 0020 and 0021 come from the schema of JSON columns ([#105](https://github.com/folkloreinc/laravel-folklore/issues/105), now [laravel-json-data#6](https://github.com/folkloreinc/laravel-json-data/issues/6)).
 
 | # | Decision | Status |
 |---|---|---|
@@ -26,7 +26,7 @@ Decisions 0002 to 0004 and 0009 to 0012 come from the plan of 2.0 ([#56](https:/
 | [0018](0018-panneau-plugin-php-only.md) | The Panneau plugin is PHP only | Accepted |
 | [0019](0019-media-of-failed-saves.md) | Media ingested by a failed save outside a transaction aren't pruned | Accepted |
 | [0020](0020-json-schema.md) | A fluent schema describes each JSON column | Accepted |
-| [0021](0021-json-data-package.md) | JSON data moves to its own package | Accepted |
+| [0021](0021-json-data-package.md) | JSON data moves to its own package | Accepted; open points settled with the extraction ("Since then") |
 
 Template:
 

@@ -69,5 +69,14 @@ Keeping the code in this package under its own namespace, with a boundary checke
 
 ## Open questions
 
-- The names of the hooks (`JsonData::declareUsing()`, `unwrapUsing()`, `syncUsing()`, `JsonReferencesRewriteCommand::discoverUsing()`). They are proposals until the package's alpha 1, as in [0014](0014-names.md). The package's name and namespace are settled: the repository exists.
-- Whether `MediaReferences` later moves to the mediatheque, as an integration it ships when the package is installed, so that a project gets media references without this package's medias module.
+- Whether `MediaReferences` later moves to the mediatheque, as an integration it ships when the package is installed, so that a project gets media references without this package's medias module ([roadmap.md](../roadmap.md#open-questions)).
+
+## Since then
+
+Settled with the extraction, in 2.0.0-alpha.4 and laravel-json-data's 1.0.0-alpha.1 and alpha.2:
+
+- The names of the hooks are `JsonData::declareUsing()`, `unwrapUsing()`, `syncUsing()` and `JsonReferencesRewriteCommand::discoverUsing()`.
+- The rewrite command is `json-data:rewrite-references`, under the package's name ([laravel-json-data's decision 0022](https://github.com/folkloreinc/laravel-json-data/blob/v1.x/docs/decisions/0022-command-names.md)), not `folklore:json-references:rewrite`.
+- The decisions copied into the package are 0005 to 0007, 0013 and 0016. [0020](0020-json-schema.md) and this decision stay here, and the package links to them.
+- This package requires `^1.0.0-alpha.2`. A site requires the package too until it has a stable release, since a stability flag doesn't apply to the dependencies of a required package.
+- The work isn't tied to the pilot's demo: the pilot moves to the package with this package's 2.0.0-alpha.4.

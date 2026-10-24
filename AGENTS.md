@@ -18,29 +18,29 @@ User-facing text belongs in translation keys (`trans('...')`), never hardcoded i
 
 The shared foundation of the Laravel sites built by Folklore. It is a toolbox:
 
-- **Core**, used by every site: entities and repositories (`src/Folklore/Contracts`, `src/Folklore/Entities`, `src/Folklore/Repositories`), JSON data from `folklore/laravel-json-data` with the 1.x API on top of it (`src/Folklore/Eloquent`: the macros, the adapter of the 1.x declarations, the aliases of the moved classes), pages and blocks, medias (built on `folklore/laravel-mediatheque`), users and the `repository` auth provider.
-- **Optional modules**, available "just in case": Customer.io, Google (Maps, Places, Drive), the PubNub broadcaster, PubSubHubbub, organisations, the Panneau 5 plugin, view composers, `make:*` generators.
+- **Core**, on `illuminate/*` and `folklore/laravel-json-data` only: entities and repositories (`src/Folklore/Contracts`, `src/Folklore/Entities`, `src/Folklore/Repositories`), the global query context, and JSON data from `folklore/laravel-json-data` with the 1.x API on top of it (`src/Folklore/Eloquent`: the macros, the adapter of the 1.x declarations, the aliases of the moved classes).
+- **Opt-in modules**, all off by default in `config/site.php` ([architecture](docs/architecture.md#configuration-and-modules)): `medias` (on `laravel-mediatheque` 2 and `laravel-image` 2), `pages`, `auth` (users and the `repository` auth provider), `http`, `assets`, `customerio`, `google`, `pubnub`, and the Panneau 5 plugin to come. `organisations`, `sites` and `pubsubhubbub` are removed in 2.0.
 
 ## Working rules
 
 - Existing sites depend on this package. Avoid breaking changes: prefer additive, opt-in changes whose defaults keep the current behaviour, and deprecate before removing.
 - A module a site doesn't use must cost it nothing: no side effects at boot, no heavy mandatory dependency.
 - Every change comes with tests (a regression test for each bug fix) and must pass CI before it lands.
-- The roadmap is tracked in [#1](https://github.com/folkloreinc/laravel-folklore/issues/1). Create a sub-issue for an item when you start working on it, and reference it in the PR.
+- The plan of 2.0 is [docs/roadmap.md](docs/roadmap.md); [#113](https://github.com/folkloreinc/laravel-folklore/issues/113) is its index, and [#1](https://github.com/folkloreinc/laravel-folklore/issues/1) tracks 1.x. Create a sub-issue of #113 for an item when you start working on it, and reference it in the PR.
 
-**Branch `v2.x`.** 2.0 is developed on `v2.x`. Read [`docs/`](docs/README.md) first: its architecture and decisions override the 1.x rules in this file wherever they differ. The development rules below apply to `v2.x`; on `v1.1`, see that branch's own `AGENTS.md`.
+**Branch `v2.x`.** 2.0 is developed on `v2.x`, the default branch. Read [`docs/`](docs/README.md) first. The development rules below apply to `v2.x`; on `v1.1`, see that branch's own `AGENTS.md`.
 
 ## Releases
 
 1.x is released from `v1.1`. 2.0 is released from `v2.x` in pre-releases, then 2.0.0, on Packagist:
 
-- **Versions:** `v2.0.0-alpha.N` for each slice of the [roadmap](docs/roadmap.md), then `v2.0.0-beta.N`, `v2.0.0-rc.N` and `v2.0.0`. Until the release candidate, an alpha can break the previous one. Projects require `^2.0@alpha` (or `@beta`, `@rc`). Composer aliases `v2.x` as `2.x-dev`.
+- **Versions:** `v2.0.0-alpha.N` when a part of the [roadmap](docs/roadmap.md) is ready (slices are named by theme, not by alpha number), then `v2.0.0-beta.N`, `v2.0.0-rc.N` and `v2.0.0`. Until the release candidate, an alpha can break the previous one. Projects require `^2.0@alpha` (or `@beta`, `@rc`) and, while `folklore/laravel-json-data` has no stable release, `folklore/laravel-json-data:^1.0@alpha` too: a stability flag doesn't apply to the dependencies of a required package. Composer aliases `v2.x` as `2.x-dev`.
 - **Changelog:** every change that users of an alpha will notice goes in the `[Unreleased]` section of `CHANGELOG.md`, in the same pull request, with breaking changes under **Breaking changes**.
 - **Only from a green commit of `v2.x`:** `.github/workflows/release.yml` runs on `v2.*` tags. It refuses a tag that isn't on `v2.x`, or whose commit doesn't have the `Composer, Pint and Larastan` job and every `PHP …` job of the tests green (`.github/scripts/check-green.sh`). It publishes the GitHub release with the changelog section (`.github/scripts/release-notes.sh`), marked as a pre-release for alpha, beta and RC versions, so 1.x stays the latest release.
 
 Steps:
 
-1. Open a release pull request against `v2.x` that moves the `[Unreleased]` changes to a `## [2.0.0-alpha.1] - YYYY-MM-DD` section, with the **breaking changes since the previous alpha** first, and adds its link at the bottom (`[2.0.0-alpha.1]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.1`). Check the roadmap boxes of the slice.
+1. Open a release pull request against `v2.x` that moves the `[Unreleased]` changes to a `## [2.0.0-alpha.1] - YYYY-MM-DD` section, with the **breaking changes since the previous alpha** first, and adds its link at the bottom (`[2.0.0-alpha.1]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.1`). Check the roadmap boxes of what it ships, with the version.
 2. Merge it, and wait for CI to pass on the merge commit of `v2.x`.
 3. Tag that commit and push the tag:
 

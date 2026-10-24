@@ -1,10 +1,10 @@
 {
     "name": "folklore/laravel-folklore",
-    "description": "",
+    "description": "The shared foundation of Folklore's Laravel sites: entities, repositories, JSON columns with references, and opt-in modules",
     "keywords": [
         "laravel"
     ],
-    "homepage": "http://github.com/Folkloreatelier",
+    "homepage": "https://github.com/folkloreinc/laravel-folklore",
     "license": "MIT",
     "authors": [
         {

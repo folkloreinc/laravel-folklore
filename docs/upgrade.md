@@ -1,6 +1,6 @@
 # Upgrading from 1.1
 
-> **Draft.** This guide is filled as 2.0 lands. The steps and the mapping below are the plan ([decisions/0003](decisions/0003-evolve-in-place.md)); the commands they mention don't exist yet.
+> **Draft.** This guide is filled as 2.0 lands. The steps and the mapping below are the plan ([decisions/0003](decisions/0003-evolve-in-place.md)). `json-data:rewrite-references` exists; `folklore:upgrade` and the Rector rules come with the beta.
 
 2.0 keeps the 1.x class names and their protected API. What it replaces is deprecated until 3.0, so a site can upgrade first and clean up its code afterwards. Sites usually upgrade when they move to Panneau 5, since the Panneau plugin ships with 2.0.
 
@@ -13,7 +13,7 @@
 
 ## Steps
 
-1. **Require the new version:** `composer require folklore/laravel-folklore:^2.0`, and the packages of the modules the site uses (they are suggested, no longer required).
+1. **Require the new version:** `composer require folklore/laravel-folklore:^2.0`, and the packages of the modules the site uses (they are suggested, no longer required). During the pre-releases, require `folklore/laravel-folklore:^2.0@alpha` and `folklore/laravel-json-data:^1.0@alpha` together: a stability flag doesn't apply to the dependencies of a required package, so a site with `minimum-stability: stable` can't install the alphas of `laravel-json-data` otherwise.
 2. **Check the site:** `php artisan folklore:upgrade --check`. It lists the modules the site uses, removed modules it still uses, block data to convert, JSON reference keys that aren't mapped, and deprecated macros.
 3. **Upgrade:** `php artisan folklore:upgrade`. It enables the site's modules in `config/site.php`, sets the media reference key that the site writes (`medias://`), and converts block data. Every module is off by default: until the command exists, list the modules the site uses under `modules` in `config/site.php`, and set `medias.reference_key` to `medias` so that the site keeps writing `medias://12` ([architecture.md](architecture.md#configuration-and-modules)).
 4. **Run the Rector rules.**
@@ -27,7 +27,7 @@
 
 | 1.1 | 2.0 |
 |---|---|
-| Requires the mediatheque, `laravel-image`, Panneau 1.x, Fortify, Guzzle, `google/apiclient`, `parsecsv` | Requires `illuminate/*`; the rest is suggested per module |
+| Requires the mediatheque, `laravel-image`, Panneau 1.x, Fortify, Guzzle, `google/apiclient`, `parsecsv` | Requires `illuminate/*` and `folklore/laravel-json-data`; the rest is suggested per module |
 | Everything boots | Modules boot when enabled in `config/site.php` |
 | `repository` auth provider and Fortify callbacks always registered | Auth module |
 | The mediatheque's model contracts rebound by the package | `config('mediatheque.models')` |
@@ -67,6 +67,6 @@
 
 Stored references don't change. Without `JsonData::enforceMap()`, a key that isn't mapped falls back to the relation of the same name, as in 1.x. See [json-data.md](json-data.md#from-1x).
 
-A site declares nothing new: `getJsonDataRelations()`, `getJsonDataColumnExtract()` and the repositories' `$jsonAttributeFillable` keep working. A model can move one JSON column at a time to a schema (`jsonDataSchema()`, [json-data.md](json-data.md#schemas)); its repository then fills it with `JsonData::fill()`.
+A site declares nothing new: `getJsonDataRelations()`, `getJsonDataColumnExtract()` and the repositories' `$jsonAttributeFillable` keep working, and are deprecated from the beta on, when `folklore:upgrade` can convert them. A model can move one JSON column at a time to a schema (`jsonDataSchema()`, [json-data.md](json-data.md#schemas)); its repository then fills it with `JsonData::fill()`.
 
 The media referenced in JSON data are synced to the mediatheque's pivot under the `json` handle. 1.x wrote those rows without a handle, and the first sync leaves them: remove them before it (`folklore:upgrade` will), or they stay as usages of their media.
