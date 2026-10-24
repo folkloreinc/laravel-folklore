@@ -1,59 +1,38 @@
-# Laravel Panneau
+# laravel-folklore
 
+The shared foundation of the Laravel sites built by [Folklore](https://folkloreinc.ca): entities and repositories over Eloquent models, JSON columns with references to other models (through [`folklore/laravel-json-data`](https://github.com/folkloreinc/laravel-json-data)), and opt-in modules for medias, pages, auth and third-party services.
 
-[![Latest Stable Version](https://poser.pugx.org/folklore/laravel-panneau/v/stable.svg)](https://packagist.org/packages/folklore/laravel-panneau)
-[![Build Status](https://travis-ci.org/Folkloreatelier/laravel-panneau.png?branch=v1-rc)](https://travis-ci.org/Folkloreatelier/laravel-panneau)
-[![Coverage Status](https://coveralls.io/repos/Folkloreatelier/laravel-panneau/badge.svg?branch=v1-rc&service=github)](https://coveralls.io/github/Folkloreatelier/laravel-panneau?branch=v1-rc)
-[![Total Downloads](https://poser.pugx.org/folklore/laravel-panneau/downloads.svg)](https://packagist.org/packages/folklore/laravel-panneau)
+## Versions
+
+| Version | Branch | Status | Requires |
+|---|---|---|---|
+| 2.x | [`v2.x`](https://github.com/folkloreinc/laravel-folklore/tree/v2.x) (default) | In development, released as alphas | PHP 8.3+, Laravel 12 or 13 |
+| 1.x | [`v1.1`](https://github.com/folkloreinc/laravel-folklore/tree/v1.1) | Maintained: fixes and security | PHP 8.3+, Laravel 11 to 13 |
 
 ## Installation
 
-```shell
-composer require folklore/laravel-panneau:dev-v1-rc
-```
-
-### Laravel 5.4 and lower
-
-**1-** Add the service provider to your `app/config/app.php` file
-
-```php
-Folklore\Panneau\PanneauerviceProvider::class,
-```
-
-**2-** Add the facade to your `app/config/app.php` file
-
-```php
-'Panneau' => Folklore\Panneau\Facades\Panneau::class,
-```
-
-### All versions
-
-**1-** Publish the configuration file and public files
+2.x, during its pre-releases:
 
 ```bash
-$ php artisan vendor:publish
+composer require folklore/laravel-folklore:^2.0@alpha folklore/laravel-json-data:^1.0@alpha
 ```
 
-**2-** Add this to `app/Providers/RouteServiceProvider.php`
+`folklore/laravel-json-data` is required by the core. Require it too while it has no stable release: a stability flag doesn't apply to the dependencies of a required package.
 
-```php
-/**
- * Define the routes for the application.
- *
- * @return void
- */
-public function map()
-{
-    $this->mapApiRoutes();
+The modules are off by default and are turned on in `config/site.php`; each one suggests the packages it needs. See [the architecture](docs/architecture.md#configuration-and-modules).
 
-    $this->mapWebRoutes();
+1.x:
 
-    app('panneau')->routes();
-}
+```bash
+composer require folklore/laravel-folklore:^1.1
 ```
 
-**3-** Review the following files:
-- Configuration: `config/panneau.php`
-- Routes: `routes/panneau.php`
-- Views: `resources/views/vendor/panneau/`
-- Assets: `resources/assets/vendor/panneau/`
+## Documentation
+
+- [docs/](docs/README.md): architecture, decisions, the plan of 2.0 ([roadmap](docs/roadmap.md)) and the [upgrade guide](docs/upgrade.md) from 1.1.
+- [CHANGELOG](CHANGELOG.md)
+- [AGENTS.md](AGENTS.md): how to work on this repository.
+
+## License
+
+MIT
