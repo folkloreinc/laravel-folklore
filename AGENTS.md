@@ -26,7 +26,7 @@ The shared foundation of the Laravel sites built by Folklore. It is a toolbox:
 - Existing sites depend on this package. Avoid breaking changes: prefer additive, opt-in changes whose defaults keep the current behaviour, and deprecate before removing.
 - A module a site doesn't use must cost it nothing: no side effects at boot, no heavy mandatory dependency.
 - Every change comes with tests (a regression test for each bug fix) and must pass CI before it lands.
-- The roadmap is tracked in [#1](https://github.com/folkloreinc/laravel-folklore/issues/1). Create a sub-issue for an item when you start working on it, and reference it in the PR.
+- 1.x is tracked in [#1](https://github.com/folkloreinc/laravel-folklore/issues/1), and 2.0 in [#113](https://github.com/folkloreinc/laravel-folklore/issues/113). Create a sub-issue for an item when you start working on it, and reference it in the PR.
 
 ## Development
 
@@ -38,4 +38,4 @@ The shared foundation of the Laravel sites built by Folklore. It is a toolbox:
 - CI (GitHub Actions): `.github/workflows/tests.yml` runs the tests on PHP 8.3 and 8.4 × Laravel 11 to 13 with SQLite, and on PHP 8.4 × Laravel 11 to 13 with laravel-panneau 1.3 and with MySQL 8.4, and on PHP 8.4 × Laravel 13 with the lowest accepted Guzzle 7 and 8 releases; `.github/workflows/code-quality.yml` runs `composer validate`, Pint and Larastan.
 - The commit that applied Pint to the whole codebase is listed in `.git-blame-ignore-revs`; run `git config blame.ignoreRevsFile .git-blame-ignore-revs` to skip it in `git blame`.
 - Layout: `src/Folklore` (namespace `Folklore\`), `src/migrations`, `src/stubs`, `tests`.
-- Active development happens on the `v1.1` branch.
+- `v1.1` is the 1.x branch: fixes and security only, released as `v1.1.N`. 2.0 is developed on `v2.x`, the default branch, with its own `AGENTS.md`; new features go there.
