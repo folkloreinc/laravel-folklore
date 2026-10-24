@@ -5,7 +5,7 @@ Design of `laravel-folklore` 2.0. Each choice is recorded in [decisions/](decisi
 ## Goals
 
 - **The shared foundation of the Folklore Laravel sites**, built on `laravel-mediatheque` 2, `laravel-image` 2 and Panneau 5.
-- **A core with no dependency on the other Folklore packages**, that a new project can adopt alone: entities, repositories, the global query context and `JsonDataCast`.
+- **A core with no dependency on the other Folklore packages**, that a new project can adopt alone: entities, repositories, the global query context and `JsonDataCast`. `JsonDataCast` moves to its own package, `folklore/laravel-json-data`, which the core requires and which depends on no other Folklore package ([decisions/0021](decisions/0021-json-data-package.md)).
 - **Opt-in modules** in the same package, that cost nothing when they are off.
 - **Cheap upgrades:** the sites on 1.1 upgrade without rewriting their repositories and entities. The 1.x API is kept, deprecated, until 3.0.
 - **Typed new code**, checked by Larastan at its maximum level, next to the 1.x signatures that sites override.
@@ -14,7 +14,8 @@ Design of `laravel-folklore` 2.0. Each choice is recorded in [decisions/](decisi
 
 | Concern | Owner |
 |---|---|
-| Entities, repositories, query context, JSON references | This package, core |
+| Entities, repositories, query context | This package, core |
+| JSON references, and the schema of JSON columns | `folklore/laravel-json-data`, required by the core ([decisions/0021](decisions/0021-json-data-package.md)). This package adds the entities, the repositories' JSON columns and media references |
 | Media storage, ingest, renditions, `media://` references, usage graph | `laravel-mediatheque` 2. This package's medias module adapts it to entities and JSON data |
 | Image presets and URLs | `laravel-image` 2, through the medias module |
 | Admin UI and its protocol | Panneau 5. This package ships a plugin: a repository adapter and page fields |
@@ -133,6 +134,8 @@ The context is merged into the params: for lists, defaults, then the resolver's 
 
 `JsonDataCast` keeps its 1.x declaration (`getJsonDataRelations()`) and stored format (`{key}://{identifier}`). 2.0 adds a global registry of reference keys, handlers per key, batch resolution, memoization, a reference listing, a recursive wildcard and a rewrite command. It is specified in [json-data.md](json-data.md), with [decisions 0005 to 0008](decisions/).
 
+It moves to `folklore/laravel-json-data` ([decisions/0021](decisions/0021-json-data-package.md)), with its spec and its decisions. The package declares columns only with `jsonDataSchema()` ([decisions/0020](decisions/0020-json-schema.md)). The 1.x names stay until 3.0: aliases, and a subclass of the cast for the macros. This package keeps the 1.x declarations (`HasJsonDataRelations`, `HasJsonDataColumnExtract`, the macros), the repositories' JSON columns, the media references, and the hooks it registers in the package: the 1.x declarations, entities unwrapped into models, the medias module's sync into the usage graph, and the pages models for the rewrite command.
+
 ## Medias module
 
 On `laravel-mediatheque` 2 and `laravel-image` 2 ([decisions/0008](decisions/0008-media-references.md)).
@@ -193,7 +196,7 @@ src/Folklore/
 ├── Contracts/            core contracts
 ├── Entities/             1.x entities, the typed base entity
 ├── Repositories/         Entities base class, typed query, context
-├── Eloquent/             JsonDataCast, JsonData, JsonReference, handlers
+├── Eloquent/             JsonDataCast, JsonData, JsonReference, handlers (aliases once they move, decisions/0021)
 ├── Medias/               medias module (proposed)
 ├── Pages/                pages module (proposed)
 ├── Auth/                 auth module (proposed)
@@ -210,6 +213,7 @@ The module namespaces are named with the contracts. 1.x classes that move into a
 | Package | 2.0.0 | Alpha 1 |
 |---|---|---|
 | `illuminate/console`, `contracts`, `database`, `pagination`, `support` `^12.69\|^13.30` | Required | Required |
+| `folklore/laravel-json-data` ([decisions/0021](decisions/0021-json-data-package.md)) | `^1.0`, required | `^1.0@alpha`, required, from the first alpha after the extraction |
 | `folklore/laravel-mediatheque`, `folklore/laravel-image` | `^2.0`, suggested (medias module) | `^2.0@alpha`, suggested. `laravel-mediatheque` below 2.0.0-alpha.7 conflicts (since alpha 2) |
 | `folklore/laravel-locale ^8.1`, `cviebrock/eloquent-sluggable` | Suggested (pages module) | Same |
 | `laravel/fortify` | Suggested (auth module) | Same |

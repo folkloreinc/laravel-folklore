@@ -4,6 +4,8 @@ Specification of `JsonDataCast` in 2.0. It ships in alpha 1 ([roadmap.md](roadma
 
 Class and method names are settled in [decisions/0014](decisions/0014-names.md).
 
+This spec moves with the code to `folklore/laravel-json-data` ([decisions/0021](decisions/0021-json-data-package.md)), where it goes on. Here it stays as the spec of the alphas before the extraction.
+
 ## Goals
 
 - Data stored by 1.x keeps working: `relation://id` references, `getJsonDataRelations()`, the column extraction, and entities that read resolved models in `data` (`to_entity(data_get($this->data, 'image.fr'))`).

@@ -1,6 +1,6 @@
 # 0002: A dependency-free core and opt-in modules
 
-- Status: accepted
+- Status: accepted, amended by [0021](0021-json-data-package.md) (JSON data moves to its own package)
 - Date: 2026-10-19
 
 ## Context
