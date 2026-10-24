@@ -8,7 +8,9 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
-JSON data comes from [`folklore/laravel-json-data`](https://github.com/folkloreinc/laravel-json-data), which the core requires (`^1.0.0-alpha.2`, from [v1.0.0-alpha.2](https://github.com/folkloreinc/laravel-json-data/releases/tag/v1.0.0-alpha.2); [decision 0021](docs/decisions/0021-json-data-package.md), [#108](https://github.com/folkloreinc/laravel-folklore/issues/108)). Sites change nothing: the 1.x names, declarations and macros keep working on top of it. Its alpha 2 brings the schema of JSON columns ([decision 0020](docs/decisions/0020-json-schema.md), [#111](https://github.com/folkloreinc/laravel-folklore/issues/111)).
+## [2.0.0-alpha.4] - 2026-10-23
+
+JSON data comes from [`folklore/laravel-json-data`](https://github.com/folkloreinc/laravel-json-data), which the core requires (`^1.0.0-alpha.2`, from [v1.0.0-alpha.2](https://github.com/folkloreinc/laravel-json-data/releases/tag/v1.0.0-alpha.2); [decision 0021](docs/decisions/0021-json-data-package.md), [#108](https://github.com/folkloreinc/laravel-folklore/issues/108)). Sites change nothing: the 1.x names, declarations and macros keep working on top of it. Its alpha 2 brings the schema of JSON columns ([decision 0020](docs/decisions/0020-json-schema.md), [#111](https://github.com/folkloreinc/laravel-folklore/issues/111)) ([roadmap](docs/roadmap.md#alpha-4-json-data-in-its-own-package)).
 
 ### Breaking changes
 
@@ -27,6 +29,7 @@ JSON data comes from [`folklore/laravel-json-data`](https://github.com/folklorei
 - `HasJsonDataRelations`, `HasJsonDataColumnExtract` and the macros reach the cast through `Folklore\Eloquent\LegacyJsonDataDeclarations`, on `JsonData::declareUsing()`. The service provider also plugs in entities (`JsonData::unwrapUsing()`), the sync of the media under the `json` handle (`Folklore\Eloquent\MediaUsagesSync`, on `JsonData::syncUsing()`), and the pages models of the rewrite command.
 - The rewrite command is registered by laravel-json-data's service provider, which this package registers.
 - After a sync, the `medias` relation is unset only when the media were synced, not after the sync of any relation of a model that uses `HasMedias`.
+- The [roadmap](docs/roadmap.md) gets the extraction as alpha 4: the Panneau adapter and the rest of the medias module move to alpha 5, the pages module and the Panneau page fields to alpha 6.
 
 ### Deprecated
 
@@ -131,7 +134,8 @@ The core and `JsonDataCast`, and the medias module on `laravel-mediatheque` 2 an
 
 - `make:entity` generated an entity and a repository that implemented themselves instead of their contracts, so they didn't load.
 
-[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.3...v2.x
+[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.4...v2.x
+[2.0.0-alpha.4]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.4
 [2.0.0-alpha.3]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.3
 [2.0.0-alpha.2]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.2
 [2.0.0-alpha.1]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.1
