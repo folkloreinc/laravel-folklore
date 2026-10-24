@@ -231,12 +231,12 @@ class JsonDataBatchesTest extends JsonDataTestCase
             ['logo' => 'prizeid://'.$second->id],
         );
 
-        $this->artisan('folklore:json-references:rewrite', ['--from' => 'prizeid', '--to' => 'prize', '--model' => [BrandGame::class], '--dry-run' => true])
+        $this->artisan('json-data:rewrite-references', ['--from' => 'prizeid', '--to' => 'prize', '--model' => [BrandGame::class], '--dry-run' => true])
             ->expectsOutputToContain('Dry run')
             ->assertSuccessful();
         $this->assertSame('prizeid://'.$first->id, json_decode((string) DB::table('games')->where('id', $game->id)->value('data'), true)['prizes'][0]['prize']);
 
-        $this->artisan('folklore:json-references:rewrite', ['--from' => 'prizeid', '--to' => 'prize', '--model' => [BrandGame::class]])
+        $this->artisan('json-data:rewrite-references', ['--from' => 'prizeid', '--to' => 'prize', '--model' => [BrandGame::class]])
             ->assertSuccessful();
 
         $data = json_decode((string) DB::table('games')->where('id', $game->id)->value('data'), true);
@@ -251,13 +251,13 @@ class JsonDataBatchesTest extends JsonDataTestCase
     {
         JsonData::map(['prize' => [Prize::class, 'handle'], 'game' => Game::class]);
 
-        $this->artisan('folklore:json-references:rewrite', ['--from' => 'prize', '--to' => 'game'])
+        $this->artisan('json-data:rewrite-references', ['--from' => 'prize', '--to' => 'game'])
             ->expectsOutputToContain('not mapped to the same model')
             ->assertFailed();
-        $this->artisan('folklore:json-references:rewrite', ['--from' => 'prize', '--to' => 'missing'])
+        $this->artisan('json-data:rewrite-references', ['--from' => 'prize', '--to' => 'missing'])
             ->expectsOutputToContain('must be mapped')
             ->assertFailed();
-        $this->artisan('folklore:json-references:rewrite', ['--from' => 'prize'])
+        $this->artisan('json-data:rewrite-references', ['--from' => 'prize'])
             ->assertFailed();
     }
 }

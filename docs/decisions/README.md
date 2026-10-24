@@ -19,13 +19,13 @@ Decisions 0002 to 0004 and 0009 to 0012 come from the plan of 2.0 ([#56](https:/
 | [0011](0011-panneau-plugin.md) | A Panneau 5 plugin, as an opt-in module | Replaced by 0018 |
 | [0012](0012-other-modules.md) | Other modules: kept, deprecated, removed | Accepted |
 | [0013](0013-defer-prepare-until-saving.md) | Prepare JSON references when the model is saved | Accepted |
-| [0014](0014-names.md) | Names of the JSON data and query context API | Accepted, amended by 0021 |
+| [0014](0014-names.md) | Names of the JSON data and query context API | Accepted, amended by 0021 and [laravel-json-data's 0022](https://github.com/folkloreinc/laravel-json-data/blob/v1.x/docs/decisions/0022-command-names.md) (the rewrite command is `json-data:rewrite-references`) |
 | [0015](0015-entity-key.md) | Models say which column holds their entity's public id | Accepted |
 | [0016](0016-scope-of-unmapped-keys.md) | Unmapped keys keep the scope of 1.x; mapped keys resolve by their column | Accepted |
 | [0017](0017-finds-apply-the-query-context.md) | Finds apply the query context | Accepted |
 | [0018](0018-panneau-plugin-php-only.md) | The Panneau plugin is PHP only | Accepted |
 | [0019](0019-media-of-failed-saves.md) | Media ingested by a failed save outside a transaction aren't pruned | Accepted |
-| [0020](0020-json-schema.md) | A fluent schema describes each JSON column | Proposed |
+| [0020](0020-json-schema.md) | A fluent schema describes each JSON column | Accepted |
 | [0021](0021-json-data-package.md) | JSON data moves to its own package | Accepted |
 
 Template:

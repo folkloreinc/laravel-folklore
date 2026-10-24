@@ -19,7 +19,7 @@
 4. **Run the Rector rules.**
 5. **Run the site's tests**, and check pages, forms with media, and logins.
 6. **Fix the deprecations** at your own pace. They are logged on the `deprecations` channel.
-7. **Later:** move media references to `media://` with `php artisan folklore:json-references:rewrite --from=medias --to=media`, once front ends read both.
+7. **Later:** move media references to `media://` with `php artisan json-data:rewrite-references --from=medias --to=media`, once front ends read both.
 
 ## What changes
 
@@ -66,5 +66,7 @@
 ### JSON data
 
 Stored references don't change. Without `JsonData::enforceMap()`, a key that isn't mapped falls back to the relation of the same name, as in 1.x. See [json-data.md](json-data.md#from-1x).
+
+A site declares nothing new: `getJsonDataRelations()`, `getJsonDataColumnExtract()` and the repositories' `$jsonAttributeFillable` keep working. A model can move one JSON column at a time to a schema (`jsonDataSchema()`, [json-data.md](json-data.md#schemas)); its repository then fills it with `JsonData::fill()`.
 
 The media referenced in JSON data are synced to the mediatheque's pivot under the `json` handle. 1.x wrote those rows without a handle, and the first sync leaves them: remove them before it (`folklore:upgrade` will), or they stay as usages of their media.

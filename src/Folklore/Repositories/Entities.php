@@ -435,6 +435,12 @@ abstract class Entities implements EntitiesContract, QueriesEntities
 
     protected function fillModelJsonAttributes($model, $data)
     {
+        if ($model instanceof Model && is_array($data) && $this->hasJsonDataSchema($model)) {
+            $this->fillJsonDataSchemas($model, $data);
+
+            return;
+        }
+
         if ($model instanceof Model && is_array($data)) {
             $this->mergeJsonAttributes($model, $data);
             // The other JSON attributes are merged into themselves, not into this one
@@ -472,6 +478,40 @@ abstract class Entities implements EntitiesContract, QueriesEntities
             return $newValue;
         }, $currentAttributeValue ?? []);
         $model->{$jsonAttributeName} = ! empty($newAttributeValue) ? $newAttributeValue : null;
+    }
+
+    /**
+     * Whether one of the model's JSON attributes has a schema (`HasJsonDataSchema`): its
+     * JSON attributes are then filled with `JsonData::fill()`, and `$jsonAttributeFillable`
+     * and `$jsonAttributeExclude` don't apply (docs/json-data.md, "Repositories").
+     */
+    protected function hasJsonDataSchema(Model $model): bool
+    {
+        foreach ($model->getCasts() as $attribute => $cast) {
+            if (is_a($cast, JsonDataCast::class, true) && ! is_null(JsonData::schema($model, (string) $attribute))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Fills the JSON attributes of a model that has a schema: `JsonData::fill()` puts the
+     * flat input into the attributes that have one, and refuses the keys that are neither
+     * fillable nor in a schema when its root is `additional(false)`. The other attributes of
+     * `$jsonAttributes` are given as a whole and merged, as without a schema.
+     *
+     * @param  array<array-key, mixed>  $data
+     */
+    protected function fillJsonDataSchemas(Model $model, array $data): void
+    {
+        $merged = array_values(array_filter(
+            $this->getMergedJsonAttributes(),
+            fn (string $attribute) => is_null(JsonData::schema($model, $attribute)),
+        ));
+        $this->mergeJsonAttributes($model, Arr::only($data, $merged));
+        JsonData::fill($model, Arr::except($data, $merged));
     }
 
     /**

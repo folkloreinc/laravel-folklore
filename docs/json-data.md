@@ -301,7 +301,7 @@ It reads the stored value, not the resolved one, so it lists references that don
 ## Rewriting references
 
 ```bash
-php artisan folklore:json-references:rewrite --from=medias --to=media --dry-run
+php artisan json-data:rewrite-references --from=medias --to=media --dry-run
 ```
 
 - Rewrites every reference with the key `--from` to the key `--to`, at the declared paths of every cast column of the models given by `--model` (repeatable), or of the models of `app/Models` and, with the pages module, of its `Page` and `Block`.
@@ -309,7 +309,39 @@ php artisan folklore:json-references:rewrite --from=medias --to=media --dry-run
 - References that don't resolve are left as they are and reported.
 - `--dry-run` reports what would change. The command works in chunks (`--chunk`, 500 rows), without model events or global scopes, and can be run again.
 
-`laravel-mediatheque` 2 planned a helper to rewrite JSON columns; this command is that helper, for `laravel-folklore` columns.
+`laravel-mediatheque` 2 planned a helper to rewrite JSON columns; this command is that helper, for `laravel-folklore` columns. It was `folklore:json-references:rewrite` until laravel-json-data's alpha 2 ([its decision 0022](https://github.com/folkloreinc/laravel-json-data/blob/v1.x/docs/decisions/0022-command-names.md)).
+
+## Schemas
+
+A model declares a JSON column with a schema, `jsonDataSchema()` ([decisions/0020](decisions/0020-json-schema.md)), from laravel-json-data's alpha 2. The schema, its nodes and `JsonData::fill()` are specified in [laravel-json-data's json-data.md](https://github.com/folkloreinc/laravel-json-data/blob/v1.x/docs/json-data.md#schema). This package adds:
+
+- **`Json::media()`**, with the medias module: `Json::reference()` with the key that the module writes (`site.medias.reference_key`, [below](#media-references)), synced to the `medias` relation of `HasMedias`, under the `json` handle ([Syncing](#syncing)). `Json::media()->translatable()` stores one media per locale (`image.*`), as 1.x sites declare them.
+- **The site's locales** for translatable nodes: `Folklore\Eloquent\SiteLocaleResolver`, bound as laravel-json-data's `LocaleResolver`, reads `site.locales` when it is set, then laravel-locale's `locale.locales`, then laravel-json-data's `json-data.locales`. The default locale is laravel-json-data's: `json-data.default_locale`, else `app.locale` when it is one of the locales.
+- **The base repository fills with `JsonData::fill()`** ([Repositories](#repositories)).
+
+```php
+use Folklore\JsonData\Contracts\HasJsonDataSchema;
+use Folklore\JsonData\Schema\Json;
+use Folklore\JsonData\Schema\ObjectType;
+
+class Game extends Model implements HasJsonDataSchema
+{
+    use HasMedias;
+
+    protected $casts = ['data' => JsonDataCast::class];
+
+    public function jsonDataSchema(string $attribute): ?ObjectType
+    {
+        return $attribute === 'data' ? Json::object([
+            'title' => Json::string()->translatable()->extract('title_{locale}'),
+            'image' => Json::media()->translatable(),
+            'prize' => Json::reference('prize')->relation('prizes'),
+        ])->additional(false) : null;
+    }
+}
+```
+
+An attribute without a schema keeps the 1.x declarations, `getJsonDataRelations()` and `getJsonDataColumnExtract()`, and the macros, through the declarations hook.
 
 ## Media references
 
@@ -374,6 +406,7 @@ A file or a URL written to a media path is ingested by the fake, which returns a
 ## Repositories
 
 - A repository lists its JSON columns (`$jsonAttributes = ['data', 'images']`). The first one takes the data that isn't fillable, as `$jsonAttributeName` (`data`) does in 1.x, which keeps working, deprecated. Each of the others is given as a whole (`['images' => ['logo' => $media]]`) and merged into its stored value: the keys given replace theirs, the others stay, and the references that don't resolve are put back first. `null` clears it.
+- **A model with a schema** (one of its JSON attributes has one) is filled with `JsonData::fill()`, which puts the flat input (`title`, `seo_title`) at the paths of its schemas, keeps the paths it doesn't give and the references that don't resolve, and refuses the keys that are neither fillable nor in a schema when its root is `additional(false)`. `$jsonAttributeFillable` and `$jsonAttributeExclude` don't apply to it. An attribute of `$jsonAttributes` without a schema is still given as a whole and merged.
 - `withJsonReferences()` returns a copy of the repository that loads the references of each result with `JsonData::load()`, so `lazy` is no longer needed. The repository it is called on doesn't change.
 
 ## From 1.x
@@ -389,6 +422,8 @@ A file or a URL written to a media path is ingested by the fake, which returns a
 | `lazy` | `JsonData::load()`, `withJsonReferences()` | Kept, deprecated |
 | `**` undocumented | `**` specified | — |
 | One JSON column per repository (`$jsonAttributeName`) | `$jsonAttributes` | Kept, deprecated |
+| `getJsonDataRelations()`, `getJsonDataColumnExtract()` | `jsonDataSchema()` | Kept for the attributes without a schema |
+| `$jsonAttributeFillable`, `$jsonAttributeExclude` (`'*'`: every key that isn't fillable) | `JsonData::fill()`, from the schema; unknown keys refused under `additional(false)` | Kept for the models without a schema |
 | Synced by the base repository, after `saveData()` | Synced by the cast after any save with events | — |
 | `syncRelations()` then `refresh()` | Relations and memoized values unset | — |
 

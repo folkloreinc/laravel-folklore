@@ -100,9 +100,11 @@ Once `laravel-mediatheque` 2 has them:
 
 Not scheduled yet: each item goes into the alpha or beta that needs it. The JSON data items are built in `folklore/laravel-json-data` once it exists ([decisions/0021](decisions/0021-json-data-package.md)), and this package requires the alpha that ships them.
 
-- [ ] A fluent schema for each JSON column: references, filling from a flat input, unknown keys refused, column extraction, then validation rules and a JSON Schema export ([#105](https://github.com/folkloreinc/laravel-folklore/issues/105), [decisions/0020](decisions/0020-json-schema.md), proposed), built in `folklore/laravel-json-data` ([decisions/0021](decisions/0021-json-data-package.md)). Its first slice replaces [#104](https://github.com/folkloreinc/laravel-folklore/issues/104)
-- [ ] Reference paths with a key and no Eloquent relation ([#84](https://github.com/folkloreinc/laravel-folklore/issues/84)). The pilot moves its provenance references to foreign key columns instead
-- [ ] `folklore:json-references:sync`: sync the relations of stored JSON references, for rows written without model events ([#86](https://github.com/folkloreinc/laravel-folklore/issues/86)). Not needed while the pilot starts from empty databases; needed before its first import, and for upgraded sites
+- [ ] A fluent schema for each JSON column ([decisions/0020](decisions/0020-json-schema.md)), built in `folklore/laravel-json-data` ([laravel-json-data#6](https://github.com/folkloreinc/laravel-json-data/issues/6)):
+  - [x] its first slice, in laravel-json-data's alpha 2: references, filling from a flat input, unknown keys refused, column extraction. This package adds `Json::media()`, the site's locales and `JsonData::fill()` in the base repository ([#111](https://github.com/folkloreinc/laravel-folklore/issues/111)); it replaces [#104](https://github.com/folkloreinc/laravel-folklore/issues/104)
+  - [ ] validation rules, then a JSON Schema export
+- [x] Reference paths with a key and no Eloquent relation, in laravel-json-data's alpha 2 ([laravel-json-data#4](https://github.com/folkloreinc/laravel-json-data/issues/4)), as `Json::reference()` without a relation
+- [ ] `json-data:sync-references`: sync the relations of stored JSON references, for rows written without model events ([laravel-json-data#5](https://github.com/folkloreinc/laravel-json-data/issues/5)). Not needed while the pilot starts from empty databases; needed before its first import, and for upgraded sites
 - An idea, not planned: rows computed from JSON entries, for list items that repeat the same related model with different attributes (one person with two roles)
 
 ## Beta: upgrade path

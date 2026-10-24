@@ -8,14 +8,24 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
-JSON data comes from [`folklore/laravel-json-data`](https://github.com/folkloreinc/laravel-json-data), which the core requires (`^1.0@alpha`, from [v1.0.0-alpha.1](https://github.com/folkloreinc/laravel-json-data/releases/tag/v1.0.0-alpha.1); [decision 0021](docs/decisions/0021-json-data-package.md), [#108](https://github.com/folkloreinc/laravel-folklore/issues/108)). Sites change nothing: the 1.x names, declarations and macros keep working on top of it.
+JSON data comes from [`folklore/laravel-json-data`](https://github.com/folkloreinc/laravel-json-data), which the core requires (`^1.0.0-alpha.2`, from [v1.0.0-alpha.2](https://github.com/folkloreinc/laravel-json-data/releases/tag/v1.0.0-alpha.2); [decision 0021](docs/decisions/0021-json-data-package.md), [#108](https://github.com/folkloreinc/laravel-folklore/issues/108)). Sites change nothing: the 1.x names, declarations and macros keep working on top of it. Its alpha 2 brings the schema of JSON columns ([decision 0020](docs/decisions/0020-json-schema.md), [#111](https://github.com/folkloreinc/laravel-folklore/issues/111)).
+
+### Breaking changes
+
+- The rewrite command is `json-data:rewrite-references`, laravel-json-data's name for it since its alpha 2, instead of `folklore:json-references:rewrite` ([laravel-json-data's decision 0022](https://github.com/folkloreinc/laravel-json-data/blob/v1.x/docs/decisions/0022-command-names.md)). Scripts and deploy steps that call the old name move to the new one.
+
+### Added
+
+- `Json::media()`, with the medias module: a node of JSON data schemas for a media reference, with the key the module writes (`site.medias.reference_key`), synced to `medias` under the `json` handle.
+- `Folklore\Eloquent\SiteLocaleResolver`, bound as laravel-json-data's `LocaleResolver`: the locales of translatable schema nodes are `site.locales` (new, `null` by default), else laravel-locale's `locale.locales`, else laravel-json-data's `json-data.locales`.
+- The base repository fills a model that has a schema with `JsonData::fill()`, from a flat input, instead of `$jsonAttributeFillable` and `$jsonAttributeExclude`, which keep working for the models without one ([#104](https://github.com/folkloreinc/laravel-folklore/issues/104)). Under `additional(false)`, a key that is neither fillable nor in the schema is refused with `InvalidJsonData`, and nothing is saved.
 
 ### Changed
 
 - `JsonData`, `JsonReference`, `JsonReferenceEntry`, `ReferenceContext`, `ReferenceOperation`, `ModelReferences`, `InvalidJsonReference`, `ReferenceNotAllowed`, `ReferenceHandler` and `JsonReferencesRewriteCommand` are laravel-json-data's, under `Folklore\JsonData\`. Their 1.x names (`Folklore\Eloquent\…`, `Folklore\Contracts\Eloquent\ReferenceHandler`, `Folklore\Console\JsonReferencesRewriteCommand`) are aliases, set when the autoloader starts, so `instanceof` and `catch` match under both.
 - `Folklore\Eloquent\JsonDataCast` is a subclass of laravel-json-data's cast that keeps the macros.
 - `HasJsonDataRelations`, `HasJsonDataColumnExtract` and the macros reach the cast through `Folklore\Eloquent\LegacyJsonDataDeclarations`, on `JsonData::declareUsing()`. The service provider also plugs in entities (`JsonData::unwrapUsing()`), the sync of the media under the `json` handle (`Folklore\Eloquent\MediaUsagesSync`, on `JsonData::syncUsing()`), and the pages models of the rewrite command.
-- `folklore:json-references:rewrite` is registered by laravel-json-data's service provider, which this package registers.
+- The rewrite command is registered by laravel-json-data's service provider, which this package registers.
 - After a sync, the `medias` relation is unset only when the media were synced, not after the sync of any relation of a model that uses `HasMedias`.
 
 ### Deprecated
