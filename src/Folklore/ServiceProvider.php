@@ -23,12 +23,16 @@ use Folklore\Contracts\Services\PubSubHubbub\Factory;
 use Folklore\Eloquent\LegacyJsonDataDeclarations;
 use Folklore\Eloquent\MediaReferences;
 use Folklore\Eloquent\MediaUsagesSync;
+use Folklore\Eloquent\SiteLocaleResolver;
 use Folklore\Exceptions\ModuleRequirementMissing;
 use Folklore\Http\Middleware\LocalMiddleware;
 use Folklore\JsonData\Console\JsonReferencesRewriteCommand;
+use Folklore\JsonData\Contracts\LocaleResolver;
 use Folklore\JsonData\JsonData;
 use Folklore\JsonData\JsonDataServiceProvider;
 use Folklore\JsonData\JsonReference;
+use Folklore\JsonData\Schema\Json;
+use Folklore\JsonData\Schema\ReferenceType;
 use Folklore\Mediatheque\Models\File as MediathequeFile;
 use Folklore\Mediatheque\Models\Media as MediathequeMedia;
 use Folklore\Mediatheque\Support\Models as MediathequeModels;
@@ -168,11 +172,14 @@ class ServiceProvider extends BaseServiceProvider
     /**
      * JSON data is laravel-json-data's (docs/decisions/0021). This package plugs into its
      * hooks what the package doesn't know: the 1.x declarations and macros, entities, the
-     * mediatheque's usage graph and the pages models.
+     * mediatheque's usage graph, the pages models and the site's locales.
      */
     protected function registerJsonData(): void
     {
         $this->app->register(JsonDataServiceProvider::class);
+
+        // The locales of translatable schema nodes: site.locales, then laravel-locale's
+        $this->app->bind(LocaleResolver::class, SiteLocaleResolver::class);
 
         JsonData::declareUsing(Closure::fromCallable(new LegacyJsonDataDeclarations));
 
@@ -244,7 +251,8 @@ class ServiceProvider extends BaseServiceProvider
 
     /**
      * Sets the models of the medias module in `config('mediatheque.models')`, unless the
-     * site sets its own there, and maps the media reference keys.
+     * site sets its own there, maps the media reference keys, and adds `Json::media()` to
+     * the nodes of JSON data schemas.
      */
     protected function bootMediatheque(): void
     {
@@ -271,6 +279,10 @@ class ServiceProvider extends BaseServiceProvider
             $keys = array_slice($keys, 0, 1, true);
         }
         JsonData::map($keys);
+
+        // Json::media(): a reference of the key written, synced to the media of HasMedias
+        $writeKey = array_key_first($keys);
+        Json::macro('media', fn (): ReferenceType => Json::reference($writeKey)->relation('medias'));
     }
 
     protected function registerSite()

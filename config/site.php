@@ -14,6 +14,11 @@ return [
     |
     */
 
+    // The locales of translatable values in JSON data schemas
+    // (`Json::string()->translatable()`). Null: laravel-locale's `locale.locales` when it
+    // is set, else laravel-json-data's `json-data.locales`.
+    'locales' => null,
+
     'medias' => [
         // The key written for media references in JSON data: `media` (`media://med_…`,
         // by uid) for new projects, `medias` (`medias://12`, by id) for sites upgraded

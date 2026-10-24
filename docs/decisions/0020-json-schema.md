@@ -1,6 +1,6 @@
 # 0020: A fluent schema describes each JSON column
 
-- Status: proposed
+- Status: accepted. Its first slice is [laravel-json-data's v1.0.0-alpha.2](https://github.com/folkloreinc/laravel-json-data/releases/tag/v1.0.0-alpha.2), whose [spec](https://github.com/folkloreinc/laravel-json-data/blob/v1.x/docs/json-data.md#schema) settles the points this decision leaves open
 - Date: 2026-10-23
 - Issue: [#105](https://github.com/folkloreinc/laravel-folklore/issues/105), which replaces [#104](https://github.com/folkloreinc/laravel-folklore/issues/104)
 - Package: `folklore/laravel-json-data`, where JSON data moves ([0021](0021-json-data-package.md))
@@ -110,4 +110,4 @@ Each slice is an alpha of the JSON data package. Its alpha 1 is the extraction, 
 
 - Validation: compiled Laravel rules only, or a JSON Schema validator in `suggest` (`opis/json-schema`) for `validatesOnSave()`.
 - Whether reading a translated value (`name` in a locale, with a fallback) belongs here, or stays in the entities.
-- Names (`HasJsonDataSchema`, `jsonDataSchema()`, `Json`, `ObjectType`, `InvalidJsonData`, `input()`, `extract()`) and their namespace in the package are proposals until the first slice is merged, as in [0014](0014-names.md).
+- Names (`HasJsonDataSchema`, `jsonDataSchema()`, `Json`, `ObjectType`, `InvalidJsonData`, `input()`, `extract()`) and their namespace in the package are proposals until the first slice is merged, as in [0014](0014-names.md). Settled by the first slice: these names, under `Folklore\JsonData\Contracts\` and `Folklore\JsonData\Schema\`.
