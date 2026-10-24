@@ -8,7 +8,7 @@ Version 2 is in development on the `v2.x` branch. It builds on `laravel-mediathe
 |---|---|
 | [current-state.md](current-state.md) | Audit of 1.1: dependencies, public API, `JsonDataCast`, known limits |
 | [architecture.md](architecture.md) | Design of 2.0: core, modules, entities, repositories, query context, compatibility |
-| [json-data.md](json-data.md) | Specification of `JsonDataCast` in 2.0: reference keys, handlers, batch resolution, listing, rewriting |
+| [json-data.md](json-data.md) | Specification of `JsonDataCast` in 2.0: reference keys, handlers, batch resolution, listing, rewriting. Moves to `folklore/laravel-json-data` ([decisions/0021](decisions/0021-json-data-package.md)) |
 | [decisions/](decisions/) | One file per decision |
 | [roadmap.md](roadmap.md) | Phases, alpha slices and open questions |
 | [upgrade.md](upgrade.md) | Upgrading a site from 1.1 (draft, filled as 2.0 lands) |

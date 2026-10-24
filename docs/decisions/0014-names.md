@@ -1,6 +1,6 @@
 # 0014: Names of the JSON data and query context API
 
-- Status: accepted
+- Status: accepted, amended by [0021](0021-json-data-package.md) (the JSON data names move to `Folklore\JsonData\`)
 - Date: 2026-10-22
 
 ## Context

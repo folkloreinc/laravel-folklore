@@ -72,6 +72,16 @@ What the pilot needs to move its JSON references onto `JsonDataCast`.
 - [x] The cast syncs the relations of a model's references when the model is saved anywhere, not only through the base repository, and doesn't refresh it ([#97](https://github.com/folkloreinc/laravel-folklore/issues/97))
 - [x] `MediaReferences` resolves media of the database under `Mediatheque::fake()` ([#98](https://github.com/folkloreinc/laravel-folklore/issues/98))
 
+## JSON data in its own package
+
+JSON data moves to `folklore/laravel-json-data` ([decisions/0021](decisions/0021-json-data-package.md)), after the pilot's demo of 2026-10-27 and before the code of [decisions/0020](decisions/0020-json-schema.md). The first alpha of this package after the extraction, whatever its number, requires it.
+
+- [ ] Create the package from this repository's history of the moved files, with its CI (SQLite, MySQL, PostgreSQL `jsonb`), its release process and its docs: the spec and the decisions about JSON data
+- [ ] Hooks in the package for what it no longer knows: declarations of models without a schema, unwrapping entities, syncing a kind of relation, the models of the rewrite command
+- [ ] Release its `1.0.0-alpha.1`, with the behaviour of this package's last alpha
+- [ ] Here: require it, remove the moved code, add the `class_alias`es under the 1.x names and the subclass of the cast with the macros, and register the hooks: the adapter of the 1.x declarations, the medias module, the pages module. The 1.x JSON tests keep passing
+- [ ] Transfer the JSON data issues (#84, #86, #105) to the package, and update the workspace inventory
+
 ## Alpha 4: the rest of the medias module, and the Panneau adapter
 
 - [ ] Panneau 5 plugin, its first part: the `ResourceRepository` adapter on the typed query, `scope()` on the query context, and `ChecksSlugs` (`slugExists()`) for the checks of Panneau's slug fields ([decisions/0018](decisions/0018-panneau-plugin-php-only.md), `laravel-panneau`'s [decision 0011](https://github.com/folkloreinc/laravel-panneau/blob/v5.x/docs/decisions/0011-slug-checks.md), proposed); `laravel-panneau`'s architecture updated for the adapter. Moved from alpha 1, which Niche needs without Panneau, then after the checks and the JSON references that it needs first
@@ -88,7 +98,7 @@ Once `laravel-mediatheque` 2 has them:
 
 ## Later
 
-Not scheduled yet: each item goes into the alpha or beta that needs it.
+Not scheduled yet: each item goes into the alpha or beta that needs it. The JSON data items are built in `folklore/laravel-json-data` once it exists ([decisions/0021](decisions/0021-json-data-package.md)), and this package requires the alpha that ships them.
 
 - [ ] A fluent schema for each JSON column: references, filling from a flat input, unknown keys refused, column extraction, then validation rules and a JSON Schema export ([#105](https://github.com/folkloreinc/laravel-folklore/issues/105), [decisions/0020](decisions/0020-json-schema.md), proposed), built in `folklore/laravel-json-data` ([decisions/0021](decisions/0021-json-data-package.md)). Its first slice replaces [#104](https://github.com/folkloreinc/laravel-folklore/issues/104)
 - [ ] Reference paths with a key and no Eloquent relation ([#84](https://github.com/folkloreinc/laravel-folklore/issues/84)). The pilot moves its provenance references to foreign key columns instead
