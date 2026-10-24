@@ -8,6 +8,20 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+JSON data comes from [`folklore/laravel-json-data`](https://github.com/folkloreinc/laravel-json-data), which the core requires ([decision 0021](docs/decisions/0021-json-data-package.md), [#108](https://github.com/folkloreinc/laravel-folklore/issues/108)). Sites change nothing: the 1.x names, declarations and macros keep working on top of it.
+
+### Changed
+
+- `JsonData`, `JsonReference`, `JsonReferenceEntry`, `ReferenceContext`, `ReferenceOperation`, `ModelReferences`, `InvalidJsonReference`, `ReferenceNotAllowed`, `ReferenceHandler` and `JsonReferencesRewriteCommand` are laravel-json-data's, under `Folklore\JsonData\`. Their 1.x names (`Folklore\Eloquent\…`, `Folklore\Contracts\Eloquent\ReferenceHandler`, `Folklore\Console\JsonReferencesRewriteCommand`) are aliases, set when the autoloader starts, so `instanceof` and `catch` match under both.
+- `Folklore\Eloquent\JsonDataCast` is a subclass of laravel-json-data's cast that keeps the macros.
+- `HasJsonDataRelations`, `HasJsonDataColumnExtract` and the macros reach the cast through `Folklore\Eloquent\LegacyJsonDataDeclarations`, on `JsonData::declareUsing()`. The service provider also plugs in entities (`JsonData::unwrapUsing()`), the sync of the media under the `json` handle (`Folklore\Eloquent\MediaUsagesSync`, on `JsonData::syncUsing()`), and the pages models of the rewrite command.
+- `folklore:json-references:rewrite` is registered by laravel-json-data's service provider, which this package registers.
+- After a sync, the `medias` relation is unset only when the media were synced, not after the sync of any relation of a model that uses `HasMedias`.
+
+### Deprecated
+
+- The 1.x names of the classes that moved, `Folklore\Eloquent\JsonDataCast` and its macros: use the `Folklore\JsonData\` names and handlers. Removed in 3.0.
+
 ## [2.0.0-alpha.3] - 2026-10-23
 
 What the pilot needs to move its JSON references onto `JsonDataCast` ([roadmap](docs/roadmap.md#alpha-3-json-references-on-the-cast), [#89](https://github.com/folkloreinc/laravel-folklore/issues/89)).

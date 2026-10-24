@@ -4,7 +4,11 @@ namespace Folklore\Eloquent;
 
 use Closure;
 use Folklore\Contracts\Entities\HasModel;
-use Folklore\Eloquent\Exceptions\InvalidJsonReference;
+use Folklore\JsonData\Exceptions\InvalidJsonReference;
+use Folklore\JsonData\JsonData;
+use Folklore\JsonData\JsonReference;
+use Folklore\JsonData\ModelReferences;
+use Folklore\JsonData\ReferenceContext;
 use Folklore\Mediatheque\Contracts\Models\Media;
 use Folklore\Mediatheque\Facades\Mediatheque;
 use Folklore\Mediatheque\References\MediaReference;

@@ -2,6 +2,7 @@
 
 namespace Folklore;
 
+use Closure;
 use Exception;
 use Folklore\Broadcasters\PubNubBroadcaster;
 use Folklore\Console\AssetsViewCommand;
@@ -9,24 +10,32 @@ use Folklore\Console\DaemonRestartCommand;
 use Folklore\Console\EntityContractMakeCommand;
 use Folklore\Console\EntityMakeCommand;
 use Folklore\Console\EntityModelMakeCommand;
-use Folklore\Console\JsonReferencesRewriteCommand;
 use Folklore\Console\PubSubHubbubSubscribe;
 use Folklore\Console\PubSubHubbubUnsubscribe;
 use Folklore\Console\RepositoryContractMakeCommand;
 use Folklore\Console\RepositoryMakeCommand;
 use Folklore\Console\UsersCreateCommand;
+use Folklore\Contracts\Entities\Entity;
+use Folklore\Contracts\Entities\HasModel;
+use Folklore\Contracts\Entities\ToEntity;
 use Folklore\Contracts\Services\CustomerIo;
 use Folklore\Contracts\Services\PubSubHubbub\Factory;
-use Folklore\Eloquent\JsonData;
-use Folklore\Eloquent\JsonReference;
+use Folklore\Eloquent\LegacyJsonDataDeclarations;
 use Folklore\Eloquent\MediaReferences;
+use Folklore\Eloquent\MediaUsagesSync;
 use Folklore\Exceptions\ModuleRequirementMissing;
 use Folklore\Http\Middleware\LocalMiddleware;
+use Folklore\JsonData\Console\JsonReferencesRewriteCommand;
+use Folklore\JsonData\JsonData;
+use Folklore\JsonData\JsonDataServiceProvider;
+use Folklore\JsonData\JsonReference;
 use Folklore\Mediatheque\Models\File as MediathequeFile;
 use Folklore\Mediatheque\Models\Media as MediathequeMedia;
 use Folklore\Mediatheque\Support\Models as MediathequeModels;
+use Folklore\Models\Block;
 use Folklore\Models\Media;
 use Folklore\Models\MediaFile;
+use Folklore\Models\Page;
 use Folklore\Repositories\Blocks;
 use Folklore\Repositories\Medias;
 use Folklore\Repositories\Organisations;
@@ -109,6 +118,8 @@ class ServiceProvider extends BaseServiceProvider
 
         $this->checkModuleRequirements();
 
+        $this->registerJsonData();
+
         $this->registerRepositories();
 
         if ($this->moduleEnabled('sites')) {
@@ -151,6 +162,42 @@ class ServiceProvider extends BaseServiceProvider
                     throw ModuleRequirementMissing::for($module, $package);
                 }
             }
+        }
+    }
+
+    /**
+     * JSON data is laravel-json-data's (docs/decisions/0021). This package plugs into its
+     * hooks what the package doesn't know: the 1.x declarations and macros, entities, the
+     * mediatheque's usage graph and the pages models.
+     */
+    protected function registerJsonData(): void
+    {
+        $this->app->register(JsonDataServiceProvider::class);
+
+        JsonData::declareUsing(Closure::fromCallable(new LegacyJsonDataDeclarations));
+
+        // An entity stands for its model, or its id when the key's model isn't its model's
+        JsonData::unwrapUsing(function (object $value, ?JsonReference $target): mixed {
+            if ($value instanceof HasModel) {
+                $model = $value->getModel();
+                if (is_null($target) || $target->accepts($model)) {
+                    return $model;
+                }
+            }
+            if ($value instanceof ToEntity) {
+                $value = $value->toEntity();
+            }
+
+            return $value instanceof Entity ? $value->id() : $value;
+        });
+
+        // The models that use laravel-mediatheque 2's HasMedias, in a module or not
+        if (trait_exists('Folklore\\Mediatheque\\Concerns\\HasMedias')) {
+            JsonData::syncUsing(Closure::fromCallable(new MediaUsagesSync));
+        }
+
+        if ($this->moduleEnabled('pages')) {
+            JsonReferencesRewriteCommand::discoverUsing(fn () => [Page::class, Block::class]);
         }
     }
 
@@ -334,7 +381,6 @@ class ServiceProvider extends BaseServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 DaemonRestartCommand::class,
-                JsonReferencesRewriteCommand::class,
             ]);
 
             if ($this->moduleEnabled('assets')) {
