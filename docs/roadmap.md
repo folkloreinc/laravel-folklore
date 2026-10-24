@@ -72,17 +72,18 @@ What the pilot needs to move its JSON references onto `JsonDataCast`.
 - [x] The cast syncs the relations of a model's references when the model is saved anywhere, not only through the base repository, and doesn't refresh it ([#97](https://github.com/folkloreinc/laravel-folklore/issues/97))
 - [x] `MediaReferences` resolves media of the database under `Mediatheque::fake()` ([#98](https://github.com/folkloreinc/laravel-folklore/issues/98))
 
-## JSON data in its own package
+## Alpha 4: JSON data in its own package
 
-JSON data moves to `folklore/laravel-json-data` ([decisions/0021](decisions/0021-json-data-package.md)), after the pilot's demo of 2026-10-27 and before the code of [decisions/0020](decisions/0020-json-schema.md). The first alpha of this package after the extraction, whatever its number, requires it.
+JSON data moves to `folklore/laravel-json-data` ([decisions/0021](decisions/0021-json-data-package.md)). This alpha requires its [v1.0.0-alpha.2](https://github.com/folkloreinc/laravel-json-data/releases/tag/v1.0.0-alpha.2), which brings the first slice of the schema of [decisions/0020](decisions/0020-json-schema.md). The Panneau adapter and the pages move to alphas 5 and 6.
 
-- [ ] Create the package from this repository's history of the moved files, with its CI (SQLite, MySQL, PostgreSQL `jsonb`), its release process and its docs: the spec and the decisions about JSON data ([folkloreinc/laravel-json-data#2](https://github.com/folkloreinc/laravel-json-data/pull/2))
-- [ ] Hooks in the package for what it no longer knows: declarations of models without a schema, unwrapping entities, syncing a kind of relation, the models of the rewrite command
-- [ ] Release its `1.0.0-alpha.1`, with the behaviour of this package's last alpha
-- [ ] Here: require it, remove the moved code, add the `class_alias`es under the 1.x names and the subclass of the cast with the macros, and register the hooks: the adapter of the 1.x declarations, the medias module, the pages module. The 1.x JSON tests keep passing ([#108](https://github.com/folkloreinc/laravel-folklore/issues/108))
-- [ ] Transfer the JSON data issues (#84, #86, #105) to the package, and update the workspace inventory
+- [x] Create the package from this repository's history of the moved files, with its CI (SQLite, MySQL, PostgreSQL `jsonb`), its release process and its docs: the spec and the decisions about JSON data ([folkloreinc/laravel-json-data#2](https://github.com/folkloreinc/laravel-json-data/pull/2))
+- [x] Hooks in the package for what it no longer knows: declarations of models without a schema, unwrapping entities, syncing a kind of relation, the models of the rewrite command
+- [x] Release its `1.0.0-alpha.1`, with the behaviour of this package's last alpha
+- [x] Here: require it, remove the moved code, add the `class_alias`es under the 1.x names and the subclass of the cast with the macros, and register the hooks: the adapter of the 1.x declarations, the medias module, the pages module. The 1.x JSON tests keep passing ([#108](https://github.com/folkloreinc/laravel-folklore/issues/108), [#109](https://github.com/folkloreinc/laravel-folklore/pull/109))
+- [x] Transfer the JSON data issues to the package (#84, #86 and #105 are [laravel-json-data#4](https://github.com/folkloreinc/laravel-json-data/issues/4), [#5](https://github.com/folkloreinc/laravel-json-data/issues/5) and [#6](https://github.com/folkloreinc/laravel-json-data/issues/6)), and update the workspace inventory
+- [x] Require its `1.0.0-alpha.2`: the first slice of the schema (references, filling from a flat input, unknown keys refused, column extraction), and reference paths with a key and no Eloquent relation ([laravel-json-data#4](https://github.com/folkloreinc/laravel-json-data/issues/4)). Here: `Json::media()`, the site's locales and `JsonData::fill()` in the base repository, which replaces [#104](https://github.com/folkloreinc/laravel-folklore/issues/104); the rewrite command is `json-data:rewrite-references` ([#111](https://github.com/folkloreinc/laravel-folklore/issues/111), [#112](https://github.com/folkloreinc/laravel-folklore/pull/112))
 
-## Alpha 4: the rest of the medias module, and the Panneau adapter
+## Alpha 5: the rest of the medias module, and the Panneau adapter
 
 - [ ] Panneau 5 plugin, its first part: the `ResourceRepository` adapter on the typed query, `scope()` on the query context, and `ChecksSlugs` (`slugExists()`) for the checks of Panneau's slug fields ([decisions/0018](decisions/0018-panneau-plugin-php-only.md), `laravel-panneau`'s [decision 0011](https://github.com/folkloreinc/laravel-panneau/blob/v5.x/docs/decisions/0011-slug-checks.md), proposed); `laravel-panneau`'s architecture updated for the adapter. Moved from alpha 1, which Niche needs without Panneau, then after the checks and the JSON references that it needs first
 
@@ -91,20 +92,17 @@ Once `laravel-mediatheque` 2 has them:
 - [ ] `MediaResource` on the mediatheque's canonical resource, with the `legacy` shape (its alpha 2)
 - [ ] The download from a URL moved to the mediatheque, behind its SSRF guard (its alpha 3)
 
-## Alpha 5: pages
+## Alpha 6: pages
 
 - [ ] Pages module: blocks in the page's JSON, type registry, configurable route names ([decisions/0009](decisions/0009-pages-and-blocks.md))
 - [ ] The Panneau plugin's page fields: `Page`, `Pages`, `Blocks` and `PageSlug`, in PHP on Panneau 5's built-in types, with the URL of a slug from the pages module ([decisions/0018](decisions/0018-panneau-plugin-php-only.md)); `PageSlug` on Panneau's generic slug field ([folkloreinc/panneau-js#109](https://github.com/folkloreinc/panneau-js/issues/109))
 
 ## Later
 
-Not scheduled yet: each item goes into the alpha or beta that needs it. The JSON data items are built in `folklore/laravel-json-data` once it exists ([decisions/0021](decisions/0021-json-data-package.md)), and this package requires the alpha that ships them.
+Not scheduled yet: each item goes into the alpha or beta that needs it. The JSON data items are built in `folklore/laravel-json-data` ([decisions/0021](decisions/0021-json-data-package.md)), and this package requires the alpha that ships them.
 
-- [ ] A fluent schema for each JSON column ([decisions/0020](decisions/0020-json-schema.md)), built in `folklore/laravel-json-data` ([laravel-json-data#6](https://github.com/folkloreinc/laravel-json-data/issues/6)):
-  - [x] its first slice, in laravel-json-data's alpha 2: references, filling from a flat input, unknown keys refused, column extraction. This package adds `Json::media()`, the site's locales and `JsonData::fill()` in the base repository ([#111](https://github.com/folkloreinc/laravel-folklore/issues/111)); it replaces [#104](https://github.com/folkloreinc/laravel-folklore/issues/104)
-  - [ ] validation rules, then a JSON Schema export
-- [x] Reference paths with a key and no Eloquent relation, in laravel-json-data's alpha 2 ([laravel-json-data#4](https://github.com/folkloreinc/laravel-json-data/issues/4)), as `Json::reference()` without a relation
-- [ ] `json-data:sync-references`: sync the relations of stored JSON references, for rows written without model events ([laravel-json-data#5](https://github.com/folkloreinc/laravel-json-data/issues/5)). Not needed while the pilot starts from empty databases; needed before its first import, and for upgraded sites
+- [ ] The next slices of the schema of JSON columns: validation rules, then a JSON Schema export ([laravel-json-data#6](https://github.com/folkloreinc/laravel-json-data/issues/6), [decisions/0020](decisions/0020-json-schema.md))
+- [ ] `json-data:sync-references`: sync the relations of stored JSON references, for rows written without model events ([laravel-json-data#5](https://github.com/folkloreinc/laravel-json-data/issues/5), was #86). Not needed while the pilot starts from empty databases; needed before its first import, and for upgraded sites
 - An idea, not planned: rows computed from JSON entries, for list items that repeat the same related model with different attributes (one person with two roles)
 
 ## Beta: upgrade path
@@ -136,5 +134,5 @@ The auth and other modules are placed in the beta because the site that upgrades
 
 ## Open questions
 
-- How `Page` restricts the pages it offers to some types, as `withTypes()` did in 1.x: a relation filter in Panneau 5, or a pages resource per type (alpha 5).
+- How `Page` restricts the pages it offers to some types, as `withTypes()` did in 1.x: a relation filter in Panneau 5, or a pages resource per type (alpha 6).
 - Whether a 1.2 accepts `^1.1|^2.0` of the mediatheque and `laravel-image`, so that sites upgrade them before this package (decided at the mediatheque's beta).

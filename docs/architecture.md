@@ -72,7 +72,7 @@ Modules are turned on in `config/site.php`, which 1.x already uses (`site.medias
   Google Places still needs `google/apiclient` when it is used, until it moves to Laravel's HTTP client.
 - The modules use parts of Laravel that the core doesn't require (HTTP, routing, auth, mail, broadcasting, views, and `Foundation` for the auth module's `User` model): a Laravel application has them.
 - For now, the package's service provider registers each module's part. A module gets its own service provider when it gets its namespace, with its alpha.
-- The panneau module, for the Panneau 5 plugin, comes in alpha 4 with its repository adapter, and gets its page fields in alpha 5 with the pages module. The Panneau 1.x fields and resources are removed.
+- The panneau module, for the Panneau 5 plugin, comes in alpha 5 with its repository adapter, and gets its page fields in alpha 6 with the pages module. The Panneau 1.x fields and resources are removed.
 - `folklore:upgrade` writes the modules an upgraded site uses into its config. Until it exists (beta), an upgraded site turns them on by hand.
 
 ## Entities
@@ -146,7 +146,7 @@ On `laravel-mediatheque` 2 and `laravel-image` 2 ([decisions/0008](decisions/000
 - **Creating media:** `createFromFile` goes through `Mediatheque::ingest()`, `updateFromFile` through `replaceOriginal()`. Downloading from a URL, with its host and size limits, stays here until `laravel-mediatheque` imports URLs behind its SSRF guard.
 - **JSON references** sync into the mediatheque's `medias_pivot` under their own handle ([json-data.md](json-data.md#syncing)).
 - **Reference keys:** the module maps `media` (by uid) and `medias` (by id) to its media model, with `MediaReferences`, and writes the one of `site.medias.reference_key` ([json-data.md](json-data.md#media-references)).
-- **Alpha 4:** `MediaResource` on the mediatheque's canonical resource, once it has one, with its `legacy` shape.
+- **Alpha 5:** `MediaResource` on the mediatheque's canonical resource, once it has one, with its `legacy` shape.
 
 ## Pages module
 
@@ -217,7 +217,7 @@ The module namespaces are named with the contracts. 1.x classes that move into a
 | `folklore/laravel-mediatheque`, `folklore/laravel-image` | `^2.0`, suggested (medias module) | `^2.0@alpha`, suggested. `laravel-mediatheque` below 2.0.0-alpha.7 conflicts (since alpha 2) |
 | `folklore/laravel-locale ^8.1`, `cviebrock/eloquent-sluggable` | Suggested (pages module) | Same |
 | `laravel/fortify` | Suggested (auth module) | Same |
-| `folklore/laravel-panneau` | `^5.0`, suggested (Panneau plugin) | Not yet: the Panneau 1.x fields are removed, the plugin comes in alpha 4 |
+| `folklore/laravel-panneau` | `^5.0`, suggested (Panneau plugin) | Not yet: the Panneau 1.x fields are removed, the plugin comes in alpha 5 |
 | `guzzlehttp/guzzle`, `parsecsv/php-parsecsv`, `pubnub/pubnub` | Suggested (services) | Same |
 | `google/apiclient` | Removed | Suggested, for Places until it moves to Laravel's HTTP client |
 
