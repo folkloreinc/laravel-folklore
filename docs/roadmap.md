@@ -76,10 +76,10 @@ What the pilot needs to move its JSON references onto `JsonDataCast`.
 
 JSON data moves to `folklore/laravel-json-data` ([decisions/0021](decisions/0021-json-data-package.md)), after the pilot's demo of 2026-10-27 and before the code of [decisions/0020](decisions/0020-json-schema.md). The first alpha of this package after the extraction, whatever its number, requires it.
 
-- [ ] Create the package from this repository's history of the moved files, with its CI (SQLite, MySQL, PostgreSQL `jsonb`), its release process and its docs: the spec and the decisions about JSON data
+- [ ] Create the package from this repository's history of the moved files, with its CI (SQLite, MySQL, PostgreSQL `jsonb`), its release process and its docs: the spec and the decisions about JSON data ([folkloreinc/laravel-json-data#2](https://github.com/folkloreinc/laravel-json-data/pull/2))
 - [ ] Hooks in the package for what it no longer knows: declarations of models without a schema, unwrapping entities, syncing a kind of relation, the models of the rewrite command
 - [ ] Release its `1.0.0-alpha.1`, with the behaviour of this package's last alpha
-- [ ] Here: require it, remove the moved code, add the `class_alias`es under the 1.x names and the subclass of the cast with the macros, and register the hooks: the adapter of the 1.x declarations, the medias module, the pages module. The 1.x JSON tests keep passing
+- [ ] Here: require it, remove the moved code, add the `class_alias`es under the 1.x names and the subclass of the cast with the macros, and register the hooks: the adapter of the 1.x declarations, the medias module, the pages module. The 1.x JSON tests keep passing ([#108](https://github.com/folkloreinc/laravel-folklore/issues/108))
 - [ ] Transfer the JSON data issues (#84, #86, #105) to the package, and update the workspace inventory
 
 ## Alpha 4: the rest of the medias module, and the Panneau adapter

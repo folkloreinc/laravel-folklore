@@ -18,7 +18,7 @@ User-facing text belongs in translation keys (`trans('...')`), never hardcoded i
 
 The shared foundation of the Laravel sites built by Folklore. It is a toolbox:
 
-- **Core**, used by every site: entities and repositories (`src/Folklore/Contracts`, `src/Folklore/Entities`, `src/Folklore/Repositories`), `JsonDataCast` (`src/Folklore/Eloquent`), pages and blocks, medias (built on `folklore/laravel-mediatheque`), users and the `repository` auth provider.
+- **Core**, used by every site: entities and repositories (`src/Folklore/Contracts`, `src/Folklore/Entities`, `src/Folklore/Repositories`), JSON data from `folklore/laravel-json-data` with the 1.x API on top of it (`src/Folklore/Eloquent`: the macros, the adapter of the 1.x declarations, the aliases of the moved classes), pages and blocks, medias (built on `folklore/laravel-mediatheque`), users and the `repository` auth provider.
 - **Optional modules**, available "just in case": Customer.io, Google (Maps, Places, Drive), the PubNub broadcaster, PubSubHubbub, organisations, the Panneau 5 plugin, view composers, `make:*` generators.
 
 ## Working rules
