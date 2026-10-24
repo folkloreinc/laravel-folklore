@@ -1,59 +1,25 @@
-# Laravel Panneau
+# laravel-folklore
 
+The shared foundation of the Laravel sites built by [Folklore](https://folkloreinc.ca): entities and repositories over Eloquent models, JSON columns with references to other models (`JsonDataCast`), pages and blocks, medias, users, and optional modules for third-party services.
 
-[![Latest Stable Version](https://poser.pugx.org/folklore/laravel-panneau/v/stable.svg)](https://packagist.org/packages/folklore/laravel-panneau)
-[![Build Status](https://travis-ci.org/Folkloreatelier/laravel-panneau.png?branch=v1-rc)](https://travis-ci.org/Folkloreatelier/laravel-panneau)
-[![Coverage Status](https://coveralls.io/repos/Folkloreatelier/laravel-panneau/badge.svg?branch=v1-rc&service=github)](https://coveralls.io/github/Folkloreatelier/laravel-panneau?branch=v1-rc)
-[![Total Downloads](https://poser.pugx.org/folklore/laravel-panneau/downloads.svg)](https://packagist.org/packages/folklore/laravel-panneau)
+> **This is the 1.x branch** (`v1.1`): fixes and security only. 2.0 is in development on [`v2.x`](https://github.com/folkloreinc/laravel-folklore/tree/v2.x), the default branch, and released as alphas.
 
 ## Installation
 
-```shell
-composer require folklore/laravel-panneau:dev-v1-rc
-```
-
-### Laravel 5.4 and lower
-
-**1-** Add the service provider to your `app/config/app.php` file
-
-```php
-Folklore\Panneau\PanneauerviceProvider::class,
-```
-
-**2-** Add the facade to your `app/config/app.php` file
-
-```php
-'Panneau' => Folklore\Panneau\Facades\Panneau::class,
-```
-
-### All versions
-
-**1-** Publish the configuration file and public files
+Requires PHP 8.3+ and Laravel 11 to 13.
 
 ```bash
-$ php artisan vendor:publish
+composer require folklore/laravel-folklore:^1.1
 ```
 
-**2-** Add this to `app/Providers/RouteServiceProvider.php`
+Sites that still require `v1.1.x-dev` move to `^1.1`: every release is tagged since `v1.1.0`.
 
-```php
-/**
- * Define the routes for the application.
- *
- * @return void
- */
-public function map()
-{
-    $this->mapApiRoutes();
+## Documentation
 
-    $this->mapWebRoutes();
+- [Releases](https://github.com/folkloreinc/laravel-folklore/releases): what each `v1.1.N` release changes.
+- [#1](https://github.com/folkloreinc/laravel-folklore/issues/1): the state and the plan of 1.x.
+- [AGENTS.md](AGENTS.md): how to work on this branch.
 
-    app('panneau')->routes();
-}
-```
+## License
 
-**3-** Review the following files:
-- Configuration: `config/panneau.php`
-- Routes: `routes/panneau.php`
-- Views: `resources/views/vendor/panneau/`
-- Assets: `resources/assets/vendor/panneau/`
+MIT
