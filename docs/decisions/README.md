@@ -25,6 +25,7 @@ Decisions 0002 to 0004 and 0009 to 0012 come from the plan of 2.0 ([#56](https:/
 | [0017](0017-finds-apply-the-query-context.md) | Finds apply the query context | Accepted |
 | [0018](0018-panneau-plugin-php-only.md) | The Panneau plugin is PHP only | Accepted |
 | [0019](0019-media-of-failed-saves.md) | Media ingested by a failed save outside a transaction aren't pruned | Accepted |
+| [0020](0020-json-schema.md) | A fluent schema describes each JSON column | Proposed |
 
 Template:
 
