@@ -3,6 +3,7 @@
 - Status: proposed
 - Date: 2026-10-23
 - Issue: [#105](https://github.com/folkloreinc/laravel-folklore/issues/105), which replaces [#104](https://github.com/folkloreinc/laravel-folklore/issues/104)
+- Package: `folklore/laravel-json-data`, where JSON data moves ([0021](0021-json-data-package.md))
 
 ## Context
 
@@ -20,12 +21,14 @@ Sites keep their labels and descriptive content in a JSON column (a name, a list
 
 ## Decision
 
+**The schema is built in `folklore/laravel-json-data`**, the package JSON data moves to ([0021](0021-json-data-package.md)), not in this package. Its slices are released as alphas of that package, and this package requires them. What the schema needs from this package (media references, the base repository) is added here, on top of it.
+
 **A schema per JSON attribute, declared on the model instance.** A model implements `HasJsonSchema` and builds its schemas with a fluent factory:
 
 ```php
-use Folklore\Contracts\Eloquent\HasJsonSchema;
-use Folklore\Eloquent\Schema\Json;
-use Folklore\Eloquent\Schema\ObjectType;
+use Folklore\JsonData\Contracts\HasJsonSchema;
+use Folklore\JsonData\Schema\Json;
+use Folklore\JsonData\Schema\ObjectType;
 
 class Offer extends Model implements HasJsonSchema
 {
@@ -62,7 +65,7 @@ The method runs on the instance, so a schema can depend on the model's data: the
 | `Json::object([...])` | An object | `additional(bool)`: whether keys outside the schema are kept |
 | `Json::list(node)`, `Json::map(node)` | An array, or an object with any keys | `min()`, `max()` |
 | `Json::any()` | Any value, not looked into | For data the site doesn't describe yet |
-| `Json::media()` | A media reference (`media://…`) | The key the medias module writes ([0008](0008-media-references.md)), synced to `medias` |
+| `Json::media()` | A media reference (`media://…`) | A macro that this package's medias module adds to `Json`: `Json::reference()` with the key the module writes ([0008](0008-media-references.md)), synced to `medias`. The JSON data package doesn't know media |
 | `Json::reference(key)` | `{key}://{identifier}` | `relation()` to sync it. Without one, it is resolved and checked but not synced: the key-only paths of [#84](https://github.com/folkloreinc/laravel-folklore/issues/84) |
 | `Json::document()` | A document (ProseMirror JSON…) | `references(key, …)`: references at any depth, as `**` |
 
@@ -75,16 +78,18 @@ Every node has `required()`, `nullable()` and `default()`. A scalar node can be 
   - A partial update replaces the paths it gives and keeps the others. `null` clears a path. The references that don't resolve are put back first, as the repositories do since 1.1.8.
   - A string given for a translatable node goes into the default locale. An object keyed by locale replaces the locales it gives.
   - A key that is neither fillable nor in the schema is refused (`InvalidJsonData`) when its object is `additional(false)`, which is the default under `JsonData::enforceMap()`. Otherwise it is ignored, as `fill()` ignores an attribute that isn't fillable.
-  - The base repository uses `JsonData::fill()` for a model that has a schema, instead of `$jsonAttributeFillable`.
+  - This package's base repository uses `JsonData::fill()` for a model that has a schema, instead of `$jsonAttributeFillable`.
 - **Column extraction.** `extract()` replaces `getJsonDataColumnExtract()`, with the same behaviour: the column is a copy, written when the model is saved.
 - **Validation.** `Json::rules(Model $model, string $attribute): array` compiles the schema into Laravel validation rules on the flat input keys (`name`, `name.fr`, `benefits.*`, `seo_title`), for form requests. The core gets no dependency. A schema can also be checked when the model is saved (`->validatesOnSave()`), to guarantee the stored shape whatever wrote it.
 - **Export.** `toJsonSchema(): array` gives a standard JSON Schema (draft 2020-12), with `x-folklore-reference` (the key) and `x-folklore-translatable` extensions. Sites can test their API specs against it, generate front-end types from it, and, after 2.0, the Panneau plugin can build fields from it.
 
 ### Locales
 
-The locales of `translatable()` and the default one come from the config (`site.locales`, falling back to `app.locale`), or from a resolver bound in the container, since the core doesn't depend on `laravel-locale`.
+The locales of `translatable()` and the default one come from the JSON data package's config, falling back to `app.locale`, or from a resolver bound in the container, since the package doesn't depend on `laravel-locale`. This package binds one that reads `site.locales` when it is set.
 
 ### Slices
+
+Each slice is an alpha of the JSON data package. The extraction ([0021](0021-json-data-package.md)) comes first.
 
 1. The declaration, references, `JsonData::fill()`, unknown keys and `extract()`. This is [#104](https://github.com/folkloreinc/laravel-folklore/issues/104), on a schema instead of a separate `HasJsonDataFields`.
 2. `Json::rules()` and `validatesOnSave()`.
@@ -92,15 +97,15 @@ The locales of `translatable()` and the default one come from the config (`site.
 
 ## Consequences
 
-- A JSON column is declared once. `HasJsonDataRelations`, `HasJsonDataColumnExtract` and the base repository's JSON properties keep working for the attributes that have no schema, deprecated, until 3.0. `folklore:upgrade --check` reports them.
+- A JSON column is declared once. `HasJsonDataRelations`, `HasJsonDataColumnExtract` and the base repository's JSON properties keep working for the attributes that have no schema, deprecated until the JSON data package's 2.0, which this package's 3.0 requires. This package's `folklore:upgrade --check` reports them.
 - Under `enforceMap()`, a key can no longer slip into a column unnoticed. Sites that keep the 1.x behaviour declare `additional(true)`, or don't declare a schema.
 - Key-only references ([#84](https://github.com/folkloreinc/laravel-folklore/issues/84)) come from `Json::reference()` without a relation, without another option on paths.
 - A list of objects with a reference could later declare rows computed from its entries (one person with two roles), the idea under "Later" in the roadmap, as an option of `Json::list()`.
-- The schema is a public API to keep stable until 3.0, and the cast calls it for every model it reads or writes. Building it must stay cheap, hence the memoization per instance.
+- The schema is a public API of the JSON data package, to keep stable through its 1.x, and the cast calls it for every model it reads or writes. Building it must stay cheap, hence the memoization per instance.
 - The exported JSON Schema says what a reference's key points to, which JavaScript readers of references need ([0005](0005-json-reference-keys.md)).
 
 ## Open questions
 
 - Validation: compiled Laravel rules only, or a JSON Schema validator in `suggest` (`opis/json-schema`) for `validatesOnSave()`.
 - Whether reading a translated value (`name` in a locale, with a fallback) belongs here, or stays in the entities.
-- Names (`HasJsonSchema`, `Json`, `ObjectType`, `InvalidJsonData`, `input()`, `extract()`) are proposals until the first slice is merged, as in [0014](0014-names.md).
+- Names (`HasJsonSchema`, `Json`, `ObjectType`, `InvalidJsonData`, `input()`, `extract()`) and their namespace in the package are proposals until the first slice is merged, as in [0014](0014-names.md).
