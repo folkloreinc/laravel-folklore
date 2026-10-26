@@ -19,6 +19,8 @@ The 1.x declarations aren't marked `@deprecated` yet: the `Page` and `Block` mod
 
 With the medias module and `laravel-mediatheque` 2 installed, the cast's sync of a relation to media goes through the mediatheque's `HasMedias::syncMedias()`, set with `JsonData::syncUsing()` (`MediaUsagesSync`). It writes into `medias_pivot`, which is also the mediatheque's usage graph, under the handle `json`: the sync only replaces its own rows, so a media attached otherwise (`attachMedia($media, 'cover')`) stays ([laravel-mediatheque's decision 0020](https://github.com/folkloreinc/laravel-mediatheque/blob/v2.x/docs/decisions/0020-attachments-by-handle-and-usages.md)). One handle serves every JSON column of a model, since the cast gathers the references of a relation across its columns.
 
+`MediaUsagesSync::synced()`, set as the second callback of `JsonData::syncUsing()`, gives the media synced under the `json` handle, so that laravel-json-data's `json-data:sync-references` compares them with the JSON and syncs only the rows that changed, and its `--dry-run` reports the media to attach and to detach. Rows written without model events (imports, `saveQuietly()`, SQL) are synced with that command ([laravel-json-data's docs](https://github.com/folkloreinc/laravel-json-data/blob/v1.x/docs/json-data.md#syncing-stored-rows)).
+
 A reference whose identifier is not a media key (a URL, a reference of another relation) is not synced; 1.x wrote it to the pivot. Rows that 1.x wrote for JSON references have no handle: an upgraded site removes them before the first sync ([upgrade.md](upgrade.md)).
 
 ## Rewriting references

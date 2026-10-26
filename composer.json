@@ -26,7 +26,7 @@
     ],
     "require": {
         "php": "^8.3",
-        "folklore/laravel-json-data": "^1.0.0-alpha.2",
+        "folklore/laravel-json-data": "^1.0.0-alpha.3",
         "illuminate/console": "^12.69|^13.30",
         "illuminate/contracts": "^12.69|^13.30",
         "illuminate/database": "^12.69|^13.30",
