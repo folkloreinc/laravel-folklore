@@ -8,6 +8,14 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+### Added
+
+- `MediaUsagesSync::synced()`, set with `JsonData::syncUsing()`, gives the media synced under the `json` handle, so that laravel-json-data's `json-data:sync-references` compares a model's media with its JSON instead of syncing them on every run, and reports them in its `--dry-run` ([laravel-json-data#5](https://github.com/folkloreinc/laravel-json-data/issues/5)).
+
+### Changed
+
+- Requires `folklore/laravel-json-data` `^1.0.0-alpha.3`, for the second callback of `JsonData::syncUsing()` and `json-data:sync-references`.
+
 ## [2.0.0-alpha.4] - 2026-10-23
 
 JSON data comes from [`folklore/laravel-json-data`](https://github.com/folkloreinc/laravel-json-data), which the core requires (`^1.0.0-alpha.2`, from [v1.0.0-alpha.2](https://github.com/folkloreinc/laravel-json-data/releases/tag/v1.0.0-alpha.2); [decision 0021](docs/decisions/0021-json-data-package.md), [#108](https://github.com/folkloreinc/laravel-folklore/issues/108)). Sites change nothing: the 1.x names, declarations and macros keep working on top of it. Its alpha 2 brings the schema of JSON columns ([decision 0020](docs/decisions/0020-json-schema.md), [#111](https://github.com/folkloreinc/laravel-folklore/issues/111)) ([roadmap](docs/roadmap.md#alpha-4-json-data-in-its-own-package)).

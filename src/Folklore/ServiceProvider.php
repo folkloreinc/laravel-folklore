@@ -200,7 +200,8 @@ class ServiceProvider extends BaseServiceProvider
 
         // The models that use laravel-mediatheque 2's HasMedias, in a module or not
         if (trait_exists('Folklore\\Mediatheque\\Concerns\\HasMedias')) {
-            JsonData::syncUsing(Closure::fromCallable(new MediaUsagesSync));
+            $mediaUsages = new MediaUsagesSync;
+            JsonData::syncUsing(Closure::fromCallable($mediaUsages), Closure::fromCallable([$mediaUsages, 'synced']));
         }
 
         if ($this->moduleEnabled('pages')) {
