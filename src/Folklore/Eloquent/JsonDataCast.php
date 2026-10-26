@@ -34,9 +34,12 @@ class JsonDataCast implements CastsAttributes
         $value = ! empty($value) ? json_decode($value, true) : null;
 
         if ($model instanceof HasJsonDataRelations) {
+            // The paths of the stored JSON, flattened once: flattening the value again for each
+            // relation would also expand the models the previous relations put in it
+            $dataPaths = array_keys(Data::dot($value));
             $value = self::normalizeJsonDataRelations(
                 $model->getJsonDataRelations($key, $value, $attributes)
-            )->reduce(function ($value, $relation) use ($model) {
+            )->reduce(function ($value, $relation) use ($model, $dataPaths) {
                 $paths = $relation['path'];
 
                 return Data::reducePaths($paths, $value, function ($newValue, $path, $item) use (
@@ -87,7 +90,7 @@ class JsonDataCast implements CastsAttributes
                     data_set($newValue, $path, $newItem);
 
                     return $newValue;
-                });
+                }, $dataPaths);
             }, $value);
         }
 

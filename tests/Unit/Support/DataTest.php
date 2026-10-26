@@ -3,6 +3,8 @@
 namespace Folklore\Tests\Unit\Support;
 
 use Folklore\Support\Data;
+use Illuminate\Contracts\Support\Arrayable;
+use LogicException;
 use PHPUnit\Framework\TestCase;
 
 class DataTest extends TestCase
@@ -80,6 +82,31 @@ class DataTest extends TestCase
         );
         $this->assertSame(['title'], Data::matchingPaths(['title'], $this->data)->values()->all());
         $this->assertSame([], Data::matchingPaths(['missing.*'], $this->data)->values()->all());
+    }
+
+    public function test_matching_several_paths_keeps_the_order_of_the_data()
+    {
+        $this->assertSame(
+            ['images.0', 'images.1', 'blocks.0.image', 'blocks.1.image'],
+            Data::matchingPaths(['blocks.*.image', 'images.*'], $this->data)->values()->all(),
+        );
+        $this->assertSame([], Data::matchingPaths([], $this->data)->values()->all());
+    }
+
+    public function test_matching_paths_reads_the_paths_given_instead_of_the_data()
+    {
+        // A model in the data, put there by a previous relation, isn't expanded again
+        $data = [
+            'image' => new class implements Arrayable
+            {
+                public function toArray(): array
+                {
+                    throw new LogicException('Expanded');
+                }
+            },
+        ];
+
+        $this->assertSame(['image'], Data::matchingPaths(['image'], $data, ['image'])->values()->all());
     }
 
     public function test_set_paths_with_a_closure()
