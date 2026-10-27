@@ -8,9 +8,12 @@ use Illuminate\Support\Collection;
 
 class Data
 {
-    public static function reducePaths($paths, $data, Closure $reducer): array
+    /**
+     * @param  array|null  $dataPaths  The paths of $data (array_keys(self::dot($data))), when already known
+     */
+    public static function reducePaths($paths, $data, Closure $reducer, ?array $dataPaths = null): array
     {
-        return (array) self::matchingPaths($paths, $data)->reduce(function ($newData, $path) use (
+        return (array) self::matchingPaths($paths, $data, $dataPaths)->reduce(function ($newData, $path) use (
             $reducer
         ) {
             return $reducer($newData, $path, data_get($newData, $path));
@@ -28,18 +31,32 @@ class Data
         });
     }
 
-    public static function matchingPaths($paths, $data): Collection
+    /**
+     * @param  array|null  $dataPaths  The paths of $data (array_keys(self::dot($data))), when already known
+     */
+    public static function matchingPaths($paths, $data, ?array $dataPaths = null): Collection
     {
-        $pathPatterns = collect($paths)->map(function ($path) {
-            return self::getPathPattern($path);
-        });
-        $dataPaths = array_keys(self::dot($data));
+        $pattern = self::getPathsPattern($paths);
+        if (is_null($pattern)) {
+            return collect();
+        }
+        $dataPaths ??= array_keys(self::dot($data));
 
-        return collect($dataPaths)->filter(function ($path) use ($pathPatterns) {
-            return $pathPatterns->contains(function ($pattern) use ($path) {
-                return preg_match($pattern, $path) === 1;
-            });
+        return collect($dataPaths)->filter(function ($path) use ($pattern) {
+            return preg_match($pattern, $path) === 1;
         });
+    }
+
+    /**
+     * One pattern matching any of the paths: a single regex per data path instead of one per path.
+     */
+    public static function getPathsPattern($paths): ?string
+    {
+        $patterns = collect($paths)
+            ->map(fn ($path) => substr(self::getPathPattern($path), 2, -2))
+            ->values();
+
+        return $patterns->isNotEmpty() ? '/^(?:'.$patterns->join('|').')$/' : null;
     }
 
     public static function getPathPattern(string $path): string
