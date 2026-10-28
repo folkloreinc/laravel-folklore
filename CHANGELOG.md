@@ -14,7 +14,7 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ### Changed
 
-- Requires `folklore/laravel-json-data` `^1.0.0-alpha.3`, for the second callback of `JsonData::syncUsing()` and `json-data:sync-references`.
+- Requires `folklore/laravel-json-data` `^1.0.0-alpha.4`, for the second callback of `JsonData::syncUsing()` and `json-data:sync-references`, and for reading JSON columns faster: the stored value is flattened once instead of once per pattern ([laravel-json-data#20](https://github.com/folkloreinc/laravel-json-data/pull/20)).
 
 ## [2.0.0-alpha.4] - 2026-10-23
 
