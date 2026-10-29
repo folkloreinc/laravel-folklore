@@ -90,7 +90,7 @@ What the contests platform needs to move its admin to Panneau 5.
 
 Once `laravel-mediatheque` 2 has them:
 
-- [ ] `MediaResource` on the mediatheque's canonical resource, with the `legacy` shape
+- [x] `MediaResource` on the mediatheque's canonical resource (its 2.0.0-alpha.10), with the `legacy` shape of 1.1 ([#124](https://github.com/folkloreinc/laravel-folklore/issues/124))
 - [ ] The download from a URL moved to the mediatheque, behind its SSRF guard
 
 ## Pages

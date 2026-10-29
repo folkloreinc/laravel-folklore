@@ -8,9 +8,17 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+### Breaking changes
+
+- `Folklore\Http\Resources\MediaResource` extends laravel-mediatheque's canonical `MediaResource`, and gives its shape by default: `id` is the uid, `url` the file the media plays, `files` an object by handle, with `status`, `width`, `height`, `duration` and the rest of the mediatheque's fields. Set `site.medias.resource` to `legacy`, or call `legacy()` on the resource or on a `MediasCollection`, to keep the shape of 1.1 ([#124](https://github.com/folkloreinc/laravel-folklore/issues/124)).
+- In a subclass of `MediaResource`, `$this->resource` is the mediatheque's media model, not the entity: `entity()` gives the entity. A subclass that overrides `toArray()` declares it `toArray(Request $request): array`, as the mediatheque's does.
+- The medias module needs `laravel-mediatheque` 2.0.0-alpha.10 or later, which has the canonical `MediaResource`: older pre-releases conflict.
+
 ### Added
 
 - `folklore:upgrade --check` reports what a 1.1 site uses that changes in 2.0, without writing anything, and exits with an error while there is something to do: modules to turn on (including the macros, the Customer.io client and the `repository` auth provider that 1.1 booted for every site), removed modules, packages that 1.1 required, Panneau's contracts used through Folklore's, models that replace `JsonDataCast` with a plain `json` cast and the code that writes and syncs their references, the paths and keys of the references stored in JSON columns with the keys that 2.0 doesn't map or whose identifiers don't match (`media://12` by id), `blocks_pivot`, the media API, and the deprecated API. `--path`, `--model`, `--limit` and `--json` adjust it ([upgrade.md](docs/upgrade.md#what---check-reports), [#123](https://github.com/folkloreinc/laravel-folklore/issues/123)). `folklore:upgrade` without `--check` comes next.
+- `site.medias.resource`, `canonical` by default: `legacy` gives the shape of 1.1 that front ends written for it read, which `MediaResource` keeps field for field, for each type of media: the internal `id` as a string, `type`, `name`, the original's `url`, `thumbnail_url`, the entity's `metadata` (`pagesCount` for a document), an image's `sizes` from the `laravel-image` presets, and `files` as a list of `id`, `handle` (`thumbnails.0`), `name`, `url`, `mime` and `size`. `withoutFiles()`, `withoutMetadata()`, `withFilesAsMap()` and `withoutImageSizes()` keep working on it; the first two also apply to the canonical shape ([#124](https://github.com/folkloreinc/laravel-folklore/issues/124)).
+- `MediaResource` takes an entity of the medias module or a mediatheque media model, and reads the model's entity for the legacy shape.
 
 - `MediaUsagesSync::synced()`, set with `JsonData::syncUsing()`, gives the media synced under the `json` handle, so that laravel-json-data's `json-data:sync-references` compares a model's media with its JSON instead of syncing them on every run, and reports them in its `--dry-run` ([laravel-json-data#5](https://github.com/folkloreinc/laravel-json-data/issues/5)).
 

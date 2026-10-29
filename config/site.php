@@ -24,6 +24,11 @@ return [
         // by uid) for new projects, `medias` (`medias://12`, by id) for sites upgraded
         // from 1.x, whose front ends read it. Both are read.
         'reference_key' => 'media',
+
+        // The JSON shape of `Http\Resources\MediaResource`: `canonical`, laravel-mediatheque's,
+        // for new projects; `legacy`, the shape of 1.1, for sites upgraded from 1.x, whose
+        // front ends read it.
+        'resource' => 'canonical',
     ],
 
     'modules' => [
