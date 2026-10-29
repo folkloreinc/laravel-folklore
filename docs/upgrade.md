@@ -62,6 +62,8 @@
 | `Image::setFilters([...])` | Deprecated: a preset name, or `width`, `height`, `fit`, `format`, `quality` |
 | `MediaMetadata::getMetadatas()` | Removed: the entities read the mediatheque's `metadata()` |
 | `new Medias($typeFactory)` | `new Medias()` |
+| `MediaResource`: the 1.x shape | The 1.x shape by default, on the mediatheque's resource; `site.medias.resource` set to `canonical`, or `->canonical()`, gives the mediatheque's shape (`id` is the uid, `files` by handle), for front ends that moved to it |
+| A subclass of `MediaResource` overrides `toArray($request)` and calls the entity through the resource (`$this->files()`) | `toArray(Request $request): array`, and `$this->entity()->files()`: the resource is the mediatheque's model |
 
 ### JSON data
 

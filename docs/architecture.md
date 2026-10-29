@@ -146,7 +146,7 @@ On `laravel-mediatheque` 2 and `laravel-image` 2 ([decisions/0008](decisions/000
 - **Creating media:** `createFromFile` goes through `Mediatheque::ingest()`, `updateFromFile` through `replaceOriginal()`. Downloading from a URL, with its host and size limits, stays here until `laravel-mediatheque` imports URLs behind its SSRF guard.
 - **JSON references** sync into the mediatheque's `medias_pivot` under the handle `json` ([json-data.md](json-data.md#syncing-media-references)).
 - **Reference keys:** the module maps `media` (by uid) and `medias` (by id) to its media model, with `MediaReferences`, and writes the one of `site.medias.reference_key` ([json-data.md](json-data.md#media-references)).
-- **To come** (slice "Panneau 5 adapter and media entities"): `MediaResource` on the mediatheque's canonical resource, once it has one, with its `legacy` shape.
+- **JSON:** `Http\Resources\MediaResource` extends the mediatheque's canonical `MediaResource` (its 2.0.0-alpha.10), from an entity or a model. Until 3.0, it gives by default the shape of 1.1 that front ends read (`site.medias.resource` set to `legacy`): the internal `id`, the original's `url`, the entity's `metadata`, an image's `sizes` from the `laravel-image` presets, and `files` as a list with the 1.x handles, the original first. `site.medias.resource` set to `canonical`, or `canonical()`, gives the mediatheque's shape ([#124](https://github.com/folkloreinc/laravel-folklore/issues/124)).
 
 ## Pages module
 
@@ -214,7 +214,7 @@ The module namespaces are named with the contracts. 1.x classes that move into a
 |---|---|---|
 | `illuminate/console`, `contracts`, `database`, `pagination`, `support` `^12.69\|^13.30` | Required | Required |
 | `folklore/laravel-json-data` ([decisions/0021](decisions/0021-json-data-package.md)) | `^1.0`, required | `^1.0.0-alpha.2`, required since 2.0.0-alpha.4. A site requires it too (`^1.0@alpha`) until it has a stable release |
-| `folklore/laravel-mediatheque`, `folklore/laravel-image` | `^2.0`, suggested (medias module) | Suggested: `laravel-mediatheque ^2.0.0-alpha.7`, `laravel-image ^2.0.0-alpha.1`. `laravel-mediatheque` below 2.0.0-alpha.7 conflicts (since alpha 2) |
+| `folklore/laravel-mediatheque`, `folklore/laravel-image` | `^2.0`, suggested (medias module) | Suggested: `laravel-mediatheque ^2.0.0-alpha.10`, `laravel-image ^2.0.0-alpha.1`. `laravel-mediatheque` below 2.0.0-alpha.10 conflicts, for its canonical `MediaResource` (below alpha 7 since alpha 2) |
 | `folklore/laravel-locale ^8.1`, `cviebrock/eloquent-sluggable` | Suggested (pages module) | Same |
 | `laravel/fortify` | Suggested (auth module) | Same |
 | `folklore/laravel-panneau` | `^5.0`, suggested (Panneau plugin) | Not yet: the Panneau 1.x fields are removed, the plugin comes with the slice "Panneau 5 adapter and media entities" |
