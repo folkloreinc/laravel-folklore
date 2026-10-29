@@ -31,6 +31,18 @@ return [
         'resource' => 'legacy',
     ],
 
+    'pages' => [
+        // The names of the routes of pages, without their locale (laravel-locale's
+        // `{locale}.{name}`): the home page, a page (`{page}`, its slug) and a page with
+        // a parent (`{parent}/{page}`). Page entities and the `PageSlug` field of the
+        // Panneau plugin give URLs from them.
+        'routes' => [
+            'home' => 'home',
+            'page' => 'page',
+            'page_with_parent' => 'page_with_parent',
+        ],
+    ],
+
     'modules' => [
         // Medias repository and entities, on laravel-mediatheque and laravel-image
         'medias' => false,

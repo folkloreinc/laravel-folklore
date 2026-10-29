@@ -24,4 +24,4 @@ In 1.x, only `PageSlug` has a component of its own (`page-slug`): it shows the p
 - Sites get the plugin's fields without building any JavaScript of this package. Where the plugin's JavaScript lives is no longer a question.
 - `PageSlug` waits for Panneau's `slug` field to have these features. Without them, it shows a fixed prefix and doesn't follow the parent.
 - The adapter answers whether a slug is taken for entities, whose repositories aren't Eloquent.
-- 1.x's `Page::withTypes()` restricted the pages offered to some types. Panneau 5's `relation` has no filter in its definition, so this is open: a relation filter in Panneau, or a pages resource per type.
+- 1.x's `Page::withTypes()` restricted the pages offered to some types. Panneau 5's `relation` has no filter in its definition, so this is open: a relation filter in Panneau, or a pages resource per type. Settled in [0022](0022-page-fields.md): a pages resource per set of types.

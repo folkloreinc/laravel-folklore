@@ -348,10 +348,18 @@ abstract class Entities implements EntitiesContract, QueriesEntities
      */
     protected function newQueryInContext(array $params = []): Builder
     {
-        $query = $this->buildQueryFromParams(
-            $this->newQuery(),
-            array_merge($this->getContextParams(), $params),
-        );
+        return $this->newQueryFromParams(array_merge($this->getContextParams(), $params));
+    }
+
+    /**
+     * The query of these params only, without the context's.
+     *
+     * @param  array<mixed>  $params
+     * @return Builder<TModel>
+     */
+    protected function newQueryFromParams(array $params): Builder
+    {
+        $query = $this->buildQueryFromParams($this->newQuery(), $params);
         if (! $query instanceof Builder) {
             throw new LogicException(static::class.'::buildQueryFromParams() must return an Eloquent query.');
         }

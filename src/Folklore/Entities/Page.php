@@ -7,6 +7,7 @@ use Folklore\Contracts\Entities\Image as ImageContract;
 use Folklore\Contracts\Entities\Page as PageContract;
 use Folklore\Contracts\Entities\PageMetadata as PageMetadataContract;
 use Folklore\Models\Page as PageModel;
+use Folklore\Pages\PageRoutes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
@@ -62,16 +63,19 @@ class Page implements HasModel, PageContract
         return data_get($this->data, 'description.'.$locale);
     }
 
+    /**
+     * The URL of the page, from the routes of `site.pages.routes` (Pages\PageRoutes).
+     */
     public function url(string $locale, bool $absolute = false): string
     {
         if ($this->handle() === 'home') {
-            return route_with_locale('home', $locale, [], $absolute);
+            return route_with_locale(PageRoutes::name('home'), $locale, [], $absolute);
         }
 
         $parent = $this->parent();
         if (! is_null($parent)) {
             return route_with_locale(
-                'page_with_parent',
+                PageRoutes::name('page_with_parent'),
                 $locale,
                 [
                     'parent' => $parent->slug($locale),
@@ -82,7 +86,7 @@ class Page implements HasModel, PageContract
         }
 
         return route_with_locale(
-            'page',
+            PageRoutes::name('page'),
             $locale,
             [
                 'page' => $this->slug($locale),
