@@ -15,7 +15,7 @@
 
 1. **Require the new version:** `composer require folklore/laravel-folklore:^2.0`, and the packages of the modules the site uses (they are suggested, no longer required). During the pre-releases, require `folklore/laravel-folklore:^2.0@alpha` and `folklore/laravel-json-data:^1.0@alpha` together: a stability flag doesn't apply to the dependencies of a required package, so a site with `minimum-stability: stable` can't install the alphas of `laravel-json-data` otherwise.
 2. **Check the site:** `php artisan folklore:upgrade --check`. It lists the modules the site uses, removed modules it still uses, block data to convert, JSON reference keys that aren't mapped, and deprecated macros.
-3. **Upgrade:** `php artisan folklore:upgrade`. It enables the site's modules in `config/site.php`, sets the media reference key that the site writes (`medias://`), and converts block data. Every module is off by default: until the command exists, list the modules the site uses under `modules` in `config/site.php`, and set `medias.reference_key` to `medias` so that the site keeps writing `medias://12` ([architecture.md](architecture.md#configuration-and-modules)).
+3. **Upgrade:** `php artisan folklore:upgrade`. It enables the site's modules in `config/site.php`, sets the media reference key that the site writes (`medias://`) and the 1.1 shape of `MediaResource`, and converts block data. Every module is off by default: until the command exists, list the modules the site uses under `modules` in `config/site.php`, set `medias.reference_key` to `medias` so that the site keeps writing `medias://12`, and `medias.resource` to `legacy` so that `MediaResource` keeps the JSON shape of 1.1 ([architecture.md](architecture.md#configuration-and-modules)).
 4. **Run the Rector rules.**
 5. **Run the site's tests**, and check pages, forms with media, and logins.
 6. **Fix the deprecations** at your own pace. They are logged on the `deprecations` channel.
@@ -62,6 +62,8 @@
 | `Image::setFilters([...])` | Deprecated: a preset name, or `width`, `height`, `fit`, `format`, `quality` |
 | `MediaMetadata::getMetadatas()` | Removed: the entities read the mediatheque's `metadata()` |
 | `new Medias($typeFactory)` | `new Medias()` |
+| `MediaResource`: the 1.x shape | The mediatheque's canonical shape (`id` is the uid, `files` by handle); `site.medias.resource` set to `legacy`, or `->legacy()`, keeps the 1.x shape |
+| A subclass of `MediaResource` overrides `toArray($request)` and calls the entity through the resource (`$this->files()`) | `toArray(Request $request): array`, and `$this->entity()->files()`: the resource is the mediatheque's model |
 
 ### JSON data
 
