@@ -98,6 +98,35 @@ class StoredReferencesCheck implements Check
     }
 
     /**
+     * The keys of the references stored in the JSON attributes of the site's models, each
+     * with the models and attributes that hold them (`App\Models\Page::data`). The
+     * attributes that can't be read are left out.
+     *
+     * @return array<string, list<string>>
+     */
+    public function keys(Site $site): array
+    {
+        $keys = [];
+        foreach ($site->models() as $class) {
+            $model = new $class;
+            foreach (array_keys($this->jsonAttributes($model)) as $attribute) {
+                try {
+                    $references = $this->references($model, $attribute, $site->limit);
+                } catch (Throwable) {
+                    continue;
+                }
+                foreach ($references as $found) {
+                    foreach (array_keys($found) as $key) {
+                        $keys[$key][] = "{$class}::{$attribute}";
+                    }
+                }
+            }
+        }
+
+        return array_map(fn (array $locations) => array_values(array_unique($locations)), $keys);
+    }
+
+    /**
      * Whether 2.0 maps a key, and whether its identifiers match the model it maps to.
      *
      * @param  list<string>  $sample
@@ -184,7 +213,7 @@ class StoredReferencesCheck implements Check
      *
      * @return array<string, string|null>
      */
-    protected function jsonAttributes(Model $model): array
+    public function jsonAttributes(Model $model): array
     {
         $attributes = [];
         foreach ($model->getCasts() as $attribute => $cast) {

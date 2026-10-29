@@ -2,21 +2,32 @@
 
 namespace Folklore\Console;
 
+use Folklore\Upgrade\ConfigChange;
 use Folklore\Upgrade\Finding;
+use Folklore\Upgrade\MediaPivotRows;
 use Folklore\Upgrade\Severity;
 use Folklore\Upgrade\Site;
+use Folklore\Upgrade\Upgrade;
 use Folklore\Upgrade\UpgradeCheck;
+use Folklore\Upgrade\UpgradePlan;
 use Illuminate\Console\Command;
+use Illuminate\Console\ConfirmableTrait;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Database\ConnectionResolverInterface;
 use Illuminate\Database\Eloquent\Model;
+use RuntimeException;
 
 /**
  * Upgrades a site from 1.1 (docs/upgrade.md). `--check` reports what the site uses that
- * changes in 2.0, without writing anything.
+ * changes in 2.0, without writing anything. Without it, the command sets the site's
+ * modules, media reference key and `MediaResource` shape in `config/site.php`, and
+ * removes the rows of `medias_pivot` that 1.x wrote without a handle; `--dry-run` says
+ * what it would do.
  */
 class UpgradeCommand extends Command
 {
+    use ConfirmableTrait;
+
     /**
      * How many locations of a finding the report lists; `--json` lists them all.
      */
@@ -29,6 +40,8 @@ class UpgradeCommand extends Command
      */
     protected $signature = 'folklore:upgrade
         {--check : Report what changes in 2.0, without writing anything}
+        {--dry-run : Say what the upgrade would change, without writing anything}
+        {--force : Upgrade in production without asking}
         {--path=* : A directory or file of the site to read, from its base path; by default app, config, routes and bootstrap}
         {--model=* : A model whose JSON data to read, besides those of the paths}
         {--limit=1000 : How many rows of each model to read; 0 reads them all}
@@ -39,26 +52,16 @@ class UpgradeCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Upgrade a site from laravel-folklore 1.1; --check reports what changes';
+    protected $description = 'Upgrade a site from laravel-folklore 1.1: its config/site.php and medias_pivot; --check reports what changes';
 
-    public function handle(UpgradeCheck $upgradeCheck, Repository $config, ConnectionResolverInterface $db): int
+    public function handle(UpgradeCheck $upgradeCheck, Upgrade $upgrade, Repository $config, ConnectionResolverInterface $db): int
     {
-        if (! $this->option('check')) {
-            $this->components->error('Only `folklore:upgrade --check` is available yet: the upgrade itself comes in a next pre-release. Follow docs/upgrade.md until then.');
+        $site = $this->site($config, $db);
 
-            return self::FAILURE;
+        if (! $this->option('check')) {
+            return $this->upgrade($upgrade, $site);
         }
 
-        $paths = $this->stringList('path');
-        $models = array_values(array_filter($this->stringList('model'), fn (string $model) => is_subclass_of($model, Model::class)));
-        $site = new Site(
-            $this->laravel->basePath(),
-            $config,
-            $db,
-            count($paths) > 0 ? $paths : Site::PATHS,
-            $models,
-            max(0, (int) $this->option('limit')),
-        );
         $report = $upgradeCheck->run($site);
         $findings = array_merge(...array_values($report));
 
@@ -72,6 +75,123 @@ class UpgradeCommand extends Command
         }
 
         return count(array_filter($findings, fn (Finding $finding) => $finding->severity->blocks())) > 0 ? self::FAILURE : self::SUCCESS;
+    }
+
+    protected function upgrade(Upgrade $upgrade, Site $site): int
+    {
+        $dryRun = (bool) $this->option('dry-run');
+        $plan = $upgrade->plan($site);
+        $this->printPlan($plan, $dryRun);
+
+        if ($dryRun || $plan->isEmpty()) {
+            $this->newLine();
+            $this->line($plan->isEmpty() ? '<options=bold>Nothing to change.</>' : '<options=bold>Dry run: nothing was written.</> Run `folklore:upgrade` to apply it.');
+
+            return self::SUCCESS;
+        }
+
+        if (! $this->confirmToProceed()) {
+            return self::FAILURE;
+        }
+
+        $this->newLine();
+        if (count($plan->config) > 0) {
+            try {
+                $path = $upgrade->writeConfig($site, $plan->config);
+            } catch (RuntimeException $e) {
+                $this->components->error('config/site.php was not written: '.$e->getMessage());
+
+                return self::FAILURE;
+            }
+            $this->components->info('Wrote '.count($plan->config).' values in '.$site->relative($path).'.');
+        }
+
+        $removed = 0;
+        foreach ($plan->mediaPivotRows as $rows) {
+            if ($rows->count > 0) {
+                $removed += $upgrade->removeMediaPivotRows($site, $rows);
+            }
+        }
+        if ($removed > 0) {
+            $this->components->info("Removed {$removed} rows of `medias_pivot` without a handle. Run `php artisan json-data:sync-references` to sync the media of the JSON data under the `json` handle.");
+        }
+
+        return self::SUCCESS;
+    }
+
+    protected function printPlan(UpgradePlan $plan, bool $dryRun): void
+    {
+        $this->newLine();
+        $this->line('<options=bold>config/site.php</>');
+        if (count($plan->config) === 0) {
+            $this->line('  Nothing to set.');
+        }
+        foreach ($plan->config as $change) {
+            $this->line(sprintf('  %s <fg=green>%s</> → %s', $dryRun ? 'Would set' : 'Sets', $change->key, $this->export($change)));
+            $this->line('    '.$change->reason);
+            $this->locations($change->locations);
+        }
+
+        $this->newLine();
+        $this->line('<options=bold>medias_pivot</>');
+        $rows = array_filter($plan->mediaPivotRows, fn (MediaPivotRows $rows) => $rows->count > 0);
+        if (count($rows) === 0) {
+            $this->line('  No rows without a handle to remove.');
+        }
+        foreach ($rows as $found) {
+            $this->line(sprintf(
+                '  %s %d rows without a handle of `%s` (%s), which 1.x wrote for its JSON references: 2.0 syncs them under the `json` handle.',
+                $dryRun ? 'Would remove' : 'Removes',
+                $found->count,
+                $found->model,
+                $found->morphClass,
+            ));
+        }
+
+        if (count($plan->notes) > 0) {
+            $this->newLine();
+            $this->line('<options=bold>Left to do</>');
+            foreach ($plan->notes as $finding) {
+                $this->line('  '.$this->tag($finding->severity).' '.$finding->message);
+                if (! is_null($finding->fix)) {
+                    $this->line('    → '.$finding->fix);
+                }
+                $this->locations($finding->locations);
+            }
+        }
+    }
+
+    protected function export(ConfigChange $change): string
+    {
+        return is_bool($change->value) ? ($change->value ? 'true' : 'false') : "'{$change->value}'";
+    }
+
+    /**
+     * @param  list<string>  $locations
+     */
+    protected function locations(array $locations): void
+    {
+        foreach (array_slice($locations, 0, self::LOCATIONS) as $location) {
+            $this->line("    <fg=gray>{$location}</>");
+        }
+        if (count($locations) > self::LOCATIONS) {
+            $this->line('    <fg=gray>and '.(count($locations) - self::LOCATIONS).' more (--check --json lists them all)</>');
+        }
+    }
+
+    protected function site(Repository $config, ConnectionResolverInterface $db): Site
+    {
+        $paths = $this->stringList('path');
+        $models = array_values(array_filter($this->stringList('model'), fn (string $model) => is_subclass_of($model, Model::class)));
+
+        return new Site(
+            $this->laravel->basePath(),
+            $config,
+            $db,
+            count($paths) > 0 ? $paths : Site::PATHS,
+            $models,
+            max(0, (int) $this->option('limit')),
+        );
     }
 
     /**
@@ -92,12 +212,7 @@ class UpgradeCommand extends Command
                 if (! is_null($finding->fix)) {
                     $this->line('    → '.$finding->fix);
                 }
-                foreach (array_slice($finding->locations, 0, self::LOCATIONS) as $location) {
-                    $this->line("    <fg=gray>{$location}</>");
-                }
-                if (count($finding->locations) > self::LOCATIONS) {
-                    $this->line('    <fg=gray>and '.(count($finding->locations) - self::LOCATIONS).' more (--json lists them all)</>');
-                }
+                $this->locations($finding->locations);
             }
         }
 

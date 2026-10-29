@@ -12,6 +12,7 @@ use Folklore\Upgrade\Checks\BlocksCheck;
 use Folklore\Upgrade\Checks\Check;
 use Folklore\Upgrade\Checks\DeprecatedApiCheck;
 use Folklore\Upgrade\Checks\JsonCodeCheck;
+use Folklore\Upgrade\Checks\MediaResourceCheck;
 use Folklore\Upgrade\Checks\MediasCheck;
 use Folklore\Upgrade\Checks\ModulesCheck;
 use Folklore\Upgrade\Checks\PackagesCheck;
@@ -21,6 +22,7 @@ use Folklore\Upgrade\Checks\StoredReferencesCheck;
 use Folklore\Upgrade\Finding;
 use Folklore\Upgrade\Severity;
 use Folklore\Upgrade\Site;
+use Folklore\Upgrade\SourceFile;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -236,9 +238,41 @@ class UpgradeCheckTest extends TestCase
             ->assertExitCode(0);
     }
 
-    public function test_the_command_needs_check_until_the_upgrade_exists()
+    public function test_it_reports_the_sites_that_use_media_resource()
     {
-        $this->artisan('folklore:upgrade')->assertExitCode(1);
+        config()->set('site.medias.resource', 'canonical');
+
+        $uses = $this->finding($this->check(new MediaResourceCheck), 'gives media with Folklore\'s `MediaResource`');
+
+        $this->assertSame(Severity::Todo, $uses->severity);
+        $this->assertSame(['app/Http/Resources/ArticleMediaResource.php:5'], $uses->locations);
+
+        config()->set('site.medias.resource', 'legacy');
+        $this->assertSame(Severity::Info, $this->finding($this->check(new MediaResourceCheck), 'in the shape of 1.1')->severity);
+    }
+
+    public function test_it_reports_what_breaks_in_subclasses_of_media_resource()
+    {
+        $findings = $this->check(new MediaResourceCheck);
+
+        $this->assertSame(['app/Http/Resources/ArticleMediaResource.php:9'], $this->finding($findings, 'declares `toArray()` without its types')->locations);
+        $this->assertSame([
+            'app/Http/Resources/ArticleMediaResource.php:13 (thumbnailUrl())',
+            'app/Http/Resources/ArticleMediaResource.php:14 (large())',
+            'app/Http/Resources/ArticleMediaResource.php:20 (metadata())',
+        ], $this->finding($findings, 'calls the entity through the resource')->locations);
+        $this->assertSame(['app/Http/Resources/ArticleMediaResource.php:14'], $this->finding($findings, 'reads `$this->resource`')->locations);
+    }
+
+    public function test_it_finds_subclasses_of_media_resource_by_their_imports()
+    {
+        $file = fn (string $code) => new SourceFile('app/Resource.php', array_combine(range(1, count(explode("\n", $code))), explode("\n", $code)));
+
+        $this->assertTrue(MediaResourceCheck::extendsResource($file("namespace App;\nuse Folklore\\Http\\Resources\\MediaResource as Base;\nclass Resource extends Base {}")));
+        $this->assertTrue(MediaResourceCheck::extendsResource($file("namespace App;\nuse Folklore\\Http\\Resources;\nclass Resource extends Resources\\MediaResource {}")));
+        $this->assertTrue(MediaResourceCheck::extendsResource($file("namespace App;\nclass Resource extends \\Folklore\\Http\\Resources\\MediaResource {}")));
+        $this->assertFalse(MediaResourceCheck::extendsResource($file("namespace App;\nuse Folklore\\Mediatheque\\Http\\Resources\\MediaResource;\nclass Resource extends MediaResource {}")));
+        $this->assertFalse(MediaResourceCheck::extendsResource($file("namespace App;\nclass Resource extends MediaResource {}")));
     }
 
     /**

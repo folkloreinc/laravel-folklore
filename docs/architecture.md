@@ -73,7 +73,7 @@ Modules are turned on in `config/site.php`, which 1.x already uses (`site.medias
 - The modules use parts of Laravel that the core doesn't require (HTTP, routing, auth, mail, broadcasting, views, and `Foundation` for the auth module's `User` model): a Laravel application has them.
 - For now, the package's service provider registers each module's part. A module gets its own service provider when it gets its namespace, with its alpha.
 - The panneau module, for the Panneau 5 plugin, comes with its repository adapter in the slice "Panneau 5 adapter and media entities", and gets its page fields with the pages module, in the slice "Pages" ([roadmap.md](roadmap.md)). The Panneau 1.x fields and resources are removed.
-- `folklore:upgrade` writes the modules an upgraded site uses into its config. Until it exists (beta), an upgraded site turns them on by hand.
+- `folklore:upgrade` writes the modules an upgraded site uses into its `config/site.php` ([upgrade.md](upgrade.md#what-folkloreupgrade-does)).
 
 ## Entities
 
@@ -177,8 +177,8 @@ On `laravel-mediatheque` 2 and `laravel-image` 2 ([decisions/0008](decisions/000
 
 - What 2.0 replaces stays on the same class, marked `@deprecated`, and logs a deprecation on Laravel's `deprecations` channel when it is used.
 - The 1.1 test suite runs on `v2.x` as the compatibility suite, except what covers Panneau 1.x and the removed modules.
-- `folklore:upgrade --check` lists what a site uses that changed, from its code read as text and its database: modules to turn on, removed modules, packages to require, Panneau contracts, the site's own JSON references, unmapped or mismatched JSON keys, block data to convert, the media API, deprecated API ([upgrade.md](upgrade.md#what---check-reports)). `folklore:upgrade` enables the site's modules and converts data.
-- Rector rules rename what moved.
+- `folklore:upgrade --check` lists what a site uses that changed, from its code read as text and its database: modules to turn on, removed modules, packages to require, Panneau contracts, the site's own JSON references, unmapped or mismatched JSON keys, block data to convert, the media API, deprecated API ([upgrade.md](upgrade.md#what---check-reports)). `folklore:upgrade` enables the site's modules, sets the media reference key and the shape of `MediaResource`, and removes the rows of `medias_pivot` that 1.x wrote without a handle; it converts block data with the pages module.
+- Rector rules rename what moved and rewrite the 1.x API that code can follow (`FolkloreSetList::UPGRADE_2_0`, [upgrade.md](upgrade.md#the-rector-rules)). They are in `src/Folklore/Rector`, for the sites that require Rector: the package only requires it for its tests.
 - 3.0 removes the deprecated API.
 
 ## Testing
@@ -203,6 +203,8 @@ src/Folklore/
 ├── Panneau/              Panneau 5 plugin
 ├── Services/             Customer.io, Google
 ├── Support/              helpers, concerns
+├── Upgrade/              folklore:upgrade and its --check
+├── Rector/               the Rector rules of the upgrade from 1.1
 └── ServiceProvider.php
 ```
 
