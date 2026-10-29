@@ -295,11 +295,6 @@ class UpgradeCheckTest extends TestCase
             ->expectsOutputToContain('is not an Eloquent model, and is skipped');
     }
 
-    public function test_the_command_needs_check_until_the_upgrade_exists()
-    {
-        $this->artisan('folklore:upgrade')->assertExitCode(1);
-    }
-
     /**
      * @return list<Media>
      */

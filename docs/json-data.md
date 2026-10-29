@@ -68,7 +68,7 @@ The medias module registers two keys, when `laravel-mediatheque` 2 is installed:
 | `media` | `uid` | `media://med_01J…` | 2.0 |
 | `medias` | `id` | `medias://12` | 1.x, kept for upgraded sites |
 
-Both use `Folklore\Eloquent\MediaReferences`, so either one resolves in a relation to media, attached or not ([decisions/0016](decisions/0016-scope-of-unmapped-keys.md)). The module maps first, and so writes by default, the key of `site.medias.reference_key`: `media` for new projects (the default), `medias` for upgraded sites (`folklore:upgrade` will set it), so that front ends that read `medias://` keep working until they move. A relation can still choose with `key`, and a reference of the other key is kept as it is until the rewrite command converts it. A project that only wants `media://` references sets `site.medias.references.other_key` to `false`: the module then maps only the key of `site.medias.reference_key`.
+Both use `Folklore\Eloquent\MediaReferences`, so either one resolves in a relation to media, attached or not ([decisions/0016](decisions/0016-scope-of-unmapped-keys.md)). The module maps first, and so writes by default, the key of `site.medias.reference_key`: `media` for new projects (the default), `medias` for upgraded sites (`folklore:upgrade` sets it when the site stores `medias://` references), so that front ends that read `medias://` keep working until they move. A relation can still choose with `key`, and a reference of the other key is kept as it is until the rewrite command converts it. A project that only wants `media://` references sets `site.medias.references.other_key` to `false`: the module then maps only the key of `site.medias.reference_key`.
 
 `MediaReferences`:
 
