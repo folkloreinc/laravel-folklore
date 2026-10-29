@@ -11,3 +11,5 @@ parameters:
         - tests/Feature/Repositories/EntitiesContractByUidTest.php
         - tests/Feature/Repositories/NotesTestCase.php
         - tests/Feature/Repositories/Fixtures
+        - tests/Feature/Panneau/ArticlesContractTest.php
+        - tests/Feature/Panneau/PanneauTestCase.php

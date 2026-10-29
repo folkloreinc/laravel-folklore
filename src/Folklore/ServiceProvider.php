@@ -41,6 +41,7 @@ use Folklore\Models\Block;
 use Folklore\Models\Media;
 use Folklore\Models\MediaFile;
 use Folklore\Models\Page;
+use Folklore\Panneau\PanneauServiceProvider;
 use Folklore\Repositories\Blocks;
 use Folklore\Repositories\Medias;
 use Folklore\Repositories\Organisations;
@@ -100,6 +101,10 @@ class ServiceProvider extends BaseServiceProvider
         'auth' => [
             'Laravel\\Fortify\\Fortify' => 'laravel/fortify',
         ],
+        'panneau' => [
+            // In laravel-panneau since 5.0.0-alpha.4
+            'Panneau\\Contracts\\Repositories\\ChecksSlugs' => 'folklore/laravel-panneau ^5.0.0-alpha.4',
+        ],
         'organisations' => [],
         'sites' => [],
         'http' => [],
@@ -126,6 +131,10 @@ class ServiceProvider extends BaseServiceProvider
         $this->registerJsonData();
 
         $this->registerRepositories();
+
+        if ($this->moduleEnabled('panneau')) {
+            $this->app->register(PanneauServiceProvider::class);
+        }
 
         if ($this->moduleEnabled('sites')) {
             $this->registerSite();

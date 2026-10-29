@@ -42,6 +42,10 @@ return [
         // callbacks and `users:create`, on laravel/fortify
         'auth' => false,
 
+        // The Panneau 5 plugin: the adapter of the repositories for Panneau's
+        // resources, on folklore/laravel-panneau
+        'panneau' => false,
+
         // Organisations repository (removed in 2.0)
         'organisations' => false,
 
