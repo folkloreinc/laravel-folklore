@@ -64,9 +64,12 @@ class Media implements HasModel, MediaContract
         return $this->model->name() ?? '';
     }
 
+    /**
+     * The original's URL; without an original, the main rendition's, or the first file's.
+     */
     public function url(): string
     {
-        $file = $this->getOriginalFile() ?? $this->files()->first();
+        $file = $this->getOriginalFile() ?? $this->getMainFile() ?? $this->files()->first();
 
         return ! is_null($file) ? $file->url() : '';
     }
@@ -88,15 +91,19 @@ class Media implements HasModel, MediaContract
     }
 
     /**
+     * The files, the original first as in 1.x, then the others in the mediatheque's order:
+     * by handle, then by index in a group.
+     *
      * @return Collection<int, MediaFile>
      */
     public function files(): Collection
     {
         if (! isset($this->files)) {
-            $this->files = $this->model->files()
+            $files = $this->model->files()
                 ->filter(fn (FileContract $file) => $file instanceof Model)
-                ->map(fn (FileContract&Model $file) => new MediaFile($file))
-                ->values();
+                ->map(fn (FileContract&Model $file) => new MediaFile($file));
+            $isOriginal = fn (MediaFile $file) => $file->handle() === FileContract::ORIGINAL;
+            $this->files = $files->filter($isOriginal)->concat($files->reject($isOriginal))->values();
         }
 
         return $this->files;
@@ -116,6 +123,16 @@ class Media implements HasModel, MediaContract
         return $this->files()->first(function ($file) {
             return $file->handle() === FileContract::ORIGINAL;
         });
+    }
+
+    /**
+     * The file of the `main` role: the rendition the media plays.
+     */
+    protected function getMainFile(): ?MediaFileContract
+    {
+        $main = $this->model->files()->first(fn (FileContract $file) => $file->role() === 'main');
+
+        return $main instanceof Model ? new MediaFile($main) : null;
     }
 
     public function getModel(): Model

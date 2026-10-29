@@ -10,20 +10,23 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ### Breaking changes
 
-- `Folklore\Http\Resources\MediaResource` extends laravel-mediatheque's canonical `MediaResource`, and gives its shape by default: `id` is the uid, `url` the file the media plays, `files` an object by handle, with `status`, `width`, `height`, `duration` and the rest of the mediatheque's fields. Set `site.medias.resource` to `legacy`, or call `legacy()` on the resource or on a `MediasCollection`, to keep the shape of 1.1 ([#124](https://github.com/folkloreinc/laravel-folklore/issues/124)).
 - In a subclass of `MediaResource`, `$this->resource` is the mediatheque's media model, not the entity: `entity()` gives the entity. A subclass that overrides `toArray()` declares it `toArray(Request $request): array`, as the mediatheque's does.
 - The medias module needs `laravel-mediatheque` 2.0.0-alpha.10 or later, which has the canonical `MediaResource`: older pre-releases conflict.
 
 ### Added
 
-- `site.medias.resource`, `canonical` by default: `legacy` gives the shape of 1.1 that front ends written for it read, which `MediaResource` keeps field for field, for each type of media: the internal `id` as a string, `type`, `name`, the original's `url`, `thumbnail_url`, the entity's `metadata` (`pagesCount` for a document), an image's `sizes` from the `laravel-image` presets, and `files` as a list of `id`, `handle` (`thumbnails.0`), `name`, `url`, `mime` and `size`. `withoutFiles()`, `withoutMetadata()`, `withFilesAsMap()` and `withoutImageSizes()` keep working on it; the first two also apply to the canonical shape ([#124](https://github.com/folkloreinc/laravel-folklore/issues/124)).
+- `Folklore\Http\Resources\MediaResource` extends laravel-mediatheque's canonical `MediaResource`. `site.medias.resource` set to `canonical`, or `canonical()` on the resource (`legacy(false)` on a `MediasCollection`), gives the mediatheque's shape: `id` is the uid, `url` the file the media plays, `files` an object by handle, with `status`, `width`, `height`, `duration` and the rest of its fields ([#124](https://github.com/folkloreinc/laravel-folklore/issues/124)).
+- `site.medias.resource`, `legacy` by default until 3.0: the shape of 1.1 that front ends written for it read, which `MediaResource` keeps field for field, for each type of media: the internal `id` as a string, `type`, `name`, the original's `url`, `thumbnail_url`, the entity's `metadata` (`pagesCount` for a document), an image's `sizes` from the `laravel-image` presets, and `files` as a list of `id`, `handle` (`thumbnails.0`), `name`, `url`, `mime` and `size`, the original first. `withoutFiles()`, `withoutMetadata()`, `withFilesAsMap()` and `withoutImageSizes()` keep working on it; the first two also apply to the canonical shape ([#124](https://github.com/folkloreinc/laravel-folklore/issues/124)).
 - `MediaResource` takes an entity of the medias module or a mediatheque media model, and reads the model's entity for the legacy shape.
-
 - `MediaUsagesSync::synced()`, set with `JsonData::syncUsing()`, gives the media synced under the `json` handle, so that laravel-json-data's `json-data:sync-references` compares a model's media with its JSON instead of syncing them on every run, and reports them in its `--dry-run` ([laravel-json-data#5](https://github.com/folkloreinc/laravel-json-data/issues/5)).
 
 ### Changed
 
 - Requires `folklore/laravel-json-data` `^1.0.0-alpha.4`, for the second callback of `JsonData::syncUsing()` and `json-data:sync-references`, and for reading JSON columns faster: the stored value is flattened once instead of once per pattern ([laravel-json-data#20](https://github.com/folkloreinc/laravel-json-data/pull/20)).
+
+### Fixed
+
+- The files of a media entity (`Entities\Media::files()`) list the original first, as 1.x did, then the others by handle, rather than all of them by handle; without an original, `url()` is the main rendition's rather than the first file's by handle.
 
 ## [2.0.0-alpha.4] - 2026-10-23
 

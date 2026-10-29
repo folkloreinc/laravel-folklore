@@ -16,11 +16,12 @@ use LogicException;
 /**
  * A media in JSON, from its entity or its model.
  *
- * By default, the canonical shape of laravel-mediatheque's `MediaResource`: `id` is the
- * uid, `files` an object by handle. With `legacy()`, or `site.medias.resource` set to
- * `legacy`, the shape that 1.1 gave and that front ends written for it read: `id` is the
- * internal id, `url` the original's, `metadata` the entity's, `sizes` an image's
- * laravel-image presets, and `files` a list with 1.x handles (`thumbnails.0`).
+ * By default (`site.medias.resource` set to `legacy`), the shape that 1.1 gave and that
+ * front ends written for it read: `id` is the internal id, `url` the original's, `metadata`
+ * the entity's, `sizes` an image's laravel-image presets, and `files` a list with 1.x
+ * handles (`thumbnails.0`), the original first. With `canonical()`, or the config set to
+ * `canonical`, laravel-mediatheque's canonical shape: `id` is the uid, `files` an object
+ * by handle.
  *
  * `$this->resource` is the mediatheque's model; `entity()` gives the media's entity.
  */
@@ -136,7 +137,7 @@ class MediaResource extends BaseMediaResource
     }
 
     /**
-     * The shape of 1.1, whatever `site.medias.resource` says.
+     * The shape of 1.1, whatever `site.medias.resource` says; `false` for the canonical one.
      */
     public function legacy(bool $legacy = true): static
     {
@@ -155,7 +156,7 @@ class MediaResource extends BaseMediaResource
 
     public function isLegacy(): bool
     {
-        return ($this->shape ?? config('site.medias.resource', self::CANONICAL)) === self::LEGACY;
+        return ($this->shape ?? config('site.medias.resource', self::LEGACY)) === self::LEGACY;
     }
 
     public function withoutMetadata()
