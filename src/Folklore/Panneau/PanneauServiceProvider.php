@@ -15,6 +15,8 @@ class PanneauServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton(BlockTypes::class);
+
         // When Panneau first needs its adapters, so that a site's own adapters, registered
         // after, take precedence
         $this->callAfterResolving(RepositoryAdapters::class, function (RepositoryAdapters $adapters): void {
