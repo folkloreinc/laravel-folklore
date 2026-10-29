@@ -86,7 +86,8 @@ JSON data moves to `folklore/laravel-json-data` ([decisions/0021](decisions/0021
 
 What the contests platform needs to move its admin to Panneau 5.
 
-- [ ] Panneau 5 plugin, its first part: the `ResourceRepository` adapter on the typed query, `scope()` on the query context, and `ChecksSlugs` (`slugExists()`) for the checks of Panneau's slug fields ([decisions/0018](decisions/0018-panneau-plugin-php-only.md), `laravel-panneau`'s [decision 0011](https://github.com/folkloreinc/laravel-panneau/blob/v5.x/docs/decisions/0011-slug-checks.md), proposed); `laravel-panneau`'s architecture updated for the adapter
+- [x] Panneau 5 plugin, its first part: the `ResourceRepository` adapter on the typed query, `scope()` on the query context, and `ChecksSlugs` (`slugExists()`) for the checks of Panneau's slug fields ([decisions/0018](decisions/0018-panneau-plugin-php-only.md), `laravel-panneau`'s [decision 0011](https://github.com/folkloreinc/laravel-panneau/blob/v5.x/docs/decisions/0011-slug-checks.md)); the panneau module, tested with the conformance kit of `@panneau/protocol` ([#121](https://github.com/folkloreinc/laravel-folklore/issues/121), [architecture.md](architecture.md#repository-adapter))
+- [ ] `laravel-panneau`'s architecture updated for the adapter, which is on the typed query rather than `get()`, with a version from the model's attributes rather than `updated_at`
 
 Once `laravel-mediatheque` 2 has them:
 

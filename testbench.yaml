@@ -1,0 +1,25 @@
+# The app served to the Panneau protocol's conformance kit (the conformance job of
+# .github/workflows/tests.yml): a Panneau resource on a Folklore repository.
+#   vendor/bin/testbench workbench:build && vendor/bin/testbench serve
+providers:
+  - Folklore\Tests\Feature\Panneau\Fixtures\ConformanceServiceProvider
+  - Folklore\ServiceProvider
+  - Panneau\ServiceProvider
+
+migrations:
+  - tests/Feature/Repositories/Fixtures/migrations
+
+env:
+  - APP_KEY="base64:JuvsFxmOvuUYoKdZDq75wMSTiJHuDe7qE8tKW32y/7k="
+  - APP_DEBUG=true
+  - DB_CONNECTION=sqlite
+  # The rate limiter of the search counts in the cache: the app has no cache table
+  - CACHE_STORE=file
+
+workbench:
+  install: false
+  build:
+    - create-sqlite-db
+    - migrate:fresh
+    - db:seed:
+        --class: Folklore\Tests\Feature\Panneau\Fixtures\ConformanceSeeder

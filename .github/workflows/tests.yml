@@ -98,14 +98,14 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer remove --dev folklore/laravel-mediatheque folklore/laravel-image folklore/laravel-locale cviebrock/eloquent-sluggable google/apiclient guzzlehttp/guzzle laravel/fortify parsecsv/php-parsecsv --no-interaction --no-update
+          composer remove --dev folklore/laravel-mediatheque folklore/laravel-image folklore/laravel-locale folklore/laravel-panneau cviebrock/eloquent-sluggable google/apiclient guzzlehttp/guzzle laravel/fortify parsecsv/php-parsecsv --no-interaction --no-update
           composer require --dev "laravel/framework:13.*" "orchestra/testbench:11.*" --no-interaction --no-update
           composer update --prefer-dist --no-interaction --no-progress
 
       - name: Show installed versions
         run: |
           composer show | grep -E "^(laravel/framework|orchestra/testbench|phpunit/phpunit|guzzlehttp/[a-z-]+|folklore/[a-z-]+) " || true
-          if composer show | grep -qE "^(folklore/laravel-(mediatheque|image|locale)|laravel/fortify|google/apiclient) "; then
+          if composer show | grep -qE "^(folklore/laravel-(mediatheque|image|locale|panneau)|laravel/fortify|google/apiclient) "; then
             echo "A package of the modules is installed." >&2
             exit 1
           fi
@@ -299,3 +299,77 @@ jobs:
           DB_DATABASE: testing
           DB_USERNAME: postgres
           DB_PASSWORD: password
+
+  conformance:
+    name: PHP 8.4 - Laravel 13 - Panneau protocol conformance
+
+    # The panneau module's adapter, through the conformance kit of the Panneau protocol:
+    # testbench.yaml serves a Panneau resource on a Folklore repository.
+    runs-on: ubuntu-latest
+
+    env:
+      # The @panneau/protocol release that goes with the laravel-panneau of require-dev
+      # (@panneau/protocol@5.0.0-alpha.6, for laravel-panneau 5.0.0-alpha.5)
+      PANNEAU_PROTOCOL_REF: 890075747b245f95bc97c26e43406779ac7a71ea
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: dom, curl, libxml, mbstring, zip, pdo, sqlite, pdo_sqlite, fileinfo, gd
+          coverage: none
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer packages
+        uses: actions/cache@v5
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-php8.4-conformance-${{ hashFiles('composer.json') }}
+          restore-keys: composer-${{ runner.os }}-php8.4-conformance-
+
+      - name: Install dependencies
+        run: |
+          composer require --dev "laravel/framework:13.*" "orchestra/testbench:11.*" --no-interaction --no-update
+          composer update --prefer-dist --no-interaction --no-progress
+
+      - name: Show installed versions
+        run: composer show | grep -E "^(laravel/framework|orchestra/testbench|folklore/[a-z-]+) "
+
+      - name: Check out @panneau/protocol
+        uses: actions/checkout@v5
+        with:
+          repository: folkloreinc/panneau-js
+          ref: ${{ env.PANNEAU_PROTOCOL_REF }}
+          path: build/panneau-js
+          sparse-checkout: packages/protocol
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Bundle the conformance kit
+        run: tests/conformance/build.sh build/panneau-js build/conformance.mjs
+
+      - name: Build and serve the fixture app
+        run: |
+          vendor/bin/testbench workbench:build
+          vendor/bin/testbench serve --port=8000 > build/serve.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            curl --silent --output /dev/null http://127.0.0.1:8000/panneau/api/definition && exit 0
+            sleep 1
+          done
+          echo "The app did not start." && exit 1
+
+      - name: Run the conformance kit
+        run: node tests/conformance/run.mjs build/conformance.mjs http://127.0.0.1:8000/panneau/api
+
+      - name: Show the server log
+        if: failure()
+        run: cat build/serve.log

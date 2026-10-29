@@ -48,6 +48,7 @@ Modules are turned on in `config/site.php`, which 1.x already uses (`site.medias
     'medias' => false,        // Medias repository, mediatheque model bindings
     'pages' => false,         // Pages and blocks repositories
     'auth' => false,          // `repository` auth provider, users repository, Fortify callbacks, `users:create`
+    'panneau' => false,       // Panneau 5 plugin: the adapter of the repositories
     'organisations' => false, // Organisations repository (removed in 2.0)
     'sites' => false,         // Site manager (removed in 2.0)
     'http' => false,          // `routeForReactRouter`, `pixel` and `csv` responses, OffsetPaginator's page resolver
@@ -67,12 +68,13 @@ Modules are turned on in `config/site.php`, which 1.x already uses (`site.medias
   | `medias` | `folklore/laravel-mediatheque` 2, `folklore/laravel-image` 2 |
   | `pages` | `folklore/laravel-mediatheque` 2 (its models use `HasMedias`), `cviebrock/eloquent-sluggable`, `folklore/laravel-locale` |
   | `auth` | `laravel/fortify` |
+  | `panneau` | `folklore/laravel-panneau` 5 (5.0.0-alpha.4 or later) |
   | `pubnub` | `pubnub/pubnub` |
 
   Google Places still needs `google/apiclient` when it is used, until it moves to Laravel's HTTP client.
 - The modules use parts of Laravel that the core doesn't require (HTTP, routing, auth, mail, broadcasting, views, and `Foundation` for the auth module's `User` model): a Laravel application has them.
 - For now, the package's service provider registers each module's part. A module gets its own service provider when it gets its namespace, with its alpha.
-- The panneau module, for the Panneau 5 plugin, comes with its repository adapter in the slice "Panneau 5 adapter and media entities", and gets its page fields with the pages module, in the slice "Pages" ([roadmap.md](roadmap.md)). The Panneau 1.x fields and resources are removed.
+- The panneau module, the Panneau 5 plugin, has its namespace and its service provider (`Panneau\PanneauServiceProvider`), which the package's registers when the module is on. It has the repository adapter; it gets its page fields with the pages module, in the slice "Pages" ([roadmap.md](roadmap.md)). The Panneau 1.x fields and resources are removed.
 - `folklore:upgrade` writes the modules an upgraded site uses into its config. Until it exists (beta), an upgraded site turns them on by hand.
 
 ## Entities
@@ -164,8 +166,46 @@ On `laravel-mediatheque` 2 and `laravel-image` 2 ([decisions/0008](decisions/000
 
 ([decisions/0018](decisions/0018-panneau-plugin-php-only.md), which replaces [0011](decisions/0011-panneau-plugin.md)) An adapter for Panneau's `ResourceRepository` on the typed query, `scope()` on the query context, and the `Page`, `Pages`, `Blocks` and `PageSlug` fields. It ships before the end of Panneau 5's betas.
 
+- **The repository adapter**, below, in the slice "Panneau 5 adapter and media entities" ([#121](https://github.com/folkloreinc/laravel-folklore/issues/121)).
 - **PHP only.** The fields extend Panneau 5's built-in types: `Page` and `Pages` are relations to the pages resource, `Blocks` a repeater whose types come from the block type registry, and `PageSlug` Panneau's slug, with the URL that the pages module gives.
 - **Slug features in Panneau.** A source per locale, a URL computed by the backend and checking that a slug is free are proposed to Panneau's generic `slug` field.
+
+### Repository adapter
+
+A Panneau 5 resource returns a repository contract from `repository()`, and the panneau module adapts the repository: it registers `Panneau\EntitiesRepository` with `Panneau::repositoryAdapter()` for every repository with the typed query (`QueriesEntities`), when Panneau first needs its adapters, so a site's own adapter, registered later, takes precedence. A repository that only implements the 1.x `Entities` contract has no adapter.
+
+```php
+final class ArticlesResource extends Resource
+{
+    public function repository(): string
+    {
+        return \App\Contracts\Repositories\Articles::class; // a repository on Folklore's base class
+    }
+
+    public function itemClass(): string
+    {
+        return \App\Contracts\Entities\Article::class;
+    }
+
+    public function scope(Request $request): array
+    {
+        return ['workspace' => $request->user()->workspace_id]; // the repository's params
+    }
+
+    public function toItem(object $item): array
+    {
+        return ['title' => $item->title(), 'slug' => $item->slugs()];
+    }
+}
+```
+
+- **Lists** go through `queryEntities()`. The list's filters are the repository's params, which its `buildQueryFromParams()` applies, as the 1.x `get()` does; a range filter is `['from' => …, 'to' => …]`. Its sorts are the `order` param, which the repository's orderable columns allow. Its search is the `search` param, which the repository applies to its own fields, so the adapter is `Searchable`: a list that declares search fields needs a repository that handles `search`. Its ids and exclusions are entity keys.
+- **The scope** is the repository's query context: the adapter calls `withGlobalQuery($scope)` for lists, finds, creates and slug checks, on top of the default resolver's context ([decisions/0004](decisions/0004-global-query-context.md)). A filter that names a param of the scope is dropped, since the params of a call take precedence over the context. On create, the scope's values are given to `create()` with the values, as Panneau's `EloquentRepository` fills them in (a list in the scope is a constraint, not a value), so a scope works for creates when its params are named after the columns they fill; the adapter throws a `LogicException` when the created entity isn't within the scope. Updates and deletes find the entity by its id within the repository's own context: Panneau found it within the scope first.
+- **Items** are the repository's entities, and their public id is their `id()`: the model's entity key (`HasEntityKey`), or its key ([decisions/0015](decisions/0015-entity-key.md)). Entities have no public properties, so the resource serializes them with `toItem()`.
+- **The version** is a hash of the attributes of the entity's model as read or last saved (`getRawOriginal()`), for an entity that implements `HasModel`, and null otherwise, which turns off Panneau's `If-Match` check. `updated_at` would keep the same version for two saves in the same second. Creates and updates find the entity again, so the version they return is the one the next update compares, whatever the database does to the stored values (`jsonb`).
+- **Unique slugs.** The adapter implements Panneau's `ChecksSlugs` with the repository's `slugExists()` (`Contracts\Repositories\ChecksSlugs`), within the scope. A repository opts in with the `Repositories\Concerns\ChecksSlugs` trait, which looks the slug up in the column named after its field, or `{field}_{locale}` for a localized slug (`slug_fr`, as the pages models have them), deleted entities included, as Panneau's `EloquentRepository` does. It overrides `getSlugColumn()` to look elsewhere, or `newSlugQuery()` to narrow the lookup with the form's values (a page's parent). The trait is opt-in, so that the method doesn't clash with a repository that already has a `slugExists()`. Checking a slug on a repository without it throws a `LogicException`.
+- `Testing\PanneauRepositoryContractTests` checks a repository through the adapter: it finds what it creates within the scope, and the version of a saved item is the one found next.
+- Not adapted yet: Panneau's `ChunkedQuery` (queued actions), `Duplicable` and `Restorable`.
 
 ## Other modules
 
@@ -184,7 +224,8 @@ On `laravel-mediatheque` 2 and `laravel-image` 2 ([decisions/0008](decisions/000
 ## Testing
 
 - The core's tests run with `illuminate/*` only. Each module's tests run with its dependencies, and check that the module stays off when they are missing.
-- Contract tests for the base entity and repository, that sites can run against their own classes.
+- Contract tests for the base entity and repository, that sites can run against their own classes, and for a repository through the Panneau adapter.
+- CI runs the conformance kit of the Panneau protocol (`@panneau/protocol`) on a Panneau resource whose repository is a Folklore repository (`testbench.yaml`, `tests/conformance`).
 - `JsonDataCast` keeps the 1.1.8 characterization tests, on SQLite, MySQL and PostgreSQL (`jsonb`).
 
 ## Package layout
@@ -217,7 +258,7 @@ The module namespaces are named with the contracts. 1.x classes that move into a
 | `folklore/laravel-mediatheque`, `folklore/laravel-image` | `^2.0`, suggested (medias module) | Suggested: `laravel-mediatheque ^2.0.0-alpha.10`, `laravel-image ^2.0.0-alpha.1`. `laravel-mediatheque` below 2.0.0-alpha.10 conflicts, for its canonical `MediaResource` (below alpha 7 since alpha 2) |
 | `folklore/laravel-locale ^8.1`, `cviebrock/eloquent-sluggable` | Suggested (pages module) | Same |
 | `laravel/fortify` | Suggested (auth module) | Same |
-| `folklore/laravel-panneau` | `^5.0`, suggested (Panneau plugin) | Not yet: the Panneau 1.x fields are removed, the plugin comes with the slice "Panneau 5 adapter and media entities" |
+| `folklore/laravel-panneau` | `^5.0`, suggested (panneau module) | Suggested: `^5.0.0-alpha.4`, which has `ChecksSlugs`. Its pre-releases below 5.0.0-alpha.4 conflict; 1.x doesn't, though the Panneau 1.x fields are removed |
 | `guzzlehttp/guzzle`, `parsecsv/php-parsecsv`, `pubnub/pubnub` | Suggested (services) | Same |
 | `google/apiclient` | Removed | Suggested, for Places until it moves to Laravel's HTTP client |
 
