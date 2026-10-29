@@ -10,6 +10,8 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ### Added
 
+- `folklore:upgrade --check` reports what a 1.1 site uses that changes in 2.0, without writing anything, and exits with an error while there is something to do: modules to turn on (including the macros, the Customer.io client and the `repository` auth provider that 1.1 booted for every site), removed modules, packages that 1.1 required, Panneau's contracts used through Folklore's, models that replace `JsonDataCast` with a plain `json` cast and the code that writes and syncs their references, the paths and keys of the references stored in JSON columns with the keys that 2.0 doesn't map or whose identifiers don't match (`media://12` by id), `blocks_pivot`, the media API, and the deprecated API. `--path`, `--model`, `--limit` and `--json` adjust it ([upgrade.md](docs/upgrade.md#what---check-reports), [#123](https://github.com/folkloreinc/laravel-folklore/issues/123)). `folklore:upgrade` without `--check` comes next.
+
 - `MediaUsagesSync::synced()`, set with `JsonData::syncUsing()`, gives the media synced under the `json` handle, so that laravel-json-data's `json-data:sync-references` compares a model's media with its JSON instead of syncing them on every run, and reports them in its `--dry-run` ([laravel-json-data#5](https://github.com/folkloreinc/laravel-json-data/issues/5)).
 
 ### Changed

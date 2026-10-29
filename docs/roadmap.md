@@ -111,7 +111,8 @@ Not scheduled yet: each item goes into the slice that needs it. The JSON data it
 - [ ] Auth module, opt-in ([decisions/0010](decisions/0010-users-and-auth.md))
 - [ ] Other modules opt-in; Places on Laravel's HTTP client; removed modules gone; paginator override removed ([decisions/0012](decisions/0012-other-modules.md))
 - [ ] Deprecated API complete, with notices on the `deprecations` channel, including the 1.x JSON declarations (`HasJsonDataRelations`, `HasJsonDataColumnExtract`, `$jsonAttributeFillable`, `$jsonAttributeExclude`) once the pages models use schemas
-- [ ] `folklore:upgrade`, with `--check`: modules, block data, JSON keys, removed modules
+- [x] `folklore:upgrade --check`: modules, packages, removed modules, Panneau contracts, the site's own JSON references and their stored paths and keys, block data, the media API, deprecated API ([#123](https://github.com/folkloreinc/laravel-folklore/issues/123))
+- [ ] `folklore:upgrade`: enables the modules, sets the media reference key, converts block data
 - [ ] Rector rules
 - [ ] An active site upgrades (the contests platform is the candidate)
 
