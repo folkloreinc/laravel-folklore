@@ -96,8 +96,9 @@ Once `laravel-mediatheque` 2 has them:
 
 ## Pages
 
-- [ ] Pages module: blocks in the page's JSON, type registry, configurable route names ([decisions/0009](decisions/0009-pages-and-blocks.md))
-- [ ] The Panneau plugin's page fields: `Page`, `Pages`, `Blocks` and `PageSlug`, in PHP on Panneau 5's built-in types, with the URL of a slug from the pages module ([decisions/0018](decisions/0018-panneau-plugin-php-only.md)); `PageSlug` on Panneau's generic slug field ([folkloreinc/panneau-js#109](https://github.com/folkloreinc/panneau-js/issues/109))
+- [ ] Pages module: blocks in the page's JSON, type registry, configurable route names ([decisions/0009](decisions/0009-pages-and-blocks.md)). The route names are in `site.pages.routes` since the page fields ([#122](https://github.com/folkloreinc/laravel-folklore/issues/122))
+- [x] The Panneau plugin's page fields: `Page`, `Pages`, `Blocks` and `PageSlug`, in PHP on Panneau 5's built-in types, with the URL of a slug from the pages module ([decisions/0018](decisions/0018-panneau-plugin-php-only.md)); `PageSlug` on Panneau's generic slug field ([folkloreinc/panneau-js#109](https://github.com/folkloreinc/panneau-js/issues/109)); the registry of block types, the nesting limit, the types of pages by resource, and blocks still stored through `blocks_pivot` ([decisions/0022](decisions/0022-page-fields.md), [#122](https://github.com/folkloreinc/laravel-folklore/issues/122)). Pulled ahead of the pages module, for a 1.4 site that is moving to Panneau 5
+- [ ] `laravel-panneau` serializes the relations and media inside groups and repeaters as references; then `Blocks` drops its own conversion ([folkloreinc/laravel-panneau#117](https://github.com/folkloreinc/laravel-panneau/issues/117))
 
 ## Later
 
@@ -137,7 +138,6 @@ The auth and other modules are placed in the beta because the site that upgrades
 
 ## Open questions
 
-- How `Page` restricts the pages it offers to some types, as `withTypes()` did in 1.x: a relation filter in Panneau 5, or a pages resource per type (slice "Pages").
 - Whether `MediaReferences` later moves to the mediatheque, as an integration it ships, so that a project gets media references without this package's medias module ([decisions/0021](decisions/0021-json-data-package.md)).
 
 ## Pilots' adoption

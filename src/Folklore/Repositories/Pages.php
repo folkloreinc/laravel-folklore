@@ -13,6 +13,14 @@ class Pages extends Entities implements PagesRepositoryContract
 
     protected $jsonAttributeFillable = '*';
 
+    /**
+     * The `type` param keeps the pages of some types (`exclude_type` the others), as the
+     * scope of a pages resource that offers only some types (docs/decisions/0022).
+     *
+     * @var list<string>
+     */
+    protected $queryColumns = ['type'];
+
     public function __construct(BlocksRepositoryContract $blocks)
     {
         $this->blocks = $blocks;

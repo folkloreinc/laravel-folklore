@@ -112,6 +112,23 @@ The resources of Panneau 5 point to the site's repository contracts, which the p
 - **Unique slugs** need the `Repositories\Concerns\ChecksSlugs` trait on the repository.
 - `Testing\PanneauRepositoryContractTests` checks each repository through the adapter.
 
+The page fields of 1.x have Panneau 5 equivalents in `Folklore\Panneau\Fields` ([architecture.md](architecture.md#page-fields), [decisions/0022](decisions/0022-page-fields.md)):
+
+| 1.x | 2.0 |
+|-----|-----|
+| The block types of the `blocks` resource (`$types`, `ResourceType` classes) | Panneau `BlockType`s, registered once with `BlockTypes::register()` |
+| `Blocks::make('blocks')` | The same, a `repeater` of the registry's types |
+| `->withoutType(StackBlock::class)` | `->exceptTypes('stack')`, by id; `onlyTypes()` keeps some |
+| `->maxDepth(2)`, `BlockWithBlocks` | `->maxDepth(2)`, levels counted from the outermost field, as in 1.x; 3 by default |
+| `Page::make('section')->withTypes(['section'])` | `Page::make('section')->resource(SectionsResource::class)`, a pages resource whose `scope()` is `['type' => ['section']]` |
+| `->withQuery([...])` on `Page` and `Pages` | The related resource's `scope()` |
+| `Pages::make('pages')` (`items-resource`) | `Pages::make('pages')`, a multiple relation |
+| `PageSlugLocalized::make('slug')` | `PageSlug::make('slug')`, localized by default |
+| `PageSlug::setRoutesResolver(...)` | `site.pages.routes`, or `url()` on the field for other routes |
+| `->isDisabled()` on the home page's slug | Disabled for the page whose `handle` is `home` |
+
+Blocks keep working through `blocks_pivot`: the field gives each block its id, and saving a page updates its blocks.
+
 ### Medias
 
 | 1.1 | 2.0 |

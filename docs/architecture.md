@@ -74,7 +74,7 @@ Modules are turned on in `config/site.php`, which 1.x already uses (`site.medias
   Google Places still needs `google/apiclient` when it is used, until it moves to Laravel's HTTP client.
 - The modules use parts of Laravel that the core doesn't require (HTTP, routing, auth, mail, broadcasting, views, and `Foundation` for the auth module's `User` model): a Laravel application has them.
 - For now, the package's service provider registers each module's part. A module gets its own service provider when it gets its namespace, with its alpha.
-- The panneau module, the Panneau 5 plugin, has its namespace and its service provider (`Panneau\PanneauServiceProvider`), which the package's registers when the module is on. It has the repository adapter; it gets its page fields with the pages module, in the slice "Pages" ([roadmap.md](roadmap.md)). The Panneau 1.x fields and resources are removed.
+- The panneau module, the Panneau 5 plugin, has its namespace and its service provider (`Panneau\PanneauServiceProvider`), which the package's registers when the module is on. It has the repository adapter and the page fields, whose `PageSlug` and `Page` fields need the pages module. The Panneau 1.x fields and resources are removed.
 - `folklore:upgrade` writes the modules an upgraded site uses into its `config/site.php` ([upgrade.md](upgrade.md#what-folkloreupgrade-does)).
 
 ## Entities
@@ -155,7 +155,7 @@ On `laravel-mediatheque` 2 and `laravel-image` 2 ([decisions/0008](decisions/000
 ([decisions/0009](decisions/0009-pages-and-blocks.md))
 
 - Blocks are stored in the page's JSON; `blocks_pivot` goes away and `folklore:upgrade` converts existing data.
-- The `slug_{locale}` columns stay. Route names (`home`, `page`, `page_with_parent`) are configurable.
+- The `slug_{locale}` columns stay. Route names (`home`, `page`, `page_with_parent`) are configurable, in `site.pages.routes`: `Pages\PageRoutes` gives the URLs of pages from them, for the `Page` entity and the `PageSlug` field.
 - A type registry maps page and block types to entity classes, in `config/site.php` or in code. `HasTypedEntity` reads `$entitiesByType` on the model first, then the registry.
 
 ## Auth module
@@ -167,6 +167,7 @@ On `laravel-mediatheque` 2 and `laravel-image` 2 ([decisions/0008](decisions/000
 ([decisions/0018](decisions/0018-panneau-plugin-php-only.md), which replaces [0011](decisions/0011-panneau-plugin.md)) An adapter for Panneau's `ResourceRepository` on the typed query, `scope()` on the query context, and the `Page`, `Pages`, `Blocks` and `PageSlug` fields. It ships before the end of Panneau 5's betas.
 
 - **The repository adapter**, below, in the slice "Panneau 5 adapter and media entities" ([#121](https://github.com/folkloreinc/laravel-folklore/issues/121)).
+- **The page fields**, below, in the slice "Pages" ([#122](https://github.com/folkloreinc/laravel-folklore/issues/122), [decisions/0022](decisions/0022-page-fields.md)).
 - **PHP only.** The fields extend Panneau 5's built-in types: `Page` and `Pages` are relations to the pages resource, `Blocks` a repeater whose types come from the block type registry, and `PageSlug` Panneau's slug, with the URL that the pages module gives.
 - **Slug features in Panneau.** A source per locale, a URL computed by the backend and checking that a slug is free are proposed to Panneau's generic `slug` field.
 
@@ -213,6 +214,57 @@ final class ArticlesResource extends Resource
 - `Testing\PanneauRepositoryContractTests` checks a repository through the adapter: it finds what it creates within the scope, not what is outside it, and the version of a saved item is the one found next.
 - Not adapted yet: Panneau's `ChunkedQuery` (queued actions), `Duplicable` and `Restorable`.
 
+### Page fields
+
+([decisions/0022](decisions/0022-page-fields.md)) `Panneau\Fields\Page`, `Pages`, `Blocks` and `PageSlug` configure Panneau 5's built-in types. A site registers its block types once, in a service provider's `boot()`:
+
+```php
+use Folklore\Panneau\BlockTypes;
+use Folklore\Panneau\Fields\Blocks;
+use Folklore\Panneau\Fields\Page;
+use Panneau\Fields\BlockType;
+
+$this->app->make(BlockTypes::class)->register(fn () => [
+    BlockType::make('text', __('Text'), [RichText::make('body')->localized()]),
+    BlockType::make('section', __('Section'), [Page::make('section')->resource(SectionsResource::class)]),
+    BlockType::make('stack', __('Stack'), [Blocks::make('blocks')->exceptTypes('stack')]),
+]);
+```
+
+```php
+final class PagesResource extends Resource
+{
+    public function repository(): string
+    {
+        return \Folklore\Contracts\Repositories\Pages::class;
+    }
+
+    public function fields(): array
+    {
+        return [
+            Text::make('title')->localized()->resolveUsing(fn (PageContract $page) => ['fr' => $page->title('fr'), 'en' => $page->title('en')]),
+            PageSlug::make('slug'),           // localized, from the title, with the page's URL
+            Page::make('parent'),             // a relation to the `pages` resource
+            Blocks::make('blocks')->maxDepth(2),
+        ];
+    }
+}
+
+final class SectionsResource extends PagesResource // the pages a field offers: the sections
+{
+    public function scope(Request $request): array
+    {
+        return ['type' => ['section']];
+    }
+}
+```
+
+- **`Page` and `Pages`** are relations to the `pages` resource (`Page::RESOURCE`), multiple for `Pages`. To offer some types of pages, they relate to a pages resource whose `scope()` has these types: its picker lists them, and Panneau refuses the others when saving. The pages repository reads the `type` param. Their values are the pages' ids; models are turned into their entities, which the related resource's repository gives ids to.
+- **`Blocks`** is a `repeater` of typed blocks. Its types are the `BlockTypes` registry's (instances, or closures called in the request, so that labels are translated), or those given to `types()`, narrowed by id with `onlyTypes()` and `exceptTypes()`. A type with a `Blocks` field nests blocks: `maxDepth()` counts levels from the outermost field, the smallest limit of the nesting applies, 3 levels when no field sets one, and a type whose blocks would be deeper isn't offered. The blocks of a page are read from its `blocks()` (`HasBlocks`) for a field named `blocks`, and from block entities, models or arrays.
+- **Block ids.** Each block has its `id`. Saved, a block keeps it only if it is one of the item's blocks, at any level, and no other block of the save kept it, so that the pages repository, which stores blocks as rows linked through `blocks_pivot`, updates them rather than creating new rows, and never updates another page's.
+- **Relations inside blocks** are turned into references (`{ "id", "label" }`), from the related items, or from the ids that blocks stored, found within the related resource's scope (one query per value), as Panneau does for the relations at the top of an item ([folkloreinc/laravel-panneau#117](https://github.com/folkloreinc/laravel-panneau/issues/117)). The label is the related resource's `itemTitle` field, read through the field: a resource on entities gives that field a `resolveUsing()`.
+- **`PageSlug`** is a `slug`, localized and from the `title` by default, read from the item's `slug($locale)` in Panneau's locales. Its check gives the page's URL from `Pages\PageRoutes`: `page`, or `page_with_parent` with the slug of the page of the form's `parent` field (`parentField()`, null for pages without a parent), and the prefix in front of the slug. It is disabled for the home page (its `handle` is `home`). `unique()` needs the `Repositories\Concerns\ChecksSlugs` trait on the repository; `url()` replaces the URL, for other routes.
+
 ## Other modules
 
 ([decisions/0012](decisions/0012-other-modules.md)) Customer.io, Google (Places on Laravel's HTTP client), PubNub, the view composers and `routeForReactRouter`, the `csv` and `pixel` macros. `daemon:restart` stays in the core. The site manager, organisations, PubSubHubbub and the unused contracts are removed. The global paginator resolver override is removed.
@@ -245,7 +297,7 @@ src/Folklore/
 ├── Repositories/         Entities base class, typed query, context
 ├── Eloquent/             JsonDataCast (subclass with the macros), the 1.x declarations, MediaReferences, the aliases of the classes moved to laravel-json-data (decisions/0021)
 ├── Medias/               medias module (proposed)
-├── Pages/                pages module (proposed)
+├── Pages/                pages module: the routes of pages (the rest proposed)
 ├── Auth/                 auth module (proposed)
 ├── Panneau/              Panneau 5 plugin
 ├── Services/             Customer.io, Google
