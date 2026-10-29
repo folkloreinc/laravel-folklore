@@ -177,7 +177,7 @@ On `laravel-mediatheque` 2 and `laravel-image` 2 ([decisions/0008](decisions/000
 
 - What 2.0 replaces stays on the same class, marked `@deprecated`, and logs a deprecation on Laravel's `deprecations` channel when it is used.
 - The 1.1 test suite runs on `v2.x` as the compatibility suite, except what covers Panneau 1.x and the removed modules.
-- `folklore:upgrade --check` lists what a site uses that changed: removed modules, unmapped JSON keys, block data to convert, deprecated macros. `folklore:upgrade` enables the site's modules and converts data.
+- `folklore:upgrade --check` lists what a site uses that changed, from its code read as text and its database: modules to turn on, removed modules, packages to require, Panneau contracts, the site's own JSON references, unmapped or mismatched JSON keys, block data to convert, the media API, deprecated API ([upgrade.md](upgrade.md#what---check-reports)). `folklore:upgrade` enables the site's modules and converts data.
 - Rector rules rename what moved.
 - 3.0 removes the deprecated API.
 

@@ -1,0 +1,9 @@
+{
+    "name": "folklore/upgrade-site",
+    "description": "A 1.1 site, for the tests of folklore:upgrade --check",
+    "require": {
+        "laravel/framework": "^12.0",
+        "folklore/laravel-folklore": "^1.1",
+        "folklore/laravel-mediatheque": "^1.1"
+    }
+}

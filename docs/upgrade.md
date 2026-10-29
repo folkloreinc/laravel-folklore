@@ -1,6 +1,6 @@
 # Upgrading from 1.1
 
-> **Draft.** This guide is filled as 2.0 lands. The steps and the mapping below are the plan ([decisions/0003](decisions/0003-evolve-in-place.md)). `json-data:rewrite-references` exists; `folklore:upgrade` and the Rector rules come with the beta.
+> **Draft.** This guide is filled as 2.0 lands. The steps and the mapping below are the plan ([decisions/0003](decisions/0003-evolve-in-place.md)). `json-data:rewrite-references` and `folklore:upgrade --check` exist; `folklore:upgrade` itself and the Rector rules come with the beta ([#123](https://github.com/folkloreinc/laravel-folklore/issues/123)).
 
 2.0 keeps the 1.x class names and their protected API. What it replaces is deprecated until 3.0, so a site can upgrade first and clean up its code afterwards. Sites usually upgrade when they move to Panneau 5, since the Panneau plugin ships with 2.0.
 
@@ -14,12 +14,28 @@
 ## Steps
 
 1. **Require the new version:** `composer require folklore/laravel-folklore:^2.0`, and the packages of the modules the site uses (they are suggested, no longer required). During the pre-releases, require `folklore/laravel-folklore:^2.0@alpha` and `folklore/laravel-json-data:^1.0@alpha` together: a stability flag doesn't apply to the dependencies of a required package, so a site with `minimum-stability: stable` can't install the alphas of `laravel-json-data` otherwise.
-2. **Check the site:** `php artisan folklore:upgrade --check`. It lists the modules the site uses, removed modules it still uses, block data to convert, JSON reference keys that aren't mapped, and deprecated macros.
+2. **Check the site:** `php artisan folklore:upgrade --check`. It writes nothing, and exits with an error while something is to do. See [What `--check` reports](#what---check-reports).
 3. **Upgrade:** `php artisan folklore:upgrade`. It enables the site's modules in `config/site.php`, sets the media reference key that the site writes (`medias://`), and converts block data. Every module is off by default: until the command exists, list the modules the site uses under `modules` in `config/site.php`, and set `medias.reference_key` to `medias` so that the site keeps writing `medias://12` ([architecture.md](architecture.md#configuration-and-modules)).
 4. **Run the Rector rules.**
 5. **Run the site's tests**, and check pages, forms with media, and logins.
 6. **Fix the deprecations** at your own pace. They are logged on the `deprecations` channel.
 7. **Later:** move media references to `media://` with `php artisan json-data:rewrite-references --from=medias --to=media`, once front ends read both.
+
+## What `--check` reports
+
+It reads the site's code as text (`app`, `config`, `routes`, `resources/views`, `bootstrap/app.php` and `bootstrap/providers.php`, or the `--path` given), so it finds the classes that no longer load in 2.0. Then it reads the JSON columns of the models from the database: the first 1000 rows of each by default, all of them with `--limit=0`. The models are the classes of those files that look like models (they extend a model, or have casts), and those given with `--model`. Each one is loaded in a child PHP process first: a class that is a fatal error in 2.0, such as a signature that no longer matches its parent's, is reported instead of stopping the check. `--json` prints the report as JSON. Each finding is **breaking** (fix it before upgrading), **to do** (while upgrading), **deprecated** (works until 3.0) or **info**.
+
+| Check | What it finds |
+|---|---|
+| Modules | The modules the site uses and that are off: the classes of each module, and what the 1.1 service provider did for every site: the `routeForReactRouter` macro and the `csv` and `pixel` responses (unless the site defines them itself), the `repository` auth provider, the Customer.io client and transport, the PubNub driver |
+| Removed modules | The site manager, organisations, PubSubHubbub, the `Contact`, `Person` and `Contactable` contracts, Panneau 1.x's fields and resources |
+| Packages | The packages that 1.1 required and that the site needs without requiring them: the modules' packages, `laravel-locale` for the view composers, Guzzle, `google/apiclient` and `parsecsv` for the services |
+| Panneau contracts | Site code that uses `Panneau\Contracts\ResourceItem` or `Repository`, which Folklore's entities and repositories no longer implement |
+| JSON references in the code | Models that replace the `JsonDataCast` of their Folklore model with a plain `json` cast, and code that writes `scheme://id` references itself (`'media://'.$id`). As info: code with the key in a variable (`$key.'://'.$id`), which may build URLs, and the `sync()` calls of that code and of the classes that use it or extend it |
+| Stored JSON references | For each JSON column, the paths and keys of its references (`data.gallery.* → medias:// (12)`): those of a column without `JsonDataCast` are to declare. Keys that aren't mapped, and keys whose identifiers match nothing in the model they map to, such as `media://12` written by id where 2.0 reads `media://` by uid. `medias://` references without `site.medias.reference_key` set to `medias` |
+| Block data | The rows of `blocks_pivot`, which 2.0 stores in the page's JSON |
+| Medias | `Folklore\Mediatheque\Support\Traits\HasMedias`, `image.sizes` filters, `new ImageSize()` with filters, `setFilters()`, `getMetadatas()`, `new Medias($typeFactory)`. `MediaResource` with `site.medias.resource` set to `canonical`, and its subclasses that override `toArray($request)` without types or call the entity through the resource |
+| Deprecated API | `JsonDataCast::macro()`, `$jsonAttributeName`, `setGlobalQuery()` |
 
 ## What changes
 

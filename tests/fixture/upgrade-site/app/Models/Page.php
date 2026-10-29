@@ -1,0 +1,15 @@
+<?php
+
+namespace App\Models;
+
+use Folklore\Mediatheque\Support\Traits\HasMedias;
+use Folklore\Models\Page as BasePage;
+
+class Page extends BasePage
+{
+    use HasMedias;
+
+    protected $casts = [
+        'data' => 'json',
+    ];
+}

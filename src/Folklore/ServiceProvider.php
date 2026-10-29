@@ -14,6 +14,7 @@ use Folklore\Console\PubSubHubbubSubscribe;
 use Folklore\Console\PubSubHubbubUnsubscribe;
 use Folklore\Console\RepositoryContractMakeCommand;
 use Folklore\Console\RepositoryMakeCommand;
+use Folklore\Console\UpgradeCommand;
 use Folklore\Console\UsersCreateCommand;
 use Folklore\Contracts\Entities\Entity;
 use Folklore\Contracts\Entities\HasModel;
@@ -394,6 +395,7 @@ class ServiceProvider extends BaseServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 DaemonRestartCommand::class,
+                UpgradeCommand::class,
             ]);
 
             if ($this->moduleEnabled('assets')) {
