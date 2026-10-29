@@ -14,15 +14,21 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 - `Contracts\Repositories\ChecksSlugs` and its `Repositories\Concerns\ChecksSlugs` trait: whether a slug is taken, in `{field}` or `{field}_{locale}`, within the repository's query context. The Panneau adapter answers the checks of Panneau's unique slugs with it; a repository opts in with the trait.
 - `Testing\PanneauRepositoryContractTests`, to check a site's repository through the Panneau adapter.
 - The page fields of the Panneau 5 plugin, in `Folklore\Panneau\Fields`, on Panneau's built-in types ([decision 0022](docs/decisions/0022-page-fields.md), [architecture.md](docs/architecture.md#page-fields), [#122](https://github.com/folkloreinc/laravel-folklore/issues/122)):
-  - `Blocks`, a `repeater` of typed blocks: the types of the `Folklore\Panneau\BlockTypes` registry, or `types()`, narrowed with `onlyTypes()` and `exceptTypes()`, and nested blocks limited by `maxDepth()` (3 levels by default). Each block has its `id`, which a save keeps for the item's own blocks only, so that blocks stored through `blocks_pivot` are updated rather than created again. Relations inside blocks are serialized as references.
+  - `Blocks`, a `repeater` of typed blocks: the types of the `Folklore\Panneau\BlockTypes` registry, or `types()`, narrowed with `onlyTypes()` and `exceptTypes()`, and nested blocks limited by `maxDepth()`, counted from the field that sets it as in 1.x (3 levels by default). Each block has its `id`, which a save keeps for the item's own blocks only, so that blocks stored through `blocks_pivot` are updated rather than created again. Relations inside blocks are serialized as references, with one query per related resource.
   - `Page` and `Pages`, relations to the `pages` resource. A field restricted to some types of pages relates to a pages resource whose `scope()` has them, instead of 1.x's `withTypes()`.
-  - `PageSlug`, Panneau's `slug`, localized and from the `title`, whose check gives the page's URL under its `parent`, and which is disabled for the home page.
+  - `PageSlug`, Panneau's `slug`, localized and from the `title`, unique unless `notUnique()`, whose check gives the page's URL under its `parent`, and which is disabled for the home page.
 - `site.pages.routes`: the names of the routes of pages (`home`, `page`, `page_with_parent`), which the `Page` entity's `url()` and `PageSlug` use, through `Folklore\Pages\PageRoutes`.
 - The pages repository reads the `type` param (`type`, `exclude_type`…), for the scope of a resource that offers some types of pages.
+- The pages repository implements `ChecksSlugs`, on its `slug_{locale}` columns, across the types of pages. The `ChecksSlugs` trait has `getSlugContextParams()`, to leave params of the context out of the lookup.
+- The Panneau adapter's version of an entity with blocks (`HasBlocks`) includes the attributes of its blocks, so that an `If-Match` from before a change of a block only is refused.
 
 ### Changed
 
 - `queryEntities()` orders the entities by their entity key after the query's sorts, so that pages are stable when the sorted values are equal.
+
+### Fixed
+
+- The pages and blocks repositories no longer write a block's `id` into its `data` when they update it.
 
 ## [2.0.0-alpha.5] - 2026-10-29
 

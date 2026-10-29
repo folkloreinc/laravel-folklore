@@ -5,6 +5,7 @@ namespace Folklore\Repositories;
 use Folklore\Contracts\Entities\Block as BlockContract;
 use Folklore\Contracts\Repositories\Blocks as BlocksRepositoryContract;
 use Folklore\Models\Block as BlockModel;
+use Illuminate\Support\Arr;
 
 class Blocks extends Entities implements BlocksRepositoryContract
 {
@@ -67,7 +68,10 @@ class Blocks extends Entities implements BlocksRepositoryContract
                             ->value('blocks.id');
                     }
 
-                    return ! empty($id) ? $this->update($id, $item) : $this->create($item);
+                    // The id is the block's row, not a value of its data
+                    $values = is_array($item) ? Arr::except($item, ['id']) : $item;
+
+                    return ! empty($id) ? $this->update($id, $values) : $this->create($values);
                 })
                 ->filter(function ($block) {
                     return ! is_null($block);

@@ -7,6 +7,7 @@ use Folklore\Contracts\Entities\HasBlocks;
 use Folklore\Contracts\Entities\ToEntity;
 use Folklore\Panneau\BlockTypes;
 use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use LogicException;
 use Panneau\Fields\BlockType;
@@ -16,6 +17,7 @@ use Panneau\Fields\Repeater;
 use Panneau\Forms\RuleSet;
 use Panneau\Forms\SaveContext;
 use Panneau\Forms\ValidationContext;
+use Panneau\Query\ResourceQuery;
 use Panneau\Resources\ItemSerializer;
 use Panneau\Resources\ResourceRegistry;
 
@@ -28,8 +30,8 @@ use Panneau\Resources\ResourceRegistry;
  * blocks: `maxDepth()` limits how deep, and a type whose blocks would be deeper than the limit
  * isn't offered.
  *
- * Blocks are read from the item's `blocks()` (`HasBlocks`), from Folklore's block entities or
- * models, or from arrays. Saved blocks keep their id, so that a repository that stores them as
+ * Blocks are read from the item's `blocks()` (`HasBlocks`, or an entity with that method), from
+ * Folklore's block entities or models, or from arrays. Saved blocks keep their id, so that a repository that stores them as
  * rows (`blocks_pivot`) updates them rather than creating new ones: an id is kept only if it
  * is one of the item's blocks, once.
  */
@@ -119,9 +121,10 @@ class Blocks extends Repeater
     }
 
     /**
-     * The levels of blocks, counted from the outermost `Blocks` field, whose blocks are the
-     * first level. `maxDepth(1)` nests no blocks. The smallest limit of the field and of the
-     * fields it is nested in applies.
+     * The levels of blocks, counted from this field, whose blocks are the first, as in 1.x:
+     * `maxDepth(1)` nests no blocks, and `maxDepth(2)` on the field of a block lets its
+     * blocks have blocks of their own only if those don't nest. The smallest limit of the
+     * field and of the fields it is nested in applies.
      */
     public function maxDepth(int $depth): static
     {
@@ -143,11 +146,18 @@ class Blocks extends Repeater
     }
 
     /**
-     * The deepest level of blocks the field allows.
+     * The deepest level of blocks the field allows, counted from the outermost field: the
+     * smallest of the limits that this field and those it is nested in set, or
+     * `DEFAULT_MAX_DEPTH` when none does.
      */
     public function depthLimit(): int
     {
-        $limits = array_filter([$this->maxDepth, $this->parentField?->depthLimit()], fn (?int $limit): bool => $limit !== null);
+        $limits = [];
+        for ($field = $this; $field !== null; $field = $field->parentField) {
+            if ($field->maxDepth !== null) {
+                $limits[] = $field->level + $field->maxDepth - 1;
+            }
+        }
 
         return count($limits) > 0 ? min($limits) : self::DEFAULT_MAX_DEPTH;
     }
@@ -197,15 +207,30 @@ class Blocks extends Repeater
     }
 
     /**
-     * The blocks of an item: its `blocks()` for the `blocks` field of a page (`HasBlocks`).
+     * The blocks of an item: for a field named `blocks`, the item's `blocks()`, as a page has
+     * them (`HasBlocks`), or an entity of the site with a `blocks()` method.
      */
     public function resolve(object $item): mixed
     {
-        if ($this->resolveUsing === null && $item instanceof HasBlocks && $this->name === 'blocks') {
-            return $this->serialize($item->blocks());
+        $blocks = $this->resolveUsing === null ? $this->blocksOfItem($item) : null;
+
+        return $blocks !== null ? $this->serialize($blocks) : parent::resolve($item);
+    }
+
+    /**
+     * The `blocks()` of an item, for a field named `blocks`: an entity, not a model, whose
+     * `blocks()` is a relation. Null for other items.
+     */
+    private function blocksOfItem(object $item): mixed
+    {
+        if ($this->name !== 'blocks' || $item instanceof Model) {
+            return null;
+        }
+        if ($item instanceof HasBlocks) {
+            return $item->blocks();
         }
 
-        return parent::resolve($item);
+        return method_exists($item, 'blocks') ? $item->blocks() : null;
     }
 
     public function serialize(mixed $value): mixed
@@ -220,11 +245,11 @@ class Blocks extends Repeater
         if (! is_array($serialized)) {
             return $serialized;
         }
+        $serialized = $this->withReferences($serialized);
         foreach ($blocks as $index => $block) {
             if (! is_array($serialized[$index] ?? null)) {
                 continue;
             }
-            $serialized[$index] = $this->withReferences($serialized[$index]);
             $id = self::idOf($block['id'] ?? null);
             if ($id !== null) {
                 $serialized[$index] = ['id' => $id, ...$serialized[$index]];
@@ -320,7 +345,7 @@ class Blocks extends Repeater
     {
         $value = $this->resolveUsing !== null
             ? ($this->resolveUsing)($item, $this)
-            : ($item instanceof HasBlocks && $this->name === 'blocks' ? $item->blocks() : data_get($item, $this->name));
+            : ($this->blocksOfItem($item) ?? data_get($item, $this->name));
 
         return $this->idsOf($value);
     }
@@ -392,36 +417,80 @@ class Blocks extends Repeater
     }
 
     /**
-     * Turns the values of the block's relation fields into references (`{ "id", "label" }`),
-     * as Panneau does for the relations of an item: the related items, and the ids that blocks
-     * stored as is, found within the related resource's scope.
+     * Turns the values of the relation fields of the blocks into references
+     * (`{ "id", "label" }`), as Panneau does for the relations of an item: the related items,
+     * and the ids that blocks stored as is, found within the related resource's scope, with
+     * one query per related resource for the whole list (folkloreinc/laravel-panneau#117).
      *
-     * @param  array<array-key, mixed>  $block
+     * @param  array<array-key, mixed>  $blocks
      * @return array<array-key, mixed>
      */
-    private function withReferences(array $block): array
+    private function withReferences(array $blocks): array
     {
-        foreach ($this->typeOf($block)?->getFields() ?? [] as $field) {
-            if (! $field instanceof Relation || ! isset($block[$field->name()])) {
+        $resources = app(ResourceRegistry::class);
+        $serializer = app(ItemSerializer::class);
+
+        // The relation fields of each block, and the ids to find per related resource
+        $relations = [];
+        $ids = [];
+        foreach ($blocks as $index => $block) {
+            if (! is_array($block)) {
                 continue;
             }
-            $resources = app(ResourceRegistry::class);
-            $resource = $field->relatedResource();
-            $related = $resource !== null ? $resources->resolve($resource) : null;
-            $serializer = app(ItemSerializer::class);
-            $reference = function (mixed $item) use ($resources, $related, $serializer): mixed {
-                $id = self::idOf($item);
-                if ($id !== null && $related !== null) {
-                    $item = $resources->repository($related)->find($id, $related->repositoryScope(request())) ?? $item;
+            foreach ($this->typeOf($block)?->getFields() ?? [] as $field) {
+                if (! $field instanceof Relation || ! isset($block[$field->name()])) {
+                    continue;
                 }
-
-                return is_object($item) ? $serializer->reference($related, $item) : $item;
-            };
-            $value = $block[$field->name()];
-            $block[$field->name()] = is_array($value) && array_is_list($value) ? array_map($reference, $value) : $reference($value);
+                $related = $field->relatedResource() !== null ? $resources->resolve($field->relatedResource()) : null;
+                $relations[$index][$field->name()] = $related;
+                $value = $block[$field->name()];
+                foreach (is_array($value) && array_is_list($value) ? $value : [$value] as $item) {
+                    $id = self::idOf($item);
+                    if ($id !== null && $related !== null) {
+                        $ids[$related->id()][$id] = true;
+                    }
+                }
+            }
         }
 
-        return $block;
+        $found = [];
+        foreach ($ids as $resource => $resourceIds) {
+            $related = $resources->find($resource);
+            if ($related === null) {
+                continue;
+            }
+            $repository = $resources->repository($related);
+            $items = $repository->query(new ResourceQuery(
+                perPage: count($resourceIds),
+                scope: $related->repositoryScope(request()),
+                ids: array_map(strval(...), array_keys($resourceIds)),
+            ));
+            foreach ($items->items() as $item) {
+                $found[$resource][$repository->id($item)] = $item;
+            }
+        }
+
+        foreach ($relations as $index => $fields) {
+            $block = $blocks[$index];
+            if (! is_array($block)) {
+                continue;
+            }
+            foreach ($fields as $name => $related) {
+                $reference = function (mixed $item) use ($found, $related, $serializer): mixed {
+                    $id = self::idOf($item);
+                    if ($id !== null && $related !== null) {
+                        $item = $found[$related->id()][$id] ?? $item;
+                    }
+
+                    return is_object($item) ? $serializer->reference($related, $item) : $item;
+                };
+                $value = $block[$name];
+                $block[$name] = is_array($value) && array_is_list($value) ? array_map($reference, $value) : $reference($value);
+            }
+            $blocks[$index] = $block;
+        }
+
+        return $blocks;
     }
 
     private static function idOf(mixed $value): ?string

@@ -4,18 +4,28 @@ namespace Folklore\Repositories;
 
 use Folklore\Contracts\Entities\Page as PageContract;
 use Folklore\Contracts\Repositories\Blocks as BlocksRepositoryContract;
+use Folklore\Contracts\Repositories\ChecksSlugs;
 use Folklore\Contracts\Repositories\Pages as PagesRepositoryContract;
 use Folklore\Models\Page as PageModel;
+use Folklore\Repositories\Concerns\ChecksSlugs as ChecksSlugsConcern;
+use Illuminate\Support\Arr;
 
-class Pages extends Entities implements PagesRepositoryContract
+/**
+ * Checks the slugs of pages in their `slug_{locale}` columns (`ChecksSlugs`), across the
+ * types of pages: a pages resource that offers some types still sees the slugs of the others.
+ */
+class Pages extends Entities implements ChecksSlugs, PagesRepositoryContract
 {
+    use ChecksSlugsConcern;
+
     protected $blocks;
 
     protected $jsonAttributeFillable = '*';
 
     /**
      * The `type` param keeps the pages of some types (`exclude_type` the others), as the
-     * scope of a pages resource that offers only some types (docs/decisions/0022).
+     * scope of a pages resource that offers only some types (docs/decisions/0022). Like every
+     * entry of `$queryColumns`, it also gives `or_type`, `exclude_type` and `or_exclude_type`.
      *
      * @var list<string>
      */
@@ -123,9 +133,12 @@ class Pages extends Entities implements PagesRepositoryContract
                             ->value('blocks.id');
                     }
 
+                    // The id is the block's row, not a value of its data
+                    $values = is_array($item) ? Arr::except($item, ['id']) : $item;
+
                     return ! empty($id)
-                        ? $this->blocks->update($id, $item)
-                        : $this->blocks->create($item);
+                        ? $this->blocks->update($id, $values)
+                        : $this->blocks->create($values);
                 })
                 ->filter(function ($block) {
                     return ! is_null($block);
@@ -135,5 +148,15 @@ class Pages extends Entities implements PagesRepositoryContract
         }
 
         parent::saveData($model, $data);
+    }
+
+    /**
+     * Slugs are unique across the types of pages: the routes of pages don't have the type.
+     *
+     * @return array<mixed>
+     */
+    protected function getSlugContextParams(): array
+    {
+        return Arr::except($this->getContextParams(), ['type', 'or_type', 'exclude_type', 'or_exclude_type']);
     }
 }

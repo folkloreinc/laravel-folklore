@@ -260,10 +260,27 @@ final class SectionsResource extends PagesResource // the pages a field offers: 
 ```
 
 - **`Page` and `Pages`** are relations to the `pages` resource (`Page::RESOURCE`), multiple for `Pages`. To offer some types of pages, they relate to a pages resource whose `scope()` has these types: its picker lists them, and Panneau refuses the others when saving. The pages repository reads the `type` param. Their values are the pages' ids; models are turned into their entities, which the related resource's repository gives ids to.
-- **`Blocks`** is a `repeater` of typed blocks. Its types are the `BlockTypes` registry's (instances, or closures called in the request, so that labels are translated), or those given to `types()`, narrowed by id with `onlyTypes()` and `exceptTypes()`. A type with a `Blocks` field nests blocks: `maxDepth()` counts levels from the outermost field, the smallest limit of the nesting applies, 3 levels when no field sets one, and a type whose blocks would be deeper isn't offered. The blocks of a page are read from its `blocks()` (`HasBlocks`) for a field named `blocks`, and from block entities, models or arrays.
-- **Block ids.** Each block has its `id`. Saved, a block keeps it only if it is one of the item's blocks, at any level, and no other block of the save kept it, so that the pages repository, which stores blocks as rows linked through `blocks_pivot`, updates them rather than creating new rows, and never updates another page's.
-- **Relations inside blocks** are turned into references (`{ "id", "label" }`), from the related items, or from the ids that blocks stored, found within the related resource's scope (one query per value), as Panneau does for the relations at the top of an item ([folkloreinc/laravel-panneau#117](https://github.com/folkloreinc/laravel-panneau/issues/117)). The label is the related resource's `itemTitle` field, read through the field: a resource on entities gives that field a `resolveUsing()`.
-- **`PageSlug`** is a `slug`, localized and from the `title` by default, read from the item's `slug($locale)` in Panneau's locales. Its check gives the page's URL from `Pages\PageRoutes`: `page`, or `page_with_parent` with the slug of the page of the form's `parent` field (`parentField()`, null for pages without a parent), and the prefix in front of the slug. It is disabled for the home page (its `handle` is `home`). `unique()` needs the `Repositories\Concerns\ChecksSlugs` trait on the repository; `url()` replaces the URL, for other routes.
+- **`Blocks`** is a `repeater` of typed blocks. Its types are the `BlockTypes` registry's (instances, or closures called in the request, so that labels are translated), or those given to `types()`, narrowed by id with `onlyTypes()` and `exceptTypes()`. A type with a `Blocks` field nests blocks: `maxDepth()` counts levels from the field that sets it, as in 1.x (`maxDepth(1)` nests none), the smallest limit of the nesting applies, 3 levels from the outermost field when no field sets one, and a type whose blocks would be deeper isn't offered. The blocks of an entity are read from its `blocks()` (`HasBlocks`, or any entity with the method) for a field named `blocks`, and from block entities, models or arrays.
+- **Block ids.** Each block has its `id`. Saved, a block keeps it only if it is one of the item's blocks, at any level, and no other block of the save kept it, so that the pages repository, which stores blocks as rows linked through `blocks_pivot`, updates them rather than creating new rows, and never updates another page's. The id isn't written into the block's data.
+- **Versions.** The adapter's version of an entity with blocks (`HasBlocks`) hashes the attributes of its blocks too, at every level: a stale form that only changed a block gets a `412`.
+- **Relations inside blocks** are turned into references (`{ "id", "label" }`), from the related items, or from the ids that blocks stored, found within the related resource's scope (one query per related resource for a list of blocks), as Panneau does for the relations at the top of an item ([folkloreinc/laravel-panneau#117](https://github.com/folkloreinc/laravel-panneau/issues/117)). The label is the related resource's `itemTitle` field, read through the field: a resource on entities gives that field a `resolveUsing()`.
+- **`PageSlug`** is a `slug`, localized and from the `title` by default, read from the item's `slug($locale)` in Panneau's locales. Its check gives the page's URL from `Pages\PageRoutes`: `page`, or `page_with_parent` with the slug of the page of the form's `parent` field (`parentField()`, null for pages without a parent), and the prefix in front of the slug. The parent is found through the pages repository, not within the resource's scope: it only gives the URL. It is disabled for the home page (its `handle` is `home`). `url()` replaces the URL, for other routes.
+- **Unique slugs.** `PageSlug` is unique by default (`notUnique()` turns it off). The pages repository implements `ChecksSlugs` on its `slug_{locale}` columns, across the types of pages: it leaves the `type` params of the scope out of the lookup. Another resource's repository needs the `Repositories\Concerns\ChecksSlugs` trait.
+- **Not covered yet.** Media inside blocks aren't turned into media references ([folkloreinc/laravel-panneau#117](https://github.com/folkloreinc/laravel-panneau/issues/117)). A field common to every type of a field (1.x sites' `withPlacements()`) is added by a subclass:
+
+  ```php
+  final class PlacedBlocks extends Blocks
+  {
+      public function blockTypes(): array
+      {
+          return $this->types ??= array_map(fn (BlockType $type): BlockType => (clone $type)->fields([
+              Select::make('placement')->options(['content' => __('Content'), 'aside' => __('Aside')])->required(),
+              ...$type->getFields(),
+          ]), parent::blockTypes());
+      }
+  }
+  ```
+
 
 ## Other modules
 

@@ -119,15 +119,18 @@ The page fields of 1.x have Panneau 5 equivalents in `Folklore\Panneau\Fields` (
 | The block types of the `blocks` resource (`$types`, `ResourceType` classes) | Panneau `BlockType`s, registered once with `BlockTypes::register()` |
 | `Blocks::make('blocks')` | The same, a `repeater` of the registry's types |
 | `->withoutType(StackBlock::class)` | `->exceptTypes('stack')`, by id; `onlyTypes()` keeps some |
-| `->maxDepth(2)`, `BlockWithBlocks` | `->maxDepth(2)`, levels counted from the outermost field, as in 1.x; 3 by default |
+| `->maxDepth(2)`, `BlockWithBlocks` | `->maxDepth(2)`, levels counted from the field that sets it, as in 1.x; 3 levels from the outermost field when no field sets one |
+| `->withoutNesting()` | `->maxDepth(1)` |
+| `->withPlacements([...])` | A subclass of `Blocks` that adds the field to each type in `blockTypes()` ([architecture.md](architecture.md#page-fields)) |
 | `Page::make('section')->withTypes(['section'])` | `Page::make('section')->resource(SectionsResource::class)`, a pages resource whose `scope()` is `['type' => ['section']]` |
 | `->withQuery([...])` on `Page` and `Pages` | The related resource's `scope()` |
 | `Pages::make('pages')` (`items-resource`) | `Pages::make('pages')`, a multiple relation |
 | `PageSlugLocalized::make('slug')` | `PageSlug::make('slug')`, localized by default |
 | `PageSlug::setRoutesResolver(...)` | `site.pages.routes`, or `url()` on the field for other routes |
 | `->isDisabled()` on the home page's slug | Disabled for the page whose `handle` is `home` |
+| Slugs not checked (`'unique' => false` in the model's `sluggable()`) | `PageSlug` is unique, across the types of pages; `notUnique()` turns it off |
 
-Blocks keep working through `blocks_pivot`: the field gives each block its id, and saving a page updates its blocks.
+Blocks keep working through `blocks_pivot`: the field gives each block its id, and saving a page updates its blocks. The pages repository now implements `ChecksSlugs`: a site's subclass of it with its own `slugExists()` must match that contract. Media inside blocks aren't media references yet ([folkloreinc/laravel-panneau#117](https://github.com/folkloreinc/laravel-panneau/issues/117)).
 
 ### Medias
 

@@ -132,6 +132,80 @@ class PageFieldsApiTest extends PanneauTestCase
             ->assertJsonPath('data.blocks.0.body', 'Other');
     }
 
+    public function test_the_id_of_a_block_is_not_saved_in_its_data()
+    {
+        $created = $this->postJson(self::PATH, ['title' => ['fr' => 'Page'], 'blocks' => [['type' => 'text', 'body' => 'First']]])
+            ->assertCreated();
+        $blocks = $created->json('data.blocks');
+        $blocks[0]['body'] = 'Edited';
+
+        $this->patchJson(self::PATH.'/'.$created->json('data.id'), ['blocks' => $blocks])->assertOk();
+
+        $this->assertSame(['body' => 'Edited'], BlockModel::query()->findOrFail($blocks[0]['id'])->data);
+    }
+
+    public function test_the_version_of_a_page_changes_with_its_blocks()
+    {
+        $created = $this->postJson(self::PATH, [
+            'title' => ['fr' => 'Page'],
+            'blocks' => [['type' => 'stack', 'title' => 'Stack', 'blocks' => [['type' => 'text', 'body' => 'Nested']]]],
+        ])->assertCreated();
+        $version = $created->json('data.version');
+        $blocks = $created->json('data.blocks');
+        $blocks[0]['blocks'][0]['body'] = 'Nested, edited';
+
+        $updated = $this->patchJson(self::PATH.'/'.$created->json('data.id'), ['blocks' => $blocks], ['If-Match' => '"'.$version.'"']);
+
+        $updated->assertOk();
+        $this->assertNotSame($version, $updated->json('data.version'));
+        // A form opened before the edit can't overwrite it
+        $blocks[0]['blocks'][0]['body'] = 'Stale';
+        $this->patchJson(self::PATH.'/'.$created->json('data.id'), ['blocks' => $blocks], ['If-Match' => '"'.$version.'"'])
+            ->assertStatus(412);
+        $this->getJson(self::PATH.'/'.$created->json('data.id'))
+            ->assertJsonPath('data.version', $updated->json('data.version'));
+    }
+
+    public function test_the_slug_of_a_page_is_unique_across_the_types_of_pages()
+    {
+        $this->page(['title' => ['fr' => 'Été'], 'type' => 'page']);
+
+        $this->postJson(self::PATH, ['title' => ['fr' => 'Autre'], 'slug' => ['fr' => 'ete']])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['slug.fr']);
+        // A resource of sections sees the slugs of the other types of pages too
+        $this->postJson('/panneau/api/resources/sections', ['title' => ['fr' => 'Rubrique'], 'slug' => ['fr' => 'ete']])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['slug.fr']);
+        $this->postJson('/panneau/api/resources/sections/fields/slug/check', ['value' => 'ete', 'locale' => 'fr', 'id' => null, 'values' => []])
+            ->assertOk()
+            ->assertJsonPath('available', false)
+            ->assertJsonPath('suggestion', 'ete-2');
+    }
+
+    public function test_the_related_pages_of_blocks_are_found_together()
+    {
+        $sections = array_map(fn (int $index): string => $this->page(['title' => ['fr' => 'Rubrique '.$index], 'type' => 'section']), range(1, 3));
+        $one = $this->postJson(self::PATH, ['title' => ['fr' => 'Une'], 'blocks' => [['type' => 'section', 'section' => $sections[0]]]])
+            ->assertCreated()->json('data.id');
+        $three = $this->postJson(self::PATH, ['title' => ['fr' => 'Trois'], 'blocks' => array_map(
+            fn (string $section): array => ['type' => 'section', 'section' => $section],
+            $sections,
+        )])->assertCreated()->json('data.id');
+
+        $queries = function (string $id): int {
+            DB::flushQueryLog();
+            DB::enableQueryLog();
+            $this->getJson(self::PATH.'/'.$id)->assertOk();
+            DB::disableQueryLog();
+
+            return count(DB::getQueryLog());
+        };
+
+        $this->assertSame($queries($one), $queries($three));
+        $this->getJson(self::PATH.'/'.$three)->assertJsonPath('data.blocks.2.section.label.fr', 'Rubrique 3');
+    }
+
     public function test_a_block_type_is_offered_only_if_the_field_allows_it()
     {
         $this->postJson(self::PATH, ['title' => ['fr' => 'Page'], 'blocks' => [['type' => 'unknown']]])

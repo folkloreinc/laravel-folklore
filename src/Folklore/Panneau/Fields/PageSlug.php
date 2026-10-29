@@ -12,8 +12,12 @@ use Panneau\Fields\Slug;
  * page's URL from the routes of the pages module (docs/decisions/0022).
  *
  * The URL follows the page's parent, the `parent` field of the form (`parentField()`), and the
- * home page has no slug: the field is disabled for it. `unique()` checks that no other page
- * has the slug, through the repository's `slugExists()` (the `ChecksSlugs` trait).
+ * home page has no slug: the field is disabled for it. The parent is found through the pages
+ * repository, outside the resource's scope: it only gives the URL.
+ *
+ * The slug is unique: no other item of the resource has it, through the repository's
+ * `slugExists()` (`ChecksSlugs`), which the pages repository checks across the types of
+ * pages. `notUnique()` turns it off, for a repository without it.
  */
 class PageSlug extends Slug
 {
@@ -25,8 +29,20 @@ class PageSlug extends Slug
 
         $this->localized = true;
         $this->from = 'title';
+        $this->unique = true;
         $this->url = fn (string $slug, ?string $locale, array $values, ?string $id): ?string => $this->pageUrl($slug, $locale ?? app()->getLocale(), $values);
         $this->disabledWhen = fn (array $values, ?string $id): bool => $this->isHome($values, $id);
+    }
+
+    /**
+     * Doesn't check that the slug is unique.
+     */
+    public function notUnique(): static
+    {
+        $this->unique = false;
+        $this->uniqueScope = null;
+
+        return $this;
     }
 
     /**

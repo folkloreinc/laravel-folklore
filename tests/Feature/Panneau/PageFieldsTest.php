@@ -112,18 +112,71 @@ class PageFieldsTest extends TestCase
     {
         $blocks = Blocks::make('blocks')->maxDepth(5)->types([
             BlockType::make('text', 'Text', [Text::make('body')]),
-            BlockType::make('columns', 'Columns', [Blocks::make('columns')->maxDepth(2)->exceptTypes('columns')->types([
+            BlockType::make('columns', 'Columns', [Blocks::make('columns')->maxDepth(1)->exceptTypes('columns')->types([
                 BlockType::make('text', 'Text', [Text::make('body')]),
                 BlockType::make('stack', 'Stack', [Blocks::make('blocks')]),
             ])]),
         ]);
 
-        // The stack would put blocks at the third level, under the limit of the columns
+        // The stack would nest blocks in the columns, whose blocks don't nest
         $this->assertSame(['text' => true, 'columns' => ['text' => true]], self::typesOf($blocks->toDefinition()));
         $nested = $blocks->blockTypes()[1]->getFields()[0];
         $this->assertInstanceOf(Blocks::class, $nested);
         $this->assertSame(2, $nested->level());
         $this->assertSame(2, $nested->depthLimit());
+    }
+
+    public function test_the_maximum_depth_counts_from_the_field_that_sets_it_as_in_1_x()
+    {
+        $text = BlockType::make('text', 'Text', [Text::make('body')]);
+        $card = BlockType::make('card', 'Card', [Blocks::make('blocks')->types([$text])]);
+        // The page's field sets no limit, and the stack's lets its cards have blocks
+        $blocks = Blocks::make('blocks')->types([
+            $text,
+            BlockType::make('stack', 'Stack', [Blocks::make('blocks')->maxDepth(2)->types([$text, $card])]),
+        ]);
+
+        $this->assertSame(
+            ['text' => true, 'stack' => ['text' => true, 'card' => ['text' => true]]],
+            self::typesOf($blocks->toDefinition()),
+        );
+        $this->assertSame(3, $blocks->blockTypes()[1]->getFields()[0] instanceof Blocks ? $blocks->blockTypes()[1]->getFields()[0]->depthLimit() : null);
+    }
+
+    public function test_blocks_are_read_from_the_blocks_method_of_an_entity()
+    {
+        $entity = new class
+        {
+            /**
+             * @return list<array<string, string>>
+             */
+            public function blocks(): array
+            {
+                return [['id' => '4', 'type' => 'text', 'body' => 'First']];
+            }
+        };
+
+        $this->assertSame([['id' => '4', 'type' => 'text', 'body' => 'First']], Blocks::make('blocks')->resolve($entity));
+    }
+
+    public function test_a_subclass_adds_a_field_to_every_type()
+    {
+        $blocks = new class('blocks') extends Blocks
+        {
+            public function blockTypes(): array
+            {
+                return $this->types ??= array_map(fn (BlockType $type): BlockType => (clone $type)->fields([
+                    Text::make('placement'),
+                    ...$type->getFields(),
+                ]), parent::blockTypes());
+            }
+        };
+        $definition = $blocks->maxDepth(2)->toDefinition();
+
+        $this->assertSame(['placement', 'body'], array_column($definition['types'][0]['fields'], 'name'));
+        // Only the field's own types: the nested fields are Blocks
+        $this->assertSame(['placement', 'blocks'], array_column($definition['types'][2]['fields'], 'name'));
+        $this->assertSame(['body'], array_column($definition['types'][2]['fields'][1]['types'][0]['fields'], 'name'));
     }
 
     public function test_the_maximum_depth_is_at_least_one()
@@ -150,6 +203,12 @@ class PageFieldsTest extends TestCase
             ['name' => 'slug', 'type' => 'slug', 'from' => 'name', 'check' => true],
             PageSlug::make('slug')->localized(false)->from('name')->toDefinition(),
         );
+    }
+
+    public function test_the_page_slug_is_unique_unless_told_otherwise()
+    {
+        $this->assertTrue(PageSlug::make('slug')->isUnique());
+        $this->assertFalse(PageSlug::make('slug')->notUnique()->isUnique());
     }
 
     public function test_the_routes_of_pages_are_named_by_the_config()

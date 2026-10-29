@@ -13,8 +13,9 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
  * for a localized slug (`slug_fr`, as the pages module's models have them), within the
  * repository's query context, deleted entities included.
  *
- * Override `getSlugColumn()` to look up another column, or `newSlugQuery()` to narrow the
- * lookup, such as to a page's parent from the form's values.
+ * Override `getSlugColumn()` to look up another column, `getSlugContextParams()` to leave
+ * params of the context out of the lookup, or `newSlugQuery()` to narrow the lookup, such as
+ * to a page's parent from the form's values.
  *
  * @phpstan-require-extends Entities
  */
@@ -39,13 +40,23 @@ trait ChecksSlugs
      */
     protected function newSlugQuery(string $field, string $value, ?string $locale, ?string $exceptId, array $values): Builder
     {
-        $query = $this->newQueryInContext()->withoutGlobalScope(SoftDeletingScope::class);
+        $query = $this->newQueryFromParams($this->getSlugContextParams())->withoutGlobalScope(SoftDeletingScope::class);
         $query->where($query->qualifyColumn($this->getSlugColumn($field, $locale)), $value);
         if (! is_null($exceptId)) {
             $query->where($query->qualifyColumn($this->getEntityKeyName()), '!=', $exceptId);
         }
 
         return $query;
+    }
+
+    /**
+     * The params of the query context that the lookup applies: all of them by default.
+     *
+     * @return array<mixed>
+     */
+    protected function getSlugContextParams(): array
+    {
+        return $this->getContextParams();
     }
 
     /**
