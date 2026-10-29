@@ -9,11 +9,11 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
 use SplFileInfo;
-use Throwable;
 
 /**
  * The site that `folklore:upgrade --check` looks at: its code, read as text so that a
- * class that no longer loads in 2.0 is still found, its config and its database.
+ * class that no longer loads in 2.0 is still found, its config, and its database through
+ * its models, which are loaded in a child process first (IsolatedLoader).
  */
 class Site
 {
@@ -22,12 +22,14 @@ class Site
      *
      * @var list<string>
      */
-    public const PATHS = ['app', 'config', 'routes', 'bootstrap/app.php', 'bootstrap/providers.php'];
+    public const PATHS = ['app', 'config', 'routes', 'resources/views', 'bootstrap/app.php', 'bootstrap/providers.php'];
 
     /**
      * @var list<SourceFile>|null
      */
     protected ?array $files = null;
+
+    public readonly IsolatedLoader $loader;
 
     /**
      * @param  list<string>  $paths  Directories and files to read, from the base path or absolute.
@@ -42,7 +44,10 @@ class Site
         public readonly array $paths = self::PATHS,
         public readonly array $models = [],
         public readonly int $limit = 1000,
-    ) {}
+        ?IsolatedLoader $loader = null,
+    ) {
+        $this->loader = $loader ?? new IsolatedLoader;
+    }
 
     /**
      * @return list<SourceFile>
@@ -180,8 +185,8 @@ class Site
     }
 
     /**
-     * The models whose JSON data the checks read: those declared in the paths that load,
-     * and those given to the command.
+     * The models whose JSON data the checks read: those given to the command, and the
+     * classes of the paths whose text looks like a model and that load.
      *
      * @return list<class-string<Model>>
      */
@@ -189,8 +194,8 @@ class Site
     {
         $models = $this->models;
         foreach ($this->files() as $file) {
-            $class = $file->declaredClass();
-            if (! is_null($class) && self::loads($class) && is_subclass_of($class, Model::class) && ! (new ReflectionClass($class))->isAbstract()) {
+            $class = $file->looksLikeModel() ? $file->declaredClass() : null;
+            if (! is_null($class) && $this->loads($class) && is_subclass_of($class, Model::class) && ! (new ReflectionClass($class))->isAbstract()) {
                 $models[] = $class;
             }
         }
@@ -199,16 +204,12 @@ class Site
     }
 
     /**
-     * Whether a class loads: a class of the site may extend one that 2.0 removed, or one
-     * of a package that the site no longer has.
+     * Whether a class loads, tried in a child process first: a class of the site may
+     * extend one that 2.0 removed or changed, which can be a fatal error.
      */
-    public static function loads(string $class): bool
+    public function loads(string $class): bool
     {
-        try {
-            return class_exists($class);
-        } catch (Throwable) {
-            return false;
-        }
+        return $this->loader->loads($class);
     }
 
     public function absolute(string $path): string

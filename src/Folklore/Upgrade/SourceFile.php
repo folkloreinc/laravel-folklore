@@ -47,6 +47,23 @@ final readonly class SourceFile
     }
 
     /**
+     * Whether the file declares what looks like an Eloquent model, to load: a class that
+     * extends a model or has casts.
+     */
+    public function looksLikeModel(): bool
+    {
+        $code = $this->code();
+        if (preg_match('/^\s*(?:(?:final|readonly)\s+)*class\s+\w+\s+extends\s/m', $code) !== 1) {
+            return false;
+        }
+
+        return preg_match('/\bextends\s+\\\\?[\w\\\\]*(?:Model|Pivot|Authenticatable|User)\b/', $code) === 1
+            || preg_match('/Folklore\\\\{1,2}Models\\\\{1,2}|Illuminate\\\\{1,2}Database\\\\{1,2}Eloquent\\\\{1,2}Model\b/', $code) === 1
+            || str_contains($code, '$casts')
+            || preg_match('/function\s+casts\s*\(/', $code) === 1;
+    }
+
+    /**
      * The class, interface or trait the file declares, with its namespace.
      */
     public function declaredClass(): ?string

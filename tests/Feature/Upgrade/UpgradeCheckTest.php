@@ -5,6 +5,7 @@ namespace Folklore\Tests\Feature\Upgrade;
 use Folklore\Eloquent\JsonData;
 use Folklore\Models\Media;
 use Folklore\ServiceProvider;
+use Folklore\Tests\Feature\Upgrade\Fixtures\BrokenModel;
 use Folklore\Tests\Feature\Upgrade\Fixtures\CastArticle;
 use Folklore\Tests\Feature\Upgrade\Fixtures\LegacyArticle;
 use Folklore\Tests\TestCase;
@@ -54,7 +55,10 @@ class UpgradeCheckTest extends TestCase
 
         $http = $this->finding($this->check(new ModulesCheck), '`http` module');
 
-        $this->assertSame(['app/Http/Controllers/ExportController.php:11 (the `csv` response macro)'], $http->locations);
+        $this->assertSame([
+            'resources/views/app.blade.php:1 (the `routeForReactRouter` URL macro)',
+            'app/Http/Controllers/ExportController.php:16 (the `pixel` response macro)',
+        ], $http->locations);
     }
 
     public function test_a_module_that_is_on_is_reported_as_used()
@@ -68,7 +72,7 @@ class UpgradeCheckTest extends TestCase
     {
         $findings = $this->check(new RemovedModulesCheck);
 
-        $this->assertSame(['app/Providers/AppServiceProvider.php:7 (Folklore\\Site)'], $this->finding($findings, 'site manager')->locations);
+        $this->assertSame(['app/Providers/AppServiceProvider.php:6 (Folklore\\Site)'], $this->finding($findings, 'site manager')->locations);
         $this->assertSame(Severity::Breaking, $findings[0]->severity);
         $this->assertNull($this->finding($findings, 'Contact', required: false));
     }
@@ -91,7 +95,7 @@ class UpgradeCheckTest extends TestCase
         $findings = $this->check(new PanneauContractsCheck);
 
         $this->assertSame(['app/Repositories/Concerns/WritesReferences.php:5'], $this->finding($findings, 'ResourceItem')->locations);
-        $this->assertSame(['app/Providers/AppServiceProvider.php:10'], $this->finding($findings, 'Contracts\\Repository`')->locations);
+        $this->assertSame(['app/Providers/AppServiceProvider.php:9'], $this->finding($findings, 'Contracts\\Repository`')->locations);
     }
 
     public function test_it_reports_plain_json_casts_over_json_data_cast()
@@ -103,18 +107,30 @@ class UpgradeCheckTest extends TestCase
         $this->assertNull($this->finding($findings, 'App\\Models\\Article', required: false));
     }
 
-    public function test_it_reports_the_code_that_writes_references_and_syncs_their_pivots()
+    public function test_it_reports_the_code_that_writes_references()
     {
-        $findings = $this->check(new JsonCodeCheck);
+        $writers = $this->finding($this->check(new JsonCodeCheck), 'writes `scheme://id` references itself');
 
-        $this->assertSame([
-            'app/Repositories/Articles.php:28 ("media://{$)',
-            "app/Repositories/Concerns/WritesReferences.php:13 (.'://'.)",
-        ], $this->finding($findings, 'writes `scheme://id` references itself')->locations);
-        $this->assertSame([
-            'app/Repositories/Articles.php:22',
-            'app/Repositories/Articles.php:23',
-        ], $this->finding($findings, 'Pivot syncs')->locations);
+        $this->assertSame(Severity::Todo, $writers->severity);
+        $this->assertSame(['app/Repositories/Articles.php:28 ("media://{$)'], $writers->locations);
+    }
+
+    public function test_code_with_the_key_in_a_variable_may_build_urls_and_is_only_reported()
+    {
+        $variables = $this->finding($this->check(new JsonCodeCheck), 'with a key in a variable');
+
+        // Not `$scheme.'://'.$host`
+        $this->assertSame(Severity::Info, $variables->severity);
+        $this->assertSame(["app/Repositories/Concerns/WritesReferences.php:13 (.'://'.)"], $variables->locations);
+    }
+
+    public function test_it_reports_the_pivot_syncs_of_the_classes_that_use_that_code()
+    {
+        $syncs = $this->finding($this->check(new JsonCodeCheck), 'Pivot syncs');
+
+        // Not the syncs of a class that only imports the trait, nor `attach()`
+        $this->assertSame(Severity::Info, $syncs->severity);
+        $this->assertSame(['app/Repositories/Articles.php:22'], $syncs->locations);
     }
 
     public function test_it_reports_the_media_api_that_changes()
@@ -126,6 +142,37 @@ class UpgradeCheckTest extends TestCase
         $this->assertSame(['app/Entities/Image.php:13'], $this->finding($findings, 'new ImageSize')->locations);
         $this->assertSame(['app/Entities/Image.php:23'], $this->finding($findings, 'getMetadatas')->locations);
         $this->assertSame(Severity::Deprecated, $this->finding($findings, 'setFilters')->severity);
+    }
+
+    public function test_it_reports_media_resource_in_the_canonical_shape()
+    {
+        $this->assertNull($this->finding($this->check(new MediasCheck), 'is `canonical`', required: false));
+
+        config()->set('site.medias.resource', 'canonical');
+        $canonical = $this->finding($this->check(new MediasCheck), 'is `canonical`');
+
+        $this->assertSame(Severity::Todo, $canonical->severity);
+        $this->assertSame(['app/Http/Resources/ImageResource.php:5'], $canonical->locations);
+    }
+
+    public function test_it_reports_subclasses_of_media_resource_that_break()
+    {
+        $findings = $this->check(new MediasCheck);
+
+        $this->assertSame(['app/Http/Resources/ImageResource.php:9'], $this->finding($findings, 'without types')->locations);
+        $this->assertSame(['app/Http/Resources/ImageResource.php:12'], $this->finding($findings, 'calls the entity through the resource')->locations);
+    }
+
+    public function test_a_model_that_is_a_fatal_error_is_reported_without_stopping_the_check()
+    {
+        $site = new Site(self::SITE, $this->app['config'], $this->app['db'], [__DIR__.'/Fixtures']);
+
+        $findings = array_values([...(new StoredReferencesCheck)->check($site)]);
+
+        $broken = $this->finding($findings, BrokenModel::class.'` doesn\'t load in 2.0');
+        $this->assertSame(Severity::Todo, $broken->severity);
+        $this->assertStringContainsString('getKeyName', $broken->message);
+        $this->assertFalse(class_exists(BrokenModel::class, false));
     }
 
     public function test_it_reports_the_deprecated_api()
@@ -234,6 +281,13 @@ class UpgradeCheckTest extends TestCase
 
         $this->artisan('folklore:upgrade', ['--check' => true, '--path' => [self::SITE.'/missing']])
             ->assertExitCode(0);
+    }
+
+    public function test_the_command_warns_about_models_it_skips()
+    {
+        $this->artisan('folklore:upgrade', ['--check' => true, '--path' => [self::SITE.'/missing'], '--model' => [BrokenModel::class, Site::class]])
+            ->expectsOutputToContain("doesn't load, and is skipped")
+            ->expectsOutputToContain('is not an Eloquent model, and is skipped');
     }
 
     public function test_the_command_needs_check_until_the_upgrade_exists()

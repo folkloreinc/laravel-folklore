@@ -23,7 +23,7 @@
 
 ## What `--check` reports
 
-It reads the site's code as text (`app`, `config`, `routes`, `bootstrap/app.php` and `bootstrap/providers.php`, or the `--path` given), so it finds the classes that no longer load in 2.0. It reads the JSON columns of the models declared there, or given with `--model`, from the database: the first 1000 rows of each by default, all of them with `--limit=0`. `--json` prints the report as JSON. Each finding is **breaking** (fix it before upgrading), **to do** (while upgrading), **deprecated** (works until 3.0) or **info**.
+It reads the site's code as text (`app`, `config`, `routes`, `resources/views`, `bootstrap/app.php` and `bootstrap/providers.php`, or the `--path` given), so it finds the classes that no longer load in 2.0. Then it reads the JSON columns of the models from the database: the first 1000 rows of each by default, all of them with `--limit=0`. The models are the classes of those files that look like models (they extend a model, or have casts), and those given with `--model`. Each one is loaded in a child PHP process first: a class that is a fatal error in 2.0, such as a signature that no longer matches its parent's, is reported instead of stopping the check. `--json` prints the report as JSON. Each finding is **breaking** (fix it before upgrading), **to do** (while upgrading), **deprecated** (works until 3.0) or **info**.
 
 | Check | What it finds |
 |---|---|
@@ -31,10 +31,10 @@ It reads the site's code as text (`app`, `config`, `routes`, `bootstrap/app.php`
 | Removed modules | The site manager, organisations, PubSubHubbub, the `Contact`, `Person` and `Contactable` contracts, Panneau 1.x's fields and resources |
 | Packages | The packages that 1.1 required and that the site needs without requiring them: the modules' packages, `laravel-locale` for the view composers, Guzzle, `google/apiclient` and `parsecsv` for the services |
 | Panneau contracts | Site code that uses `Panneau\Contracts\ResourceItem` or `Repository`, which Folklore's entities and repositories no longer implement |
-| JSON references in the code | Models that replace the `JsonDataCast` of their Folklore model with a plain `json` cast, code that writes `scheme://id` references itself, and the pivot syncs of the repositories that use that code |
+| JSON references in the code | Models that replace the `JsonDataCast` of their Folklore model with a plain `json` cast, and code that writes `scheme://id` references itself (`'media://'.$id`). As info: code with the key in a variable (`$key.'://'.$id`), which may build URLs, and the `sync()` calls of that code and of the classes that use it or extend it |
 | Stored JSON references | For each JSON column, the paths and keys of its references (`data.gallery.* → medias:// (12)`): those of a column without `JsonDataCast` are to declare. Keys that aren't mapped, and keys whose identifiers match nothing in the model they map to, such as `media://12` written by id where 2.0 reads `media://` by uid. `medias://` references without `site.medias.reference_key` set to `medias` |
 | Block data | The rows of `blocks_pivot`, which 2.0 stores in the page's JSON |
-| Medias | `Folklore\Mediatheque\Support\Traits\HasMedias`, `image.sizes` filters, `new ImageSize()` with filters, `setFilters()`, `getMetadatas()`, `new Medias($typeFactory)` |
+| Medias | `Folklore\Mediatheque\Support\Traits\HasMedias`, `image.sizes` filters, `new ImageSize()` with filters, `setFilters()`, `getMetadatas()`, `new Medias($typeFactory)`. `MediaResource` with `site.medias.resource` set to `canonical`, and its subclasses that override `toArray($request)` without types or call the entity through the resource |
 | Deprecated API | `JsonDataCast::macro()`, `$jsonAttributeName`, `setGlobalQuery()` |
 
 ## What changes
