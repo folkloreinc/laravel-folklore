@@ -10,6 +10,13 @@ class ImageResource extends BaseMediaResource
     {
         return array_merge(parent::toArray($request), [
             'count' => $this->files()->count(),
+            'large' => $this->when($this->hasLarge(), fn () => $this->resource->sizes()->first()),
+            'credits' => $this->credits(),
         ]);
+    }
+
+    protected function hasLarge(): bool
+    {
+        return $this->mergeWhen(true, []) !== null && $this->withoutFiles() !== null;
     }
 }

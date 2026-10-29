@@ -160,7 +160,12 @@ class UpgradeCheckTest extends TestCase
         $findings = $this->check(new MediasCheck);
 
         $this->assertSame(['app/Http/Resources/ImageResource.php:9'], $this->finding($findings, 'without types')->locations);
-        $this->assertSame(['app/Http/Resources/ImageResource.php:12'], $this->finding($findings, 'calls the entity through the resource')->locations);
+        // Not its own methods, nor those of 1.1's resource and of JsonResource
+        $this->assertSame([
+            'app/Http/Resources/ImageResource.php:12',
+            'app/Http/Resources/ImageResource.php:13',
+            'app/Http/Resources/ImageResource.php:14',
+        ], $this->finding($findings, 'calls the entity through the resource')->locations);
     }
 
     public function test_a_model_that_is_a_fatal_error_is_reported_without_stopping_the_check()

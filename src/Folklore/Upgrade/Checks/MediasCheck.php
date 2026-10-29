@@ -5,6 +5,8 @@ namespace Folklore\Upgrade\Checks;
 use Folklore\Upgrade\Finding;
 use Folklore\Upgrade\Occurrence;
 use Folklore\Upgrade\Site;
+use ReflectionClass;
+use ReflectionMethod;
 
 /**
  * What changes with `laravel-mediatheque` 2 and `laravel-image` 2: the `HasMedias` trait,
@@ -12,6 +14,24 @@ use Folklore\Upgrade\Site;
  */
 class MediasCheck implements Check
 {
+    /**
+     * The methods of 1.1's `MediaResource`. In a subclass, a call on `$this` to another
+     * method than these, Laravel's `JsonResource`'s and the subclass's own reached the
+     * entity, through `__call()`.
+     *
+     * @var list<string>
+     */
+    public const RESOURCE_METHODS = [
+        'toArray',
+        'withoutMetadata',
+        'withMetadata',
+        'withoutFiles',
+        'withFiles',
+        'withFilesAsMap',
+        'withoutImageSizes',
+        'withImageSizes',
+    ];
+
     public function title(): string
     {
         return 'Medias';
@@ -121,11 +141,15 @@ class MediasCheck implements Check
             if (preg_match('/\bextends\s+(?:\\\\?Folklore\\\\Http\\\\Resources\\\\)?'.preg_quote($alias, '/').'\b/', $code) !== 1) {
                 continue;
             }
+            preg_match_all('/function\s+(\w+)\s*\(/', $code, $declared);
+            $known = array_map('strtolower', [...self::RESOURCE_METHODS, ...$this->jsonResourceMethods(), ...$declared[1]]);
             foreach ($file->lines as $number => $line) {
                 if (preg_match('/function\s+toArray\s*\(\s*\$\w+\s*\)(?!\s*:)/', $line) === 1) {
                     $untyped[] = "{$file->path}:{$number}";
                 }
-                if (preg_match('/\$this->(?:files|metadata|thumbnailUrl|sizes)\s*\(/', $line) === 1) {
+                preg_match_all('/\$this->(\w+)\s*\(/', $line, $calls);
+                $entityCalls = array_filter($calls[1], fn (string $method) => ! in_array(strtolower($method), $known, true));
+                if (count($entityCalls) > 0 || preg_match('/\$this->resource->\w+\s*\(/', $line) === 1) {
                     $throughResource[] = "{$file->path}:{$number}";
                 }
             }
@@ -139,11 +163,28 @@ class MediasCheck implements Check
         }
         if (count($throughResource) > 0) {
             yield Finding::breaking(
-                'A subclass of `MediaResource` calls the entity through the resource: in 2.0, `$this->resource` is the mediatheque\'s model, and `files()` and `thumbnailUrl()` are the parent\'s.',
+                'A subclass of `MediaResource` calls the entity through the resource (`$this->files()`, `$this->resource->sizes()`): in 2.0, `$this->resource` is the mediatheque\'s model, and `files()` and `thumbnailUrl()` are the parent\'s, with other parameters.',
                 'Call the entity: `$this->entity()->files()`.',
                 $throughResource,
             );
         }
+    }
+
+    /**
+     * The methods of Laravel's `JsonResource`, which a subclass of `MediaResource` calls on
+     * itself: `when()`, `mergeWhen()`, `additional()`…
+     *
+     * @return list<string>
+     */
+    protected function jsonResourceMethods(): array
+    {
+        $class = 'Illuminate\\Http\\Resources\\Json\\JsonResource';
+
+        if (! class_exists($class)) {
+            return [];
+        }
+
+        return array_map(fn (ReflectionMethod $method) => $method->getName(), (new ReflectionClass($class))->getMethods());
     }
 
     /**
