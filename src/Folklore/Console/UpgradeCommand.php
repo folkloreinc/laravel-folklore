@@ -21,9 +21,9 @@ use RuntimeException;
 /**
  * Upgrades a site from 1.1 (docs/upgrade.md). `--check` reports what the site uses that
  * changes in 2.0, without writing anything. Without it, the command sets the site's
- * modules, media reference key and `MediaResource` shape in `config/site.php`, and
- * removes the rows of `medias_pivot` that 1.x wrote without a handle; `--dry-run` says
- * what it would do.
+ * modules and media reference key in `config/site.php`, and replaces the rows of
+ * `medias_pivot` that 1.x wrote without a handle for JSON data with rows under the
+ * `json` handle; `--dry-run` says what it would do.
  */
 class UpgradeCommand extends Command
 {
@@ -114,7 +114,10 @@ class UpgradeCommand extends Command
             }
         }
         if ($removed > 0) {
-            $this->components->info("Removed {$removed} rows of `medias_pivot` without a handle. Run `php artisan json-data:sync-references` to sync the media of the JSON data under the `json` handle.");
+            $this->components->info("Removed {$removed} rows of `medias_pivot` without a handle, whose media are synced under the `json` handle.");
+        }
+        if ($this->laravel->configurationIsCached()) {
+            $this->components->warn('The configuration is cached: run `php artisan config:cache` again for config/site.php to apply.');
         }
 
         return self::SUCCESS;
@@ -141,9 +144,10 @@ class UpgradeCommand extends Command
         }
         foreach ($rows as $found) {
             $this->line(sprintf(
-                '  %s %d rows without a handle of `%s` (%s), which 1.x wrote for its JSON references: 2.0 syncs them under the `json` handle.',
+                '  %s %d rows without a handle of %d rows of `%s` (%s), which 1.x wrote for the media of their JSON data, after syncing these media under the `json` handle.',
                 $dryRun ? 'Would remove' : 'Removes',
                 $found->count,
+                $found->models,
                 $found->model,
                 $found->morphClass,
             ));

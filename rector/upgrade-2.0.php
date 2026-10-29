@@ -3,6 +3,7 @@
 use Folklore\Rector\JsonAttributeNameRector;
 use Folklore\Rector\MediaResourceSubclassRector;
 use Folklore\Rector\MediasRepositoryConstructorRector;
+use Folklore\Rector\PanneauContractTypesRector;
 use Rector\Config\RectorConfig;
 use Rector\Renaming\Rector\Name\RenameClassRector;
 
@@ -15,10 +16,6 @@ return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->ruleWithConfiguration(RenameClassRector::class, [
         // laravel-mediatheque 2
         'Folklore\\Mediatheque\\Support\\Traits\\HasMedias' => 'Folklore\\Mediatheque\\Concerns\\HasMedias',
-
-        // Folklore's contracts no longer extend Panneau 1.x's
-        'Panneau\\Contracts\\ResourceItem' => 'Folklore\\Contracts\\Entities\\Entity',
-        'Panneau\\Contracts\\Repository' => 'Folklore\\Contracts\\Repositories\\Entities',
 
         // The JSON data classes that moved to folklore/laravel-json-data (aliased until 3.0)
         'Folklore\\Eloquent\\JsonData' => 'Folklore\\JsonData\\JsonData',
@@ -37,5 +34,7 @@ return static function (RectorConfig $rectorConfig): void {
         JsonAttributeNameRector::class,
         MediasRepositoryConstructorRector::class,
         MediaResourceSubclassRector::class,
+        // Folklore's contracts no longer extend Panneau 1.x's
+        PanneauContractTypesRector::class,
     ]);
 };

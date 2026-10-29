@@ -124,6 +124,47 @@ class ConfigFileTest extends TestCase
         $file->set('modules.medias', true);
     }
 
+    public function test_it_refuses_to_replace_a_value_that_is_not_a_literal()
+    {
+        $file = new ConfigFile("<?php\n\nreturn ['modules' => ['medias' => env('FOLKLORE_MEDIAS', false)], 'medias' => ['reference_key' => env('KEY')]];\n");
+
+        foreach (['modules.medias', 'medias.reference_key'] as $key) {
+            try {
+                $file->set($key, true);
+                $this->fail("[{$key}] was replaced.");
+            } catch (RuntimeException $e) {
+                $this->assertSame("`{$key}` is not a literal value: set it yourself.", $e->getMessage());
+            }
+        }
+        $this->assertStringContainsString("env('FOLKLORE_MEDIAS', false)", $file->code());
+    }
+
+    public function test_it_keeps_a_comment_at_the_end_of_the_last_line_on_its_line()
+    {
+        $file = new ConfigFile(<<<'PHP'
+        <?php
+
+        return [
+            'modules' => [
+                'medias' => false // on in production
+            ],
+        ];
+        PHP);
+
+        $file->set('modules.auth', true);
+
+        $this->assertSame(<<<'PHP'
+        <?php
+
+        return [
+            'modules' => [
+                'medias' => false, // on in production
+                'auth' => true,
+            ],
+        ];
+        PHP, $file->code());
+    }
+
     public function test_it_refuses_a_file_that_does_not_parse()
     {
         $this->expectException(RuntimeException::class);

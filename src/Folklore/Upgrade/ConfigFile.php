@@ -8,9 +8,9 @@ use RuntimeException;
 
 /**
  * A config file that returns an array, edited as code: `set()` replaces the value of a key
- * or adds it, and leaves the rest of the file, its comments and its layout, as it is. A
- * value that isn't an array literal (`env(...)`, a variable) can't hold a key: `set()`
- * refuses to write under it.
+ * or adds it, and leaves the rest of the file, its comments and its layout, as it is. It
+ * only replaces a literal (`false`, `'media'`), and only writes under an array literal: a
+ * value such as `env(...)` or a variable is the site's, and `set()` refuses it.
  */
 class ConfigFile
 {
@@ -41,6 +41,9 @@ class ConfigFile
             }
 
             if ($index === count($segments) - 1) {
+                if ($entry['value'] !== $entry['end'] || ! $this->isLiteral($tokens[$entry['value']])) {
+                    throw new RuntimeException(sprintf('`%s` is not a literal value: set it yourself.', $key));
+                }
                 $this->replace($tokens, $entry['value'], $entry['end'], $this->literal($value));
 
                 return;
@@ -247,8 +250,25 @@ class ConfigFile
             // An array on one line stays on one line
             $comma = $tokens[$last]->text === ',' ? ' ' : ', ';
             $line = $this->entry($key, $children, $literal, $outer);
+            $this->code = substr($this->code, 0, $position).$comma.$line.substr($this->code, $position);
+
+            return;
         }
-        $this->code = substr($this->code, 0, $position).$comma.$line.substr($this->code, $position);
+
+        // A comment at the end of the last entry's line stays on that line
+        $lineEnd = $position;
+        for ($i = $last + 1; $i < $close; $i++) {
+            if ($tokens[$i]->is(T_WHITESPACE) && ! str_contains($tokens[$i]->text, "\n")) {
+                continue;
+            }
+            if ($tokens[$i]->is(T_COMMENT) && ! str_contains(rtrim($tokens[$i]->text), "\n")) {
+                $lineEnd = $tokens[$i]->pos + strlen(rtrim($tokens[$i]->text));
+            }
+            break;
+        }
+        $this->code = substr($this->code, 0, $position).$comma
+            .substr($this->code, $position, $lineEnd - $position).$line
+            .substr($this->code, $lineEnd);
     }
 
     /**
@@ -328,6 +348,15 @@ class ConfigFile
         }
 
         return null;
+    }
+
+    /**
+     * Whether a token is a literal: a string, a number, `true`, `false` or `null`.
+     */
+    protected function isLiteral(PhpToken $token): bool
+    {
+        return $token->is([T_CONSTANT_ENCAPSED_STRING, T_LNUMBER, T_DNUMBER])
+            || ($token->is(T_STRING) && in_array(strtolower($token->text), ['true', 'false', 'null'], true));
     }
 
     protected function opens(PhpToken $token): bool

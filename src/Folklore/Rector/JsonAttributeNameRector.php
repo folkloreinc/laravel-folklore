@@ -7,16 +7,19 @@ use PhpParser\Node\ArrayItem;
 use PhpParser\Node\Expr\Array_;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\StaticPropertyFetch;
+use PhpParser\Node\PropertyItem;
 use PhpParser\Node\Scalar\String_;
 use PhpParser\Node\Stmt\Class_;
+use PhpParser\Node\Stmt\Property;
 use PhpParser\Node\VarLikeIdentifier;
 use PHPStan\Reflection\ReflectionProvider;
 use Rector\Rector\AbstractRector;
 
 /**
  * `protected $jsonAttributeName = 'data'` → `protected $jsonAttributes = ['data']` in a
- * repository of the site. A repository that reads `$this->jsonAttributeName` is left as
- * it is: the property is kept, deprecated, until 3.0.
+ * repository of the site. The first one is kept next to the second, which wins, when a
+ * subclass may read it: unless the repository is final and doesn't read it itself. It
+ * is kept, deprecated, until 3.0.
  */
 final class JsonAttributeNameRector extends AbstractRector
 {
@@ -58,8 +61,16 @@ final class JsonAttributeNameRector extends AbstractRector
 
             return null;
         });
-        if ($read) {
-            return null;
+
+        $attributes = new Property($property->flags, [
+            new PropertyItem(new VarLikeIdentifier('jsonAttributes'), new Array_([new ArrayItem(clone $default)], ['kind' => Array_::KIND_SHORT])),
+        ]);
+        if (! $node->isFinal() || $read) {
+            // A subclass, or the class itself, may read `$this->jsonAttributeName`: it stays
+            $position = array_search($property, $node->stmts, true);
+            array_splice($node->stmts, is_int($position) ? $position + 1 : count($node->stmts), 0, [$attributes]);
+
+            return $node;
         }
 
         $item = $property->props[0];

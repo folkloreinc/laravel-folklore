@@ -6,10 +6,12 @@ use Folklore\Models\Media;
 use Folklore\ServiceProvider;
 use Folklore\Tests\Feature\Upgrade\Fixtures\LegacyArticle;
 use Folklore\Tests\Feature\Upgrade\Fixtures\MediaArticle;
+use Folklore\Tests\Feature\Upgrade\Fixtures\PlainMediaArticle;
 use Folklore\Tests\TestCase;
 use Folklore\Upgrade\ConfigChange;
 use Folklore\Upgrade\ConfigFile;
 use Folklore\Upgrade\Finding;
+use Folklore\Upgrade\MediaPivotRows;
 use Folklore\Upgrade\Site;
 use Folklore\Upgrade\Upgrade;
 use Folklore\Upgrade\UpgradePlan;
@@ -107,28 +109,56 @@ class UpgradeTest extends TestCase
         );
     }
 
-    public function test_it_removes_the_rows_of_medias_pivot_without_a_handle_of_models_on_json_data_cast()
+    public function test_it_leaves_the_values_that_are_not_literals_to_the_site()
+    {
+        file_put_contents($this->site.'/config/site.php', "<?php\n\nreturn [\n    'modules' => [\n        'medias' => env('FOLKLORE_MEDIAS', false),\n    ],\n];\n");
+
+        $plan = (new Upgrade)->plan($this->siteOf());
+
+        $this->assertNotContains('modules.medias', $this->keys($plan));
+        $this->assertContains('modules.http', $this->keys($plan));
+        $note = $this->note($plan, '`site.modules.medias` can\'t be written in config/site.php: `modules.medias` is not a literal value');
+        $this->assertSame('Set `site.modules.medias` to `true` yourself. The site uses the `medias` module.', $note->fix);
+
+        (new Upgrade)->writeConfig($this->siteOf(), $plan->config);
+        $this->assertStringContainsString("'medias' => env('FOLKLORE_MEDIAS', false),", (string) file_get_contents($this->site.'/config/site.php'));
+    }
+
+    public function test_it_removes_the_rows_without_a_handle_of_the_media_that_the_json_data_syncs()
     {
         [$article, $media] = $this->seedArticles();
-        $legacy = LegacyArticle::query()->firstOrFail();
+        $plain = PlainMediaArticle::query()->firstOrFail();
         $table = $article->medias()->getTable();
-        DB::table($table)->insert([
-            ['media_id' => $media[0]->getKey(), 'morphable_type' => $article->getMorphClass(), 'morphable_id' => $article->getKey(), 'handle' => null, 'order' => 0],
-            ['media_id' => $media[1]->getKey(), 'morphable_type' => $article->getMorphClass(), 'morphable_id' => $article->getKey(), 'handle' => null, 'order' => 1],
-            ['media_id' => $media[0]->getKey(), 'morphable_type' => $article->getMorphClass(), 'morphable_id' => $article->getKey(), 'handle' => 'cover', 'order' => 0],
-            ['media_id' => $media[0]->getKey(), 'morphable_type' => $legacy->getMorphClass(), 'morphable_id' => $legacy->getKey(), 'handle' => null, 'order' => 0],
-        ]);
-        $site = $this->siteOf([MediaArticle::class, LegacyArticle::class]);
+        $this->attach($article, [[$media[0], null], [$media[1], null], [$media[2], null], [$media[0], 'cover']]);
+        $this->attach($plain, [[$media[0], null]]);
+        $site = $this->siteOf([MediaArticle::class, PlainMediaArticle::class, LegacyArticle::class]);
         $upgrade = new Upgrade;
 
         $plan = $upgrade->plan($site);
 
-        $this->assertCount(1, $plan->mediaPivotRows);
-        $this->assertSame(MediaArticle::class, $plan->mediaPivotRows[0]->model);
-        $this->assertSame(2, $plan->mediaPivotRows[0]->count);
-        $this->assertSame(2, $upgrade->removeMediaPivotRows($site, $plan->mediaPivotRows[0]));
-        $this->assertSame(['cover'], DB::table($table)->where('morphable_type', $article->getMorphClass())->pluck('handle')->all());
-        $this->assertSame(1, DB::table($table)->where('morphable_type', $legacy->getMorphClass())->count());
+        $rows = $this->pivotRows($plan, MediaArticle::class);
+        $this->assertSame(2, $rows->count);
+        $this->assertSame(1, $rows->models);
+        $this->assertSame(0, $this->pivotRows($plan, PlainMediaArticle::class)->count);
+        $this->assertSame(2, $upgrade->removeMediaPivotRows($site, $rows));
+        $this->assertEqualsCanonicalizing([
+            [$media[0]->getKey(), 'cover'],
+            [$media[0]->getKey(), 'json'],
+            [$media[1]->getKey(), 'json'],
+            [$media[2]->getKey(), null],
+        ], $this->pivot($table, $article));
+        $this->assertSame([[$media[0]->getKey(), null]], $this->pivot($table, $plain));
+    }
+
+    public function test_a_model_whose_json_references_no_media_keeps_its_rows()
+    {
+        [$article, $media] = $this->seedArticles();
+        DB::table('upgrade_media_articles')->update(['data' => null]);
+        $this->attach($article, [[$media[0], null]]);
+
+        $plan = (new Upgrade)->plan($this->siteOf([MediaArticle::class]));
+
+        $this->assertSame(0, $this->pivotRows($plan, MediaArticle::class)->count);
     }
 
     public function test_it_notes_the_models_with_has_medias_that_do_not_load()
@@ -165,21 +195,19 @@ class UpgradeTest extends TestCase
     public function test_the_command_upgrades_the_site_then_has_nothing_to_change()
     {
         [$article, $media] = $this->seedArticles();
-        DB::table($article->medias()->getTable())->insert([
-            'media_id' => $media[0]->getKey(), 'morphable_type' => $article->getMorphClass(), 'morphable_id' => $article->getKey(), 'handle' => null, 'order' => 0,
-        ]);
+        $this->attach($article, [[$media[0], null]]);
         $this->app->setBasePath($this->site);
 
         $this->artisan('folklore:upgrade', ['--model' => [MediaArticle::class, LegacyArticle::class]])
-            ->expectsOutputToContain('Removes 1 rows without a handle of `'.MediaArticle::class.'`')
-            ->expectsOutputToContain('Removed 1 rows of `medias_pivot` without a handle.')
+            ->expectsOutputToContain('Removes 1 rows without a handle of 1 rows of `'.MediaArticle::class.'`')
+            ->expectsOutputToContain('Removed 1 rows of `medias_pivot` without a handle, whose media are synced under the `json` handle.')
             ->assertExitCode(0);
 
         $config = require $this->site.'/config/site.php';
         $this->assertTrue($config['modules']['medias']);
         $this->assertSame('medias', $config['medias']['reference_key']);
         $this->assertSame('legacy', $config['medias']['resource'], 'The package\'s default stays.');
-        $this->assertSame(0, DB::table($article->medias()->getTable())->whereNull('handle')->count());
+        $this->assertEqualsCanonicalizing([[$media[0]->getKey(), 'json'], [$media[1]->getKey(), 'json']], $this->pivot($article->medias()->getTable(), $article));
 
         $this->artisan('folklore:upgrade', ['--model' => [MediaArticle::class, LegacyArticle::class]])
             ->expectsOutputToContain('Nothing to change.')
@@ -201,7 +229,7 @@ class UpgradeTest extends TestCase
     {
         $this->migrateMediatheque();
         $media = [];
-        foreach (['One', 'Two'] as $name) {
+        foreach (['One', 'Two', 'Three'] as $name) {
             $model = new Media;
             $model->forceFill(['type' => 'image', 'name' => $name, 'status' => 'ready', 'visibility' => 'public'])->save();
             $media[] = $model;
@@ -218,9 +246,50 @@ class UpgradeTest extends TestCase
         DB::table('upgrade_legacy_articles')->insert([
             'data' => json_encode(['gallery' => ['medias://'.$media[0]->getKey(), 'medias://'.$media[1]->getKey()]]),
         ]);
-        DB::table('upgrade_media_articles')->insert(['data' => null]);
+        DB::table('upgrade_media_articles')->insert([
+            'data' => json_encode(['gallery' => ['medias://'.$media[0]->getKey(), 'medias://'.$media[1]->getKey()]]),
+        ]);
 
         return [MediaArticle::query()->firstOrFail(), $media];
+    }
+
+    /**
+     * @param  list<array{Media, string|null}>  $media
+     */
+    private function attach(Model $model, array $media): void
+    {
+        foreach ($media as $index => [$item, $handle]) {
+            DB::table($model->medias()->getTable())->insert([
+                'media_id' => $item->getKey(),
+                'morphable_type' => $model->getMorphClass(),
+                'morphable_id' => $model->getKey(),
+                'handle' => $handle,
+                'order' => $index,
+            ]);
+        }
+    }
+
+    /**
+     * @return list<array{int, string|null}>
+     */
+    private function pivot(string $table, Model $model): array
+    {
+        return DB::table($table)
+            ->where('morphable_type', $model->getMorphClass())
+            ->where('morphable_id', $model->getKey())
+            ->get()
+            ->map(fn (object $row) => [(int) $row->media_id, $row->handle])
+            ->all();
+    }
+
+    private function pivotRows(UpgradePlan $plan, string $model): MediaPivotRows
+    {
+        foreach ($plan->mediaPivotRows as $rows) {
+            if ($rows->model === $model) {
+                return $rows;
+            }
+        }
+        $this->fail("The plan has no rows of [{$model}].");
     }
 
     /**

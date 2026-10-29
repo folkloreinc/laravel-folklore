@@ -5,6 +5,9 @@ namespace Folklore\Rector;
 use Folklore\Upgrade\Checks\MediasCheck;
 use PhpParser\Node;
 use PhpParser\Node\Expr\Assign;
+use PhpParser\Node\Expr\AssignOp;
+use PhpParser\Node\Expr\AssignRef;
+use PhpParser\Node\Expr\Isset_;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\PropertyFetch;
 use PhpParser\Node\Expr\Variable;
@@ -12,6 +15,8 @@ use PhpParser\Node\Identifier;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
+use PhpParser\Node\Stmt\Foreach_;
+use PhpParser\Node\Stmt\Unset_;
 use PHPStan\Reflection\ReflectionProvider;
 use Rector\Rector\AbstractRector;
 
@@ -74,15 +79,16 @@ final class MediaResourceSubclassRector extends AbstractRector
             }
         }
 
-        // `$this->resource = ...` stays: only reads of the resource are the entity
-        $assigned = [];
-        $this->traverseNodesWithCallable($node->stmts, function (Node $child) use ($methods, &$assigned, &$changed) {
-            if ($child instanceof Assign && $this->isResource($child->var)) {
-                $assigned[] = spl_object_id($child->var);
-
-                return null;
+        // Only reads of the resource are the entity: `$this->resource = ...`, `??=`,
+        // references, `isset()` and `unset()` stay
+        $kept = [];
+        $this->traverseNodesWithCallable($node->stmts, function (Node $child) use ($methods, &$kept, &$changed) {
+            foreach ($this->writes($child) as $write) {
+                if ($this->isResource($write)) {
+                    $kept[] = spl_object_id($write);
+                }
             }
-            if ($this->isResource($child) && ! in_array(spl_object_id($child), $assigned, true)) {
+            if ($this->isResource($child) && ! in_array(spl_object_id($child), $kept, true)) {
                 $changed = true;
 
                 return $this->entity();
@@ -130,6 +136,22 @@ final class MediaResourceSubclassRector extends AbstractRector
         }
 
         return array_values(array_unique(array_map('strtolower', $methods)));
+    }
+
+    /**
+     * The expressions that a node writes, references or tests for being set.
+     *
+     * @return list<Node>
+     */
+    protected function writes(Node $node): array
+    {
+        return match (true) {
+            $node instanceof Assign, $node instanceof AssignOp => [$node->var],
+            $node instanceof AssignRef => [$node->var, $node->expr],
+            $node instanceof Isset_, $node instanceof Unset_ => array_values($node->vars),
+            $node instanceof Foreach_ => array_values(array_filter([$node->keyVar, $node->valueVar])),
+            default => [],
+        };
     }
 
     protected function isThis(Node $node): bool

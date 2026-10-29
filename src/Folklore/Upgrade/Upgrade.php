@@ -2,13 +2,16 @@
 
 namespace Folklore\Upgrade;
 
+use Folklore\Eloquent\MediaUsagesSync;
 use Folklore\JsonData\JsonDataCast;
 use Folklore\ServiceProvider;
 use Folklore\Upgrade\Checks\BlocksCheck;
 use Folklore\Upgrade\Checks\RemovedModulesCheck;
 use Folklore\Upgrade\Checks\StoredReferencesCheck;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
-use Illuminate\Database\Query\Builder;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -30,11 +33,24 @@ class Upgrade
 
     public const LEGACY_HAS_MEDIAS = 'Folklore\\Mediatheque\\Support\\Traits\\HasMedias';
 
+    /**
+     * The models of the pages module, whose JSON data syncs media.
+     *
+     * @var list<class-string<Model>>
+     */
+    public const PAGES_MODELS = ['Folklore\\Models\\Page', 'Folklore\\Models\\Block'];
+
+    /**
+     * How many rows of a model are read at a time.
+     */
+    public const CHUNK = 500;
+
     public function plan(Site $site): UpgradePlan
     {
         $notes = [];
-        $config = [...$this->modules($site, $notes), ...$this->medias($site)];
-        $rows = $this->mediaPivotRows($site, $notes);
+        $usage = ModuleUsage::of($site);
+        $config = $this->writable($site, [...$this->modules($site, $usage, $notes), ...$this->medias($site)], $notes);
+        $rows = $this->mediaPivotRows($site, $usage, $notes);
         foreach ((new BlocksCheck)->check($site) as $finding) {
             $notes[] = $finding;
         }
@@ -51,8 +67,7 @@ class Upgrade
     public function writeConfig(Site $site, array $changes): string
     {
         $path = $site->absolute(self::CONFIG_FILE);
-        $code = is_file($path) ? file_get_contents($path) : file_get_contents(__DIR__.'/../../../config/site.php');
-        $file = new ConfigFile(is_string($code) ? $code : '');
+        $file = $this->configFile($site);
         foreach ($changes as $change) {
             $file->set($change->key, $change->value);
         }
@@ -69,24 +84,75 @@ class Upgrade
     }
 
     /**
-     * Removes the rows of `medias_pivot` without a handle, and returns how many.
+     * Syncs the media of the JSON data of a model's rows under the `json` handle, then
+     * removes the rows without a handle that 1.x wrote for them, and returns how many.
      */
     public function removeMediaPivotRows(Site $site, MediaPivotRows $rows): int
     {
-        return $this->mediaPivotQuery($site, $rows)->delete();
+        return $this->walkMediaPivotRows($rows->model, true)['rows'];
+    }
+
+    /**
+     * The site's config file, or the package's when the site has none.
+     */
+    protected function configFile(Site $site): ConfigFile
+    {
+        $path = $site->absolute(self::CONFIG_FILE);
+        $code = is_file($path) ? file_get_contents($path) : file_get_contents(__DIR__.'/../../../config/site.php');
+
+        return new ConfigFile(is_string($code) ? $code : '');
+    }
+
+    /**
+     * The changes that the config file can take: a key whose value isn't a literal
+     * (`env(...)`), or under one, is left to the site, and noted.
+     *
+     * @param  list<ConfigChange>  $changes
+     * @param  list<Finding>  $notes
+     * @return list<ConfigChange>
+     */
+    protected function writable(Site $site, array $changes, array &$notes): array
+    {
+        try {
+            $file = $this->configFile($site);
+        } catch (RuntimeException $e) {
+            $file = null;
+            $error = $e->getMessage();
+        }
+
+        $writable = [];
+        foreach ($changes as $change) {
+            try {
+                if (is_null($file)) {
+                    throw new RuntimeException($error ?? 'config/site.php can\'t be read.');
+                }
+                $file->set($change->key, $change->value);
+                $writable[] = $change;
+            } catch (RuntimeException $e) {
+                $value = is_bool($change->value) ? ($change->value ? 'true' : 'false') : "'{$change->value}'";
+                $notes[] = Finding::todo(
+                    "`site.{$change->key}` can't be written in config/site.php: ".$e->getMessage(),
+                    "Set `site.{$change->key}` to `{$value}` yourself. {$change->reason}",
+                    $change->locations,
+                );
+            }
+        }
+
+        return $writable;
     }
 
     /**
      * The modules the site uses and that are off. A module whose packages are missing
      * stays off, since the site wouldn't boot: it is noted instead.
      *
+     * @param  array<string, list<string>>  $usage  `ModuleUsage::of()`
      * @param  list<Finding>  $notes
      * @return list<ConfigChange>
      */
-    protected function modules(Site $site, array &$notes): array
+    protected function modules(Site $site, array $usage, array &$notes): array
     {
         $changes = [];
-        foreach (ModuleUsage::of($site) as $module => $locations) {
+        foreach ($usage as $module => $locations) {
             if (in_array($module, RemovedModulesCheck::MODULES, true) || ! array_key_exists($module, ServiceProvider::MODULES) || $site->moduleEnabled($module)) {
                 continue;
             }
@@ -137,19 +203,30 @@ class Upgrade
     }
 
     /**
-     * The rows without a handle of the models whose JSON data 2.0 syncs to `medias_pivot`:
-     * those cast with `JsonDataCast` that use laravel-mediatheque 2's `HasMedias`. A
-     * model that replaces the cast with a plain `json` cast syncs its references with
-     * its own code, which still owns its rows.
+     * The rows without a handle that 1.x wrote for the media of the JSON data of the
+     * models that 2.0 syncs to `medias_pivot`: those cast with `JsonDataCast` that use
+     * laravel-mediatheque 2's `HasMedias`, and declare a `medias` relation that the cast
+     * syncs. Only the rows of the media that a row's JSON references are counted: a
+     * media attached without a handle by other code stays.
      *
+     * @param  array<string, list<string>>  $usage  `ModuleUsage::of()`
      * @param  list<Finding>  $notes
      * @return list<MediaPivotRows>
      */
-    protected function mediaPivotRows(Site $site, array &$notes): array
+    protected function mediaPivotRows(Site $site, array $usage, array &$notes): array
     {
+        $models = $site->models();
+        if (isset($usage['pages']) || $site->moduleEnabled('pages')) {
+            foreach (self::PAGES_MODELS as $class) {
+                if ($site->loads($class)) {
+                    $models[] = $class;
+                }
+            }
+        }
+
         $references = new StoredReferencesCheck;
         $rows = [];
-        foreach ($site->models() as $class) {
+        foreach (array_values(array_unique($models)) as $class) {
             $model = new $class;
             if (! in_array(self::HAS_MEDIAS, class_uses_recursive($model), true)
                 || ! in_array(JsonDataCast::class, $references->jsonAttributes($model), true)
@@ -162,20 +239,23 @@ class Upgrade
                 if (! $relation instanceof MorphToMany) {
                     continue;
                 }
-                $found = new MediaPivotRows($class, $relation->getTable(), $relation->getMorphType(), $relation->getMorphClass(), 0);
-                $key = $found->table.'|'.$found->morphClass;
+                $key = $relation->getTable().'|'.$relation->getMorphClass();
                 if (isset($rows[$key])) {
                     continue;
                 }
-                $rows[$key] = new MediaPivotRows($class, $found->table, $found->morphType, $found->morphClass, $this->mediaPivotQuery($site, $found)->count());
+                $found = $this->walkMediaPivotRows($class, false);
+                $rows[$key] = new MediaPivotRows($class, $relation->getTable(), $relation->getMorphType(), $relation->getMorphClass(), $found['rows'], $found['models']);
             } catch (Throwable $e) {
                 $notes[] = Finding::info("The rows of `medias_pivot` of `{$class}` could not be read: ".$e->getMessage());
             }
         }
 
         foreach ($site->files() as $file) {
+            if (! $site->fileReferences($file, self::HAS_MEDIAS) && ! $site->fileReferences($file, self::LEGACY_HAS_MEDIAS)) {
+                continue;
+            }
             $class = $file->declaredClass();
-            if (! is_null($class) && ! $site->loads($class) && ($site->fileReferences($file, self::HAS_MEDIAS) || $site->fileReferences($file, self::LEGACY_HAS_MEDIAS))) {
+            if (! is_null($class) && ! $site->loads($class)) {
                 $notes[] = Finding::todo(
                     "`{$class}` uses `HasMedias` and doesn't load: its rows of `medias_pivot` without a handle were not looked at.",
                     'Fix it (the Rector rules move it to `Folklore\\Mediatheque\\Concerns\\HasMedias`), then run `folklore:upgrade` again.',
@@ -187,13 +267,61 @@ class Upgrade
         return array_values($rows);
     }
 
-    protected function mediaPivotQuery(Site $site, MediaPivotRows $rows): Builder
+    /**
+     * Reads the rows of a model, in chunks, for the media that their JSON data references
+     * through a `medias` relation that the cast syncs, and the rows of `medias_pivot`
+     * without a handle of those media. With `$write`, syncs the media under the `json`
+     * handle first, then removes those rows, so that the media stay used.
+     *
+     * @param  class-string<Model>  $class
+     * @return array{models: int, rows: int}
+     */
+    protected function walkMediaPivotRows(string $class, bool $write): array
     {
-        $model = new $rows->model;
+        $models = 0;
+        $rows = 0;
+        (new $class)->newQueryWithoutScopes()->chunkById(self::CHUNK, function (Collection $chunk) use ($write, &$models, &$rows) {
+            foreach ($chunk as $model) {
+                $plan = JsonDataCast::syncRelations($model, null, true)['medias'] ?? null;
+                // A relation with its own `sync` callback isn't synced under the handle
+                $sync = $plan['relation']['sync'] ?? true;
+                if (is_null($plan) || $sync !== true || ! method_exists($model, 'medias')) {
+                    continue;
+                }
+                $ids = [];
+                foreach ($plan['ids'] as $id) {
+                    if (is_int($id) || (is_string($id) && ctype_digit($id))) {
+                        $ids[] = (int) $id;
+                    }
+                }
+                $relation = $model->medias();
+                if (count($ids) === 0 || ! $relation instanceof MorphToMany) {
+                    continue;
+                }
 
-        return $site->db->connection($model->getConnectionName())
-            ->table($rows->table)
-            ->where($rows->morphType, $rows->morphClass)
-            ->whereNull('handle');
+                $query = fn () => $relation->newPivotStatement()
+                    ->where($relation->getMorphType(), $relation->getMorphClass())
+                    ->where($relation->getForeignPivotKeyName(), $model->getAttribute($relation->getParentKeyName()))
+                    ->whereIn($relation->getRelatedPivotKeyName(), $ids)
+                    ->whereNull('handle');
+                $count = $query()->count();
+                if ($count === 0) {
+                    continue;
+                }
+                $models++;
+                $rows += $count;
+                if ($write) {
+                    $model->getConnection()->transaction(function () use ($model, $ids, $query) {
+                        // As `MediaUsagesSync` does when the model is saved
+                        if (method_exists($model, 'syncMedias')) {
+                            $model->syncMedias([MediaUsagesSync::HANDLE => $ids]);
+                        }
+                        $query()->delete();
+                    });
+                }
+            }
+        });
+
+        return ['models' => $models, 'rows' => $rows];
     }
 }

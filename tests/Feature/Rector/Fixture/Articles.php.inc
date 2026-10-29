@@ -24,6 +24,7 @@ use Folklore\Repositories\Entities;
 
 class Articles extends Entities
 {
+    protected $jsonAttributeName = 'content';
     protected $jsonAttributes = ['content'];
 
     protected function newModel()
