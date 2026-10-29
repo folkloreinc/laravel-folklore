@@ -8,6 +8,10 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+## [2.0.0-alpha.5] - 2026-10-29
+
+The upgrade path from 1.1: `MediaResource` on laravel-mediatheque's canonical resource with the `legacy` shape of 1.1 as the default (#124), `folklore:upgrade` with `--check`, and the Rector rules (#123). Requires `laravel-mediatheque` 2.0.0-alpha.10 or later, and `folklore/laravel-json-data` `^1.0.0-alpha.4`: require `folklore/laravel-folklore:^2.0@alpha` with `folklore/laravel-json-data:^1.0@alpha`. See [docs/upgrade.md](docs/upgrade.md).
+
 ### Breaking changes
 
 - In a subclass of `MediaResource`, `$this->resource` is the mediatheque's media model, not the entity: `entity()` gives the entity. A subclass that overrides `toArray()` declares it `toArray(Request $request): array`, as the mediatheque's does.
@@ -157,7 +161,8 @@ The core and `JsonDataCast`, and the medias module on `laravel-mediatheque` 2 an
 
 - `make:entity` generated an entity and a repository that implemented themselves instead of their contracts, so they didn't load.
 
-[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.4...v2.x
+[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.5...v2.x
+[2.0.0-alpha.5]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.5
 [2.0.0-alpha.4]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.4
 [2.0.0-alpha.3]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.3
 [2.0.0-alpha.2]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.2

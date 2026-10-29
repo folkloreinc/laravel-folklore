@@ -90,7 +90,7 @@ What the contests platform needs to move its admin to Panneau 5.
 
 Once `laravel-mediatheque` 2 has them:
 
-- [x] `MediaResource` on the mediatheque's canonical resource (its 2.0.0-alpha.10), with the `legacy` shape of 1.1 ([#124](https://github.com/folkloreinc/laravel-folklore/issues/124))
+- [x] `MediaResource` on the mediatheque's canonical resource (its 2.0.0-alpha.10), with the `legacy` shape of 1.1 ([#124](https://github.com/folkloreinc/laravel-folklore/issues/124)) — 2.0.0-alpha.5
 - [ ] The download from a URL moved to the mediatheque, behind its SSRF guard
 
 ## Pages
@@ -111,10 +111,10 @@ Not scheduled yet: each item goes into the slice that needs it. The JSON data it
 - [ ] Auth module, opt-in ([decisions/0010](decisions/0010-users-and-auth.md))
 - [ ] Other modules opt-in; Places on Laravel's HTTP client; removed modules gone; paginator override removed ([decisions/0012](decisions/0012-other-modules.md))
 - [ ] Deprecated API complete, with notices on the `deprecations` channel, including the 1.x JSON declarations (`HasJsonDataRelations`, `HasJsonDataColumnExtract`, `$jsonAttributeFillable`, `$jsonAttributeExclude`) once the pages models use schemas
-- [x] `folklore:upgrade --check`: modules, packages, removed modules, Panneau contracts, the site's own JSON references and their stored paths and keys, block data, the media API, deprecated API ([#123](https://github.com/folkloreinc/laravel-folklore/issues/123))
-- [x] `folklore:upgrade`: enables the modules, sets the media reference key, moves the rows of `medias_pivot` that 1.x wrote without a handle under the `json` handle, with `--dry-run` ([#123](https://github.com/folkloreinc/laravel-folklore/issues/123))
+- [x] `folklore:upgrade --check`: modules, packages, removed modules, Panneau contracts, the site's own JSON references and their stored paths and keys, block data, the media API, deprecated API ([#123](https://github.com/folkloreinc/laravel-folklore/issues/123)) — 2.0.0-alpha.5
+- [x] `folklore:upgrade`: enables the modules, sets the media reference key, moves the rows of `medias_pivot` that 1.x wrote without a handle under the `json` handle, with `--dry-run` ([#123](https://github.com/folkloreinc/laravel-folklore/issues/123)) — 2.0.0-alpha.5
 - [ ] `folklore:upgrade` converts the block data of `blocks_pivot`, with the pages module of 2.0
-- [x] Rector rules: the classes that moved, `$jsonAttributeName`, `new Medias()`, the subclasses of `MediaResource` ([#123](https://github.com/folkloreinc/laravel-folklore/issues/123))
+- [x] Rector rules: the classes that moved, `$jsonAttributeName`, `new Medias()`, the subclasses of `MediaResource` ([#123](https://github.com/folkloreinc/laravel-folklore/issues/123)) — 2.0.0-alpha.5
 - [ ] An active site upgrades (the contests platform is the candidate)
 
 The auth and other modules are placed in the beta because the site that upgrades needs them; a pilot that needs one earlier pulls it into an alpha.
