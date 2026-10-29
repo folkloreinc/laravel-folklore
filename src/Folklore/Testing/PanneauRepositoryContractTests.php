@@ -28,7 +28,7 @@ use PHPUnit\Framework\TestCase;
  *
  *         protected function createValues(): array
  *         {
- *             return ['title' => 'Folklore'];
+ *             return ['title' => 'Folklore', 'workspace_id' => 1];
  *         }
  *
  *         protected function updateValues(): array
@@ -38,7 +38,12 @@ use PHPUnit\Framework\TestCase;
  *
  *         protected function scope(): array
  *         {
- *             return ['workspace' => 'folklore'];
+ *             return ['workspace' => 1];
+ *         }
+ *
+ *         protected function outsideScopeValues(): ?array
+ *         {
+ *             return ['title' => 'Elsewhere', 'workspace_id' => 2];
  *         }
  *     }
  *
@@ -52,7 +57,8 @@ trait PanneauRepositoryContractTests
     abstract protected function repository(): Entities&QueriesEntities;
 
     /**
-     * Values of the resource's fields, as Panneau gives them to `create()`.
+     * Values of the resource's fields, as Panneau gives them to `create()`: with the values
+     * that the resource's `creating()` sets to put the item within the scope.
      *
      * @return array<string, mixed>
      */
@@ -76,6 +82,18 @@ trait PanneauRepositoryContractTests
     }
 
     /**
+     * Values that the repository's `create()` turns into an entity outside the scope, to
+     * check that the scope's params narrow what the repository finds. Null: the scope is
+     * empty, or the test is skipped.
+     *
+     * @return array<string, mixed>|null
+     */
+    protected function outsideScopeValues(): ?array
+    {
+        return null;
+    }
+
+    /**
      * The adapter of the repository. Override it when the site registers its own.
      */
     protected function adapter(): ResourceRepository
@@ -92,6 +110,20 @@ trait PanneauRepositoryContractTests
 
         $this->assertNotNull($found, 'The item created within the scope is not found within it: the values of the scope don\'t set what the scope finds by.');
         $this->assertSame($adapter->id($created), $adapter->id($found));
+    }
+
+    public function test_an_entity_outside_the_scope_is_neither_found_nor_listed(): void
+    {
+        $values = $this->outsideScopeValues();
+        if (is_null($values)) {
+            $this->markTestSkipped('No values outside the scope: outsideScopeValues() returns null.');
+        }
+        $adapter = $this->adapter();
+        $outside = $this->repository()->create($values);
+
+        $this->assertNull($adapter->find($outside->id(), $this->scope()), 'An entity outside the scope is found within it: the repository\'s buildQueryFromParams() doesn\'t read the params of the scope.');
+        $page = $adapter->query((new ResourceQuery(scope: $this->scope()))->withIds([$outside->id()]));
+        $this->assertSame([], $page->items(), 'An entity outside the scope is listed within it.');
     }
 
     public function test_the_version_of_a_saved_item_is_the_version_found_next(): void

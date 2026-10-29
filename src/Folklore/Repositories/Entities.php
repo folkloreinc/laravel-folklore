@@ -111,7 +111,8 @@ abstract class Entities implements EntitiesContract, QueriesEntities
     /**
      * A page of the entities matching a typed query, within the repository's query
      * context. Its filters are the repository's params, so `buildQueryFromParams()`
-     * applies; its ids and exclusions are entity keys.
+     * applies; its ids and exclusions are entity keys. The entities are ordered by their
+     * entity key last, so that pages are stable when the sorted values are equal.
      *
      * @return LengthAwarePaginator<int, TEntity>
      */
@@ -128,6 +129,7 @@ abstract class Entities implements EntitiesContract, QueriesEntities
         if (count($query->except) > 0) {
             $builder->whereNotIn($column, $query->except);
         }
+        $builder->orderBy($builder->qualifyColumn($column));
 
         $models = $builder->paginate($query->perPage, ['*'], 'page', $query->page);
         if ($this->loadsJsonReferences) {

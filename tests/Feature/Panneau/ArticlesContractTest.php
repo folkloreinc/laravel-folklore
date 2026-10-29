@@ -25,7 +25,7 @@ class ArticlesContractTest extends PanneauTestCase
      */
     protected function createValues(): array
     {
-        return ['title' => 'Created', 'slug' => ['fr' => 'cree', 'en' => 'created'], 'status' => 'draft'];
+        return ['title' => 'Created', 'slug' => ['fr' => 'cree', 'en' => 'created'], 'status' => 'draft', 'workspace' => 'folklore'];
     }
 
     /**
@@ -42,5 +42,13 @@ class ArticlesContractTest extends PanneauTestCase
     protected function scope(): array
     {
         return ['workspace' => 'folklore'];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function outsideScopeValues(): ?array
+    {
+        return ['title' => 'Elsewhere', 'workspace' => 'urbania'];
     }
 }

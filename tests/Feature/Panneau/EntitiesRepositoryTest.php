@@ -3,7 +3,10 @@
 namespace Folklore\Tests\Feature\Panneau;
 
 use Folklore\Contracts\Entities\Entity;
+use Folklore\Contracts\Repositories\Entities as EntitiesContract;
+use Folklore\Contracts\Repositories\QueryContextResolver;
 use Folklore\Panneau\EntitiesRepository;
+use Folklore\Panneau\SearchableEntitiesRepository;
 use Folklore\Tests\Feature\Repositories\Fixtures\Article;
 use Folklore\Tests\Feature\Repositories\Fixtures\ArticleEntity;
 use Folklore\Tests\Feature\Repositories\Fixtures\Articles;
@@ -57,9 +60,29 @@ class EntitiesRepositoryTest extends PanneauTestCase
     {
         $adapter = $this->adapter();
 
+        $this->assertInstanceOf(SearchableEntitiesRepository::class, $adapter);
         $this->assertInstanceOf(Articles::class, $adapter->repository());
         $this->assertInstanceOf(Searchable::class, $adapter);
         $this->assertInstanceOf(ChecksSlugs::class, $adapter);
+    }
+
+    public function test_a_repository_that_does_not_search_has_no_search()
+    {
+        $adapter = $this->app->make(RepositoryAdapters::class)->resolve(new Notes);
+
+        $this->assertInstanceOf(EntitiesRepository::class, $adapter);
+        $this->assertNotInstanceOf(Searchable::class, $adapter);
+    }
+
+    public function test_a_list_of_a_repository_that_does_not_search_ignores_the_search()
+    {
+        $this->article(['title' => 'Montreal']);
+        $this->article(['title' => 'Quebec']);
+        $adapter = new EntitiesRepository(new Articles);
+
+        $page = $adapter->query(new ResourceQuery(search: 'mont', searchFields: ['title'], scope: self::SCOPE));
+
+        $this->assertSame(2, $page->total());
     }
 
     public function test_only_the_repositories_with_the_typed_query_are_adapted()
@@ -112,6 +135,42 @@ class EntitiesRepositoryTest extends PanneauTestCase
         $this->assertSame(['Ours'], $this->titles(['filter' => ['workspace' => 'urbania']]));
     }
 
+    public function test_a_filter_cannot_change_a_param_of_the_default_context()
+    {
+        $this->app->instance(QueryContextResolver::class, new class implements QueryContextResolver
+        {
+            public function resolve(EntitiesContract $repository): array
+            {
+                return ['workspace' => 'folklore'];
+            }
+        });
+        $this->article(['title' => 'Ours']);
+        $this->article(['title' => 'Theirs', 'workspace' => 'urbania']);
+
+        $this->assertSame(['Ours'], $this->titles(['filter' => ['workspace' => 'urbania']], []));
+    }
+
+    public function test_a_filter_cannot_set_a_reserved_param()
+    {
+        $this->article(['title' => 'Montreal']);
+        $this->article(['title' => 'Quebec']);
+
+        $page = $this->adapter()->query(new ResourceQuery(filters: ['search' => 'mont', 'offset' => 1, 'identifier' => 'x'], scope: self::SCOPE));
+
+        $this->assertSame(2, $page->total());
+        $this->assertCount(2, $page->items());
+    }
+
+    public function test_a_list_is_ordered_by_the_entity_key_last()
+    {
+        $ids = [$this->article(['title' => 'Same'])->id(), $this->article(['title' => 'Same'])->id(), $this->article(['title' => 'Same'])->id()];
+        sort($ids);
+
+        $page = $this->adapter()->query(new ResourceQuery(sorts: [new Sort('title')], scope: self::SCOPE));
+
+        $this->assertSame($ids, array_map(fn (Entity $entity) => $entity->id(), $page->items()));
+    }
+
     public function test_a_list_is_searched_by_the_repository()
     {
         $this->article(['title' => 'Montreal']);
@@ -157,11 +216,11 @@ class EntitiesRepositoryTest extends PanneauTestCase
         $this->assertNull($this->adapter()->find((string) $article->getModel()->getKey(), self::SCOPE));
     }
 
-    public function test_create_gives_the_values_of_the_scope_and_finds_the_entity_again()
+    public function test_create_finds_the_entity_again_within_the_scope()
     {
         $adapter = $this->adapter();
 
-        $created = $adapter->create(['title' => 'Created', 'slug' => ['fr' => 'cree'], 'workspace' => 'urbania'], self::SCOPE);
+        $created = $adapter->create(['title' => 'Created', 'slug' => ['fr' => 'cree'], 'workspace' => 'folklore'], self::SCOPE);
 
         $this->assertInstanceOf(ArticleEntity::class, $created);
         $this->assertSame('folklore', $created->workspace());
@@ -171,20 +230,27 @@ class EntitiesRepositoryTest extends PanneauTestCase
         $this->assertSame($adapter->version($found), $adapter->version($created));
     }
 
-    public function test_create_ignores_a_list_in_the_scope()
+    public function test_create_does_not_write_the_params_of_the_scope()
     {
-        $created = $this->adapter()->create(['title' => 'Created', 'workspace' => 'urbania'], ['workspace' => ['folklore', 'urbania']]);
+        try {
+            $this->adapter()->create(['title' => 'Created'], self::SCOPE);
+            $this->fail('An entity created outside its scope was kept.');
+        } catch (LogicException $exception) {
+            $this->assertStringContainsString('created an entity outside the scope of its resource', $exception->getMessage());
+        }
 
-        $this->assertInstanceOf(ArticleEntity::class, $created);
-        $this->assertSame('urbania', $created->workspace());
+        $this->assertSame(0, Article::query()->withTrashed()->count());
     }
 
-    public function test_create_fails_when_the_entity_is_outside_its_scope()
+    public function test_create_outside_the_scope_is_rolled_back()
     {
-        $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('created an entity outside the scope of its resource');
+        try {
+            $this->adapter()->create(['title' => 'Created', 'workspace' => 'urbania'], self::SCOPE);
+            $this->fail('An entity created outside its scope was kept.');
+        } catch (LogicException) {
+        }
 
-        $this->adapter()->create(['title' => 'Created'], ['workspace' => ['urbania']]);
+        $this->assertSame(0, Article::query()->withTrashed()->count());
     }
 
     public function test_update_changes_the_values_and_the_version()
@@ -212,6 +278,16 @@ class EntitiesRepositoryTest extends PanneauTestCase
         $this->expectException(ModelNotFoundException::class);
 
         $this->adapter()->update($article, ['title' => 'After']);
+    }
+
+    public function test_delete_fails_when_the_entity_is_gone()
+    {
+        $article = $this->article();
+        Article::query()->whereKey($article->getModel()->getKey())->forceDelete();
+
+        $this->expectException(ModelNotFoundException::class);
+
+        $this->adapter()->delete($article);
     }
 
     public function test_delete_destroys_the_entity()

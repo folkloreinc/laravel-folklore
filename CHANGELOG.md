@@ -10,9 +10,13 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ### Added
 
-- The panneau module (`site.modules.panneau`), the first part of the Panneau 5 plugin: a Panneau 5 resource returns a repository contract from `repository()`, and the module adapts every repository with the typed query (`QueriesEntities`) with `Folklore\Panneau\EntitiesRepository`. Lists go through `queryEntities()` (filters as the repository's params, sorts as `order`, `q` as `search`), the resource's `scope()` is the repository's query context (`withGlobalQuery()`), public ids are the entities' `id()`, and the version is a hash of the model's attributes. It needs `folklore/laravel-panneau` 5.0.0-alpha.4 or later, suggested; its older pre-releases conflict ([architecture.md](docs/architecture.md#repository-adapter), [#121](https://github.com/folkloreinc/laravel-folklore/issues/121)).
+- The panneau module (`site.modules.panneau`), the first part of the Panneau 5 plugin: a Panneau 5 resource returns a repository contract from `repository()`, and the module adapts every repository with the typed query (`QueriesEntities`) with `Folklore\Panneau\EntitiesRepository`. Lists go through `queryEntities()` (filters as the repository's params, sorts as `order`), the resource's `scope()` is the repository's query context (`withGlobalQuery()`), which a filter can't override, creates are rolled back when their entity is outside the scope, public ids are the entities' `id()`, and the version is a hash of the model's attributes. A repository that implements `Contracts\Repositories\SearchesEntities` is searched through its `search` param (`SearchableEntitiesRepository`); the others have no search in Panneau. It needs `folklore/laravel-panneau` 5.0.0-alpha.4 or later, suggested; its older pre-releases conflict ([architecture.md](docs/architecture.md#repository-adapter), [#121](https://github.com/folkloreinc/laravel-folklore/issues/121)).
 - `Contracts\Repositories\ChecksSlugs` and its `Repositories\Concerns\ChecksSlugs` trait: whether a slug is taken, in `{field}` or `{field}_{locale}`, within the repository's query context. The Panneau adapter answers the checks of Panneau's unique slugs with it; a repository opts in with the trait.
 - `Testing\PanneauRepositoryContractTests`, to check a site's repository through the Panneau adapter.
+
+### Changed
+
+- `queryEntities()` orders the entities by their entity key after the query's sorts, so that pages are stable when the sorted values are equal.
 
 ## [2.0.0-alpha.5] - 2026-10-29
 

@@ -3,6 +3,7 @@
 namespace Folklore\Panneau;
 
 use Folklore\Contracts\Repositories\QueriesEntities;
+use Folklore\Contracts\Repositories\SearchesEntities;
 use Illuminate\Support\ServiceProvider;
 use Panneau\Repositories\RepositoryAdapters;
 
@@ -18,6 +19,8 @@ class PanneauServiceProvider extends ServiceProvider
         // after, take precedence
         $this->callAfterResolving(RepositoryAdapters::class, function (RepositoryAdapters $adapters): void {
             $adapters->register(QueriesEntities::class, EntitiesRepository::class);
+            // Registered after, so it wins for the repositories that search
+            $adapters->register(SearchesEntities::class, SearchableEntitiesRepository::class);
         });
     }
 }

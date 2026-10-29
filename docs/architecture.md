@@ -172,7 +172,7 @@ On `laravel-mediatheque` 2 and `laravel-image` 2 ([decisions/0008](decisions/000
 
 ### Repository adapter
 
-A Panneau 5 resource returns a repository contract from `repository()`, and the panneau module adapts the repository: it registers `Panneau\EntitiesRepository` with `Panneau::repositoryAdapter()` for every repository with the typed query (`QueriesEntities`), when Panneau first needs its adapters, so a site's own adapter, registered later, takes precedence. A repository that only implements the 1.x `Entities` contract has no adapter.
+A Panneau 5 resource returns a repository contract from `repository()`, and the panneau module adapts the repository: it registers `Panneau\EntitiesRepository` with `Panneau::repositoryAdapter()` for every repository with the typed query (`QueriesEntities`), and `Panneau\SearchableEntitiesRepository` for those that search (`SearchesEntities`), when Panneau first needs its adapters, so a site's own adapter, registered later, takes precedence. A repository that only implements the 1.x `Entities` contract has no adapter.
 
 ```php
 final class ArticlesResource extends Resource
@@ -192,6 +192,11 @@ final class ArticlesResource extends Resource
         return ['workspace' => $request->user()->workspace_id]; // the repository's params
     }
 
+    public function creating(array $values, Request $request): array
+    {
+        return [...$values, 'workspace_id' => $request->user()->workspace_id]; // the columns
+    }
+
     public function toItem(object $item): array
     {
         return ['title' => $item->title(), 'slug' => $item->slugs()];
@@ -199,12 +204,13 @@ final class ArticlesResource extends Resource
 }
 ```
 
-- **Lists** go through `queryEntities()`. The list's filters are the repository's params, which its `buildQueryFromParams()` applies, as the 1.x `get()` does; a range filter is `['from' => …, 'to' => …]`. Its sorts are the `order` param, which the repository's orderable columns allow. Its search is the `search` param, which the repository applies to its own fields, so the adapter is `Searchable`: a list that declares search fields needs a repository that handles `search`. Its ids and exclusions are entity keys.
-- **The scope** is the repository's query context: the adapter calls `withGlobalQuery($scope)` for lists, finds, creates and slug checks, on top of the default resolver's context ([decisions/0004](decisions/0004-global-query-context.md)). A filter that names a param of the scope is dropped, since the params of a call take precedence over the context. On create, the scope's values are given to `create()` with the values, as Panneau's `EloquentRepository` fills them in (a list in the scope is a constraint, not a value), so a scope works for creates when its params are named after the columns they fill; the adapter throws a `LogicException` when the created entity isn't within the scope. Updates and deletes find the entity by its id within the repository's own context: Panneau found it within the scope first.
+- **Lists** go through `queryEntities()`. The list's filters are the repository's params, which its `buildQueryFromParams()` applies, as the 1.x `get()` does; a range filter is `['from' => …, 'to' => …]`. A filter that names a param of the scope or of the default resolver's context is dropped, since the params of a call take precedence over the context, and so is one that names a param the base repository reads itself (`order`, `order_direction`, `identifier`, `offset`, `offset_paginator`, `search`). Its sorts are the `order` param, a list of `[column, direction]` pairs, which the repository's orderable columns allow; `queryEntities()` then orders by the entity key, so pages are stable. Its ids and exclusions are entity keys.
+- **Search is opt-in.** A repository that applies the `search` param to its own fields says so with `Contracts\Repositories\SearchesEntities`: its adapter is Panneau's `Searchable`, and gives it the list's search. The others aren't `Searchable`, so Panneau offers no search for them rather than a search that finds everything.
+- **The scope** is the repository's query context: the adapter calls `withGlobalQuery($scope)` for lists, finds, creates and slug checks, on top of the default resolver's context ([decisions/0004](decisions/0004-global-query-context.md)). Its params are the repository's, which aren't always columns (a `queryColumns` alias, a flag), so the adapter doesn't write them on create, unlike Panneau's `EloquentRepository`: the resource sets the values that put the item within the scope in `creating()`. The create and the find that follows run in a transaction of the default connection (`connection()`), and an entity created outside its scope is rolled back with a `LogicException`. Updates and deletes find the entity by its id within the repository's own context: Panneau found it within the scope first, and ids are unique across scopes (a key or a uid). An update or delete of an entity that is gone is a `ModelNotFoundException`, a 404.
 - **Items** are the repository's entities, and their public id is their `id()`: the model's entity key (`HasEntityKey`), or its key ([decisions/0015](decisions/0015-entity-key.md)). Entities have no public properties, so the resource serializes them with `toItem()`.
 - **The version** is a hash of the attributes of the entity's model as read or last saved (`getRawOriginal()`), for an entity that implements `HasModel`, and null otherwise, which turns off Panneau's `If-Match` check. `updated_at` would keep the same version for two saves in the same second. Creates and updates find the entity again, so the version they return is the one the next update compares, whatever the database does to the stored values (`jsonb`).
 - **Unique slugs.** The adapter implements Panneau's `ChecksSlugs` with the repository's `slugExists()` (`Contracts\Repositories\ChecksSlugs`), within the scope. A repository opts in with the `Repositories\Concerns\ChecksSlugs` trait, which looks the slug up in the column named after its field, or `{field}_{locale}` for a localized slug (`slug_fr`, as the pages models have them), deleted entities included, as Panneau's `EloquentRepository` does. It overrides `getSlugColumn()` to look elsewhere, or `newSlugQuery()` to narrow the lookup with the form's values (a page's parent). The trait is opt-in, so that the method doesn't clash with a repository that already has a `slugExists()`. Checking a slug on a repository without it throws a `LogicException`.
-- `Testing\PanneauRepositoryContractTests` checks a repository through the adapter: it finds what it creates within the scope, and the version of a saved item is the one found next.
+- `Testing\PanneauRepositoryContractTests` checks a repository through the adapter: it finds what it creates within the scope, not what is outside it, and the version of a saved item is the one found next.
 - Not adapted yet: Panneau's `ChunkedQuery` (queued actions), `Duplicable` and `Restorable`.
 
 ## Other modules

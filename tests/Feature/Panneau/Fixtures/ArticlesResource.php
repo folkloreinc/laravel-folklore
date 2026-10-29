@@ -68,6 +68,15 @@ class ArticlesResource extends Resource
         return ['workspace' => 'folklore'];
     }
 
+    /**
+     * The values that put a new article within the scope: the adapter doesn't write the
+     * scope's params, which are the repository's.
+     */
+    public function creating(array $values, Request $request): array
+    {
+        return array_merge($values, $this->scope($request));
+    }
+
     public function toItem(object $item): array
     {
         if (! $item instanceof ArticleEntity) {

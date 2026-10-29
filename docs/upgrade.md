@@ -102,6 +102,16 @@ The rest of "What changes" isn't mechanical (image sizes as presets, `getMetadat
 | Panneau 1.x fields and resources | Panneau 5 plugin | Removed |
 | `blocks_pivot` | Blocks in the page's JSON | Converted by `folklore:upgrade` |
 
+### Panneau 5
+
+The resources of Panneau 5 point to the site's repository contracts, which the panneau module adapts (`site.modules.panneau`, [architecture.md](architecture.md#repository-adapter)). Before moving a resource:
+
+- **`order` is a list of pairs.** The adapter's lists go through the typed query, whose sorts reach `buildQueryFromParams()` as `'order' => [['title', 'asc'], ['published_at', 'desc']]`. The base repository reads it, but a repository that reads `$params['order']` itself as a column, or as one `[column, direction]` pair (`orderBy($params['order'][0], $params['order'][1])`), doesn't sort, or fails: read the pairs, or leave `order` to the base repository.
+- **The scope is the repository's params.** `scope()` returns params that the repository's `buildQueryFromParams()` reads (a `queryColumns` entry). The adapter doesn't write them on create: the resource sets the values in `creating()`.
+- **Search is opt-in.** A repository that reads `$params['search']` implements `Contracts\Repositories\SearchesEntities`; the others get no search in Panneau.
+- **Unique slugs** need the `Repositories\Concerns\ChecksSlugs` trait on the repository.
+- `Testing\PanneauRepositoryContractTests` checks each repository through the adapter.
+
 ### Medias
 
 | 1.1 | 2.0 |
