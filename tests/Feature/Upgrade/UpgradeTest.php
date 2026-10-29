@@ -38,7 +38,6 @@ class UpgradeTest extends TestCase
             config()->set('site.modules.'.$module, false);
         }
         config()->set('site.medias.reference_key', 'media');
-        config()->set('site.medias.resource', 'canonical');
     }
 
     protected function tearDown(): void
@@ -66,17 +65,6 @@ class UpgradeTest extends TestCase
         config()->set('site.modules.medias', true);
 
         $this->assertNotContains('modules.medias', $this->keys((new Upgrade)->plan($this->siteOf())));
-    }
-
-    public function test_it_sets_the_legacy_shape_of_media_resource_for_a_site_that_uses_it()
-    {
-        $change = $this->change((new Upgrade)->plan($this->siteOf()), 'medias.resource');
-
-        $this->assertSame('legacy', $change->value);
-        $this->assertSame(['app/Http/Resources/ArticleMediaResource.php:5'], $change->locations);
-
-        config()->set('site.medias.resource', 'legacy');
-        $this->assertNotContains('medias.resource', $this->keys((new Upgrade)->plan($this->siteOf())));
     }
 
     public function test_it_sets_the_medias_reference_key_when_medias_references_are_stored()
@@ -167,7 +155,7 @@ class UpgradeTest extends TestCase
 
         $this->artisan('folklore:upgrade', ['--dry-run' => true])
             ->expectsOutputToContain('Would set modules.medias → true')
-            ->expectsOutputToContain("Would set medias.resource → 'legacy'")
+            ->expectsOutputToContain('Would set modules.http → true')
             ->expectsOutputToContain('Dry run: nothing was written.')
             ->assertExitCode(0);
 
@@ -190,7 +178,7 @@ class UpgradeTest extends TestCase
         $config = require $this->site.'/config/site.php';
         $this->assertTrue($config['modules']['medias']);
         $this->assertSame('medias', $config['medias']['reference_key']);
-        $this->assertSame('legacy', $config['medias']['resource']);
+        $this->assertSame('legacy', $config['medias']['resource'], 'The package\'s default stays.');
         $this->assertSame(0, DB::table($article->medias()->getTable())->whereNull('handle')->count());
 
         $this->artisan('folklore:upgrade', ['--model' => [MediaArticle::class, LegacyArticle::class]])

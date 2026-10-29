@@ -2,7 +2,7 @@
 
 namespace Folklore\Rector;
 
-use Folklore\Upgrade\Checks\MediaResourceCheck;
+use Folklore\Upgrade\Checks\MediasCheck;
 use PhpParser\Node;
 use PhpParser\Node\Expr\Assign;
 use PhpParser\Node\Expr\MethodCall;
@@ -24,7 +24,16 @@ use Rector\Rector\AbstractRector;
  */
 final class MediaResourceSubclassRector extends AbstractRector
 {
+    public const RESOURCE = 'Folklore\\Http\\Resources\\MediaResource';
+
     public const JSON_RESOURCE = 'Illuminate\\Http\\Resources\\Json\\JsonResource';
+
+    /**
+     * The methods that 2.0's `MediaResource` adds, which a subclass calls on itself.
+     *
+     * @var list<string>
+     */
+    public const METHODS = ['entity', 'legacy', 'canonical', 'isLegacy', 'toLegacyArray'];
 
     public function __construct(private readonly ReflectionProvider $reflectionProvider) {}
 
@@ -46,7 +55,7 @@ final class MediaResourceSubclassRector extends AbstractRector
             return null;
         }
         $class = $this->reflectionProvider->getClass($name);
-        if (! $class->isSubclassOf(MediaResourceCheck::RESOURCE)) {
+        if (! $class->isSubclassOf(self::RESOURCE)) {
             return null;
         }
 
@@ -101,7 +110,7 @@ final class MediaResourceSubclassRector extends AbstractRector
      */
     protected function ownMethods(string $name): array
     {
-        $methods = [...MediaResourceCheck::LEGACY_METHODS, ...MediaResourceCheck::METHODS];
+        $methods = [...MediasCheck::RESOURCE_METHODS, ...self::METHODS];
         if ($this->reflectionProvider->hasClass(self::JSON_RESOURCE)) {
             foreach ($this->reflectionProvider->getClass(self::JSON_RESOURCE)->getNativeReflection()->getMethods() as $method) {
                 $methods[] = $method->getName();
@@ -110,7 +119,7 @@ final class MediaResourceSubclassRector extends AbstractRector
 
         $class = $this->reflectionProvider->getClass($name);
         foreach ([$class, ...$class->getParents()] as $ancestor) {
-            if ($ancestor->getName() === MediaResourceCheck::RESOURCE) {
+            if ($ancestor->getName() === self::RESOURCE) {
                 break;
             }
             foreach ($ancestor->getNativeReflection()->getMethods() as $method) {

@@ -4,6 +4,7 @@ namespace Folklore\Console;
 
 use Folklore\Upgrade\ConfigChange;
 use Folklore\Upgrade\Finding;
+use Folklore\Upgrade\IsolatedLoader;
 use Folklore\Upgrade\MediaPivotRows;
 use Folklore\Upgrade\Severity;
 use Folklore\Upgrade\Site;
@@ -42,7 +43,7 @@ class UpgradeCommand extends Command
         {--check : Report what changes in 2.0, without writing anything}
         {--dry-run : Say what the upgrade would change, without writing anything}
         {--force : Upgrade in production without asking}
-        {--path=* : A directory or file of the site to read, from its base path; by default app, config, routes and bootstrap}
+        {--path=* : A directory or file of the site to read, from its base path; by default app, config, routes, resources/views and bootstrap}
         {--model=* : A model whose JSON data to read, besides those of the paths}
         {--limit=1000 : How many rows of each model to read; 0 reads them all}
         {--json : Print the report as JSON}';
@@ -182,7 +183,18 @@ class UpgradeCommand extends Command
     protected function site(Repository $config, ConnectionResolverInterface $db): Site
     {
         $paths = $this->stringList('path');
-        $models = array_values(array_filter($this->stringList('model'), fn (string $model) => is_subclass_of($model, Model::class)));
+        $loader = new IsolatedLoader;
+        $models = [];
+        foreach ($this->stringList('model') as $model) {
+            $error = $loader->error($model);
+            if (! is_null($error)) {
+                $this->components->warn("[{$model}] doesn't load, and is skipped: {$error}");
+            } elseif (! is_subclass_of($model, Model::class)) {
+                $this->components->warn("[{$model}] is not an Eloquent model, and is skipped.");
+            } else {
+                $models[] = $model;
+            }
+        }
 
         return new Site(
             $this->laravel->basePath(),
@@ -191,6 +203,7 @@ class UpgradeCommand extends Command
             count($paths) > 0 ? $paths : Site::PATHS,
             $models,
             max(0, (int) $this->option('limit')),
+            $loader,
         );
     }
 

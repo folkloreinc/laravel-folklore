@@ -40,6 +40,12 @@ class StoredReferencesCheck implements Check
     public function check(Site $site): iterable
     {
         $models = $site->models();
+        foreach ($site->loader->errors() as $class => $error) {
+            yield Finding::todo(
+                "`{$class}` doesn't load in 2.0, so its JSON data wasn't read: {$error}",
+                'Fix the class, then run the check again, or pass the model with --model.',
+            );
+        }
         if (count($models) === 0) {
             yield Finding::info('No model was found to read: pass them with --model.');
 
@@ -51,8 +57,15 @@ class StoredReferencesCheck implements Check
         /** @var array<string, list<string>> $locations */
         $locations = [];
         foreach ($models as $class) {
-            $model = new $class;
-            foreach ($this->jsonAttributes($model) as $attribute => $cast) {
+            try {
+                $model = new $class;
+                $attributes = $this->jsonAttributes($model);
+            } catch (Throwable $e) {
+                yield Finding::info("`{$class}` could not be made: ".$e->getMessage());
+
+                continue;
+            }
+            foreach ($attributes as $attribute => $cast) {
                 try {
                     $references = $this->references($model, $attribute, $site->limit);
                 } catch (Throwable $e) {

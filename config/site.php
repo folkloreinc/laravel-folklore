@@ -25,10 +25,10 @@ return [
         // from 1.x, whose front ends read it. Both are read.
         'reference_key' => 'media',
 
-        // The JSON shape of `Http\Resources\MediaResource`: `canonical`, laravel-mediatheque's,
-        // for new projects; `legacy`, the shape of 1.1, for sites upgraded from 1.x, whose
-        // front ends read it.
-        'resource' => 'canonical',
+        // The JSON shape of `Http\Resources\MediaResource`: `legacy`, the shape of 1.1, which
+        // front ends written for 1.x read, until 3.0; `canonical`, laravel-mediatheque's, for
+        // new projects and front ends that moved to it.
+        'resource' => 'legacy',
     ],
 
     'modules' => [

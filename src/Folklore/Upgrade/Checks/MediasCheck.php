@@ -5,6 +5,8 @@ namespace Folklore\Upgrade\Checks;
 use Folklore\Upgrade\Finding;
 use Folklore\Upgrade\Occurrence;
 use Folklore\Upgrade\Site;
+use ReflectionClass;
+use ReflectionMethod;
 
 /**
  * What changes with `laravel-mediatheque` 2 and `laravel-image` 2: the `HasMedias` trait,
@@ -12,6 +14,24 @@ use Folklore\Upgrade\Site;
  */
 class MediasCheck implements Check
 {
+    /**
+     * The methods of 1.1's `MediaResource`. In a subclass, a call on `$this` to another
+     * method than these, Laravel's `JsonResource`'s and the subclass's own reached the
+     * entity, through `__call()`.
+     *
+     * @var list<string>
+     */
+    public const RESOURCE_METHODS = [
+        'toArray',
+        'withoutMetadata',
+        'withMetadata',
+        'withoutFiles',
+        'withFiles',
+        'withFilesAsMap',
+        'withoutImageSizes',
+        'withImageSizes',
+    ];
+
     public function title(): string
     {
         return 'Medias';
@@ -72,6 +92,8 @@ class MediasCheck implements Check
             );
         }
 
+        yield from $this->checkMediaResource($site);
+
         $medias = [];
         foreach ($site->matches('/new\s+\\\\?(?:[\w\\\\]*\\\\)?Medias\s*\(\s*\$/') as $occurrence) {
             if ($site->fileReferences($occurrence->file, 'Folklore\\Repositories\\Medias')) {
@@ -85,6 +107,84 @@ class MediasCheck implements Check
                 $medias,
             );
         }
+    }
+
+    /**
+     * `MediaResource` extends the mediatheque's resource in 2.0: its shape is set by
+     * `site.medias.resource`, and its subclasses get the model as `$this->resource`.
+     *
+     * @return iterable<Finding>
+     */
+    protected function checkMediaResource(Site $site): iterable
+    {
+        $resource = 'Folklore\\Http\\Resources\\MediaResource';
+        $uses = $this->locations([
+            ...$site->references($resource),
+            ...$site->references('Folklore\\Http\\Resources\\MediasCollection'),
+        ]);
+        if (count($uses) > 0 && $site->config('site.medias.resource', 'legacy') === 'canonical') {
+            yield Finding::todo(
+                '`site.medias.resource` is `canonical`, so `MediaResource` gives the mediatheque\'s shape, not the one of 1.1 that front ends written for it read: `id` is the uid, `files` an object by handle.',
+                'Set `site.medias.resource` to `legacy` until the front ends read the canonical shape.',
+                $uses,
+            );
+        }
+
+        $untyped = [];
+        $throughResource = [];
+        foreach ($site->files() as $file) {
+            if (! $site->fileReferences($file, $resource)) {
+                continue;
+            }
+            $code = $file->code();
+            $alias = preg_match('/^\s*use\s+\\\\?Folklore\\\\Http\\\\Resources\\\\MediaResource\s+as\s+(\w+)\s*;/m', $code, $match) === 1 ? $match[1] : 'MediaResource';
+            if (preg_match('/\bextends\s+(?:\\\\?Folklore\\\\Http\\\\Resources\\\\)?'.preg_quote($alias, '/').'\b/', $code) !== 1) {
+                continue;
+            }
+            preg_match_all('/function\s+(\w+)\s*\(/', $code, $declared);
+            $known = array_map('strtolower', [...self::RESOURCE_METHODS, ...$this->jsonResourceMethods(), ...$declared[1]]);
+            foreach ($file->lines as $number => $line) {
+                if (preg_match('/function\s+toArray\s*\(\s*\$\w+\s*\)(?!\s*:)/', $line) === 1) {
+                    $untyped[] = "{$file->path}:{$number}";
+                }
+                preg_match_all('/\$this->(\w+)\s*\(/', $line, $calls);
+                $entityCalls = array_filter($calls[1], fn (string $method) => ! in_array(strtolower($method), $known, true));
+                if (count($entityCalls) > 0 || preg_match('/\$this->resource->\w+\s*\(/', $line) === 1) {
+                    $throughResource[] = "{$file->path}:{$number}";
+                }
+            }
+        }
+        if (count($untyped) > 0) {
+            yield Finding::breaking(
+                'A subclass of `MediaResource` overrides `toArray($request)` without types: the mediatheque\'s `toArray(Request $request): array` makes it a fatal error in 2.0.',
+                'Declare it `toArray(Request $request): array`.',
+                $untyped,
+            );
+        }
+        if (count($throughResource) > 0) {
+            yield Finding::breaking(
+                'A subclass of `MediaResource` calls the entity through the resource (`$this->files()`, `$this->resource->sizes()`): in 2.0, `$this->resource` is the mediatheque\'s model, and `files()` and `thumbnailUrl()` are the parent\'s, with other parameters.',
+                'Call the entity: `$this->entity()->files()`.',
+                $throughResource,
+            );
+        }
+    }
+
+    /**
+     * The methods of Laravel's `JsonResource`, which a subclass of `MediaResource` calls on
+     * itself: `when()`, `mergeWhen()`, `additional()`…
+     *
+     * @return list<string>
+     */
+    protected function jsonResourceMethods(): array
+    {
+        $class = 'Illuminate\\Http\\Resources\\Json\\JsonResource';
+
+        if (! class_exists($class)) {
+            return [];
+        }
+
+        return array_map(fn (ReflectionMethod $method) => $method->getName(), (new ReflectionClass($class))->getMethods());
     }
 
     /**

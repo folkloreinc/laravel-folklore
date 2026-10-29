@@ -7,7 +7,8 @@ class MediasCollection extends Collection
     public $collects = MediaResource::class;
 
     /**
-     * Each media in the shape of 1.1, whatever `site.medias.resource` says.
+     * Each media in the shape of 1.1, or with `false` in the canonical one, whatever
+     * `site.medias.resource` says.
      */
     public function legacy(bool $legacy = true): static
     {

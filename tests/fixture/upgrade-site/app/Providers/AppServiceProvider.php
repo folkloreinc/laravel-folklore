@@ -3,9 +3,8 @@
 namespace App\Providers;
 
 use App\Repositories\Articles;
-use App\Routing\UrlGeneratorMixin;
 use Folklore\Site\Manager;
-use Illuminate\Routing\UrlGenerator;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\ServiceProvider;
 use Panneau\Contracts\Repository;
 
@@ -15,9 +14,9 @@ class AppServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-        UrlGenerator::macro(
-            'routeForReactRouter',
-            $this->app->make(UrlGeneratorMixin::class)->routeForReactRouter()
+        Response::macro(
+            'csv',
+            fn ($rows, $filename) => response()->streamDownload(fn () => print (''), $filename)
         );
 
         /*
@@ -25,10 +24,5 @@ class AppServiceProvider extends ServiceProvider
          */
         $this->app->bind(Repository::class, Articles::class);
         $this->app->singleton(Manager::class);
-    }
-
-    public function routes(): string
-    {
-        return url()->routeForReactRouter('home');
     }
 }

@@ -20,9 +20,9 @@ use Illuminate\Support\Collection;
 use InvalidArgumentException;
 
 /**
- * `MediaResource` gives the mediatheque's canonical shape, or with `legacy` the shape of
- * 1.1: the expected arrays below are what 1.1's resource gave for each type of media, key
- * for key and in the same order.
+ * `MediaResource` gives the shape of 1.1 by default (`legacy`), or the mediatheque's
+ * canonical shape: the expected arrays below are what 1.1's resource gave for each type
+ * of media, key for key and in the same order, files included.
  */
 class MediaResourceTest extends TestCase
 {
@@ -121,8 +121,8 @@ class MediaResourceTest extends TestCase
                 'height' => 1080,
             ],
             'files' => [
-                $this->legacyFile($h264, 'h264', 'h264.mp4', 'video/mp4', 2048),
                 $this->legacyFile($original, 'original', 'clip.mov', 'video/quicktime', 4096),
+                $this->legacyFile($h264, 'h264', 'h264.mp4', 'video/mp4', 2048),
                 $this->legacyFile($first, 'thumbnails.0', 'thumbnail-0.jpg', 'image/jpeg', 64),
                 $this->legacyFile($second, 'thumbnails.1', 'thumbnail-1.jpg', 'image/jpeg', 64),
             ],
@@ -151,8 +151,8 @@ class MediaResourceTest extends TestCase
                 'duration' => 180, // a float without a fraction, which JSON writes as an integer
             ],
             'files' => [
-                $this->legacyFile($mp3, 'mp3', 'song.mp3', 'audio/mpeg', 1024),
                 $this->legacyFile($original, 'original', 'song.wav', 'audio/wav', 8192),
+                $this->legacyFile($mp3, 'mp3', 'song.mp3', 'audio/mpeg', 1024),
             ],
         ], $this->render((new MediaResource($audio))->legacy()));
     }
@@ -200,14 +200,25 @@ class MediaResourceTest extends TestCase
         $this->assertArrayNotHasKey('files', $data);
     }
 
-    public function test_the_shape_is_canonical_by_default()
+    public function test_the_shape_is_legacy_by_default()
     {
         $media = $this->makeMedia('image', 'Photo', [
             ['original', 'original', null, 'photo.jpg', 'image/jpeg', 1024, ['width' => 2000, 'height' => 1000]],
         ]);
         $image = $this->entity($media, Image::class);
 
-        $data = $this->render(new MediaResource($image));
+        $this->assertSame($this->render((new MediaResource($image))->legacy()), $this->render(new MediaResource($image)));
+        $this->assertSame((string) $media->getKey(), $this->render(new MediaResource($image))['id']);
+    }
+
+    public function test_the_canonical_shape_is_the_mediatheque_one()
+    {
+        $media = $this->makeMedia('image', 'Photo', [
+            ['original', 'original', null, 'photo.jpg', 'image/jpeg', 1024, ['width' => 2000, 'height' => 1000]],
+        ]);
+        $image = $this->entity($media, Image::class);
+
+        $data = $this->render((new MediaResource($image))->canonical());
 
         $this->assertSame($this->render(new MediathequeMediaResource($media)), $data);
         $this->assertSame($media->uid(), $data['id']);
@@ -220,7 +231,7 @@ class MediaResourceTest extends TestCase
             ['original', 'original', null, 'photo.jpg', 'image/jpeg', 1024, ['width' => 2000, 'height' => 1000]],
         ]);
 
-        $data = $this->render((new MediaResource($media))->withoutFiles()->withoutMetadata());
+        $data = $this->render((new MediaResource($media))->canonical()->withoutFiles()->withoutMetadata());
 
         $this->assertArrayNotHasKey('files', $data);
         $this->assertArrayNotHasKey('metadata', $data);
@@ -232,10 +243,10 @@ class MediaResourceTest extends TestCase
         $media = $this->makeMedia('image', 'Photo', [
             ['original', 'original', null, 'photo.jpg', 'image/jpeg', 1024, ['width' => 2000, 'height' => 1000]],
         ]);
-        config()->set('site.medias.resource', MediaResource::LEGACY);
+        config()->set('site.medias.resource', MediaResource::CANONICAL);
 
-        $this->assertSame((string) $media->getKey(), $this->render(new MediaResource($media))['id']);
-        $this->assertSame($media->uid(), $this->render((new MediaResource($media))->canonical())['id']);
+        $this->assertSame($media->uid(), $this->render(new MediaResource($media))['id']);
+        $this->assertSame((string) $media->getKey(), $this->render((new MediaResource($media))->legacy())['id']);
     }
 
     public function test_a_model_gives_the_legacy_shape_of_its_entity()
@@ -252,17 +263,30 @@ class MediaResourceTest extends TestCase
         $this->assertInstanceOf(Image::class, (new MediaResource($media))->entity());
     }
 
-    public function test_a_collection_can_be_in_the_legacy_shape()
+    public function test_a_collection_can_set_the_shape()
     {
         $media = $this->makeMedia('image', 'Photo', [
             ['original', 'original', null, 'photo.jpg', 'image/jpeg', 1024, ['width' => 2000, 'height' => 1000]],
         ]);
         $image = $this->entity($media, Image::class);
+        $render = fn (MediasCollection $collection) => json_decode((string) json_encode($collection->toArray(Request::create('/'))), true);
 
-        $collection = (new MediasCollection(collect([$image])))->legacy();
-        $data = json_decode((string) json_encode($collection->toArray(Request::create('/'))), true);
+        $this->assertSame($media->uid(), $render((new MediasCollection(collect([$image])))->legacy(false))[0]['id']);
+        config()->set('site.medias.resource', MediaResource::CANONICAL);
+        $this->assertSame((string) $media->getKey(), $render((new MediasCollection(collect([$image])))->legacy())[0]['id']);
+    }
 
-        $this->assertSame((string) $media->getKey(), $data[0]['id']);
+    public function test_a_media_without_an_original_plays_its_main_rendition()
+    {
+        $media = $this->makeMedia('video', 'Clip', [
+            ['h264', 'main', null, 'h264.mp4', 'video/mp4', 2048, ['width' => 1920, 'height' => 1080, 'duration' => 12.5]],
+            ['dash', 'derivative', null, 'clip.mpd', 'application/dash+xml', 128, []],
+        ]);
+
+        $data = $this->render(new MediaResource($this->entity($media, Video::class)));
+
+        $this->assertSame('https://cdn.test/storage/medias/h264.mp4', $data['url']);
+        $this->assertSame(['dash', 'h264'], array_column($data['files'], 'handle'));
     }
 
     public function test_an_entity_without_a_media_model_is_refused()

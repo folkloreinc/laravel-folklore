@@ -112,7 +112,7 @@ Not scheduled yet: each item goes into the slice that needs it. The JSON data it
 - [ ] Other modules opt-in; Places on Laravel's HTTP client; removed modules gone; paginator override removed ([decisions/0012](decisions/0012-other-modules.md))
 - [ ] Deprecated API complete, with notices on the `deprecations` channel, including the 1.x JSON declarations (`HasJsonDataRelations`, `HasJsonDataColumnExtract`, `$jsonAttributeFillable`, `$jsonAttributeExclude`) once the pages models use schemas
 - [x] `folklore:upgrade --check`: modules, packages, removed modules, Panneau contracts, the site's own JSON references and their stored paths and keys, block data, the media API, deprecated API ([#123](https://github.com/folkloreinc/laravel-folklore/issues/123))
-- [x] `folklore:upgrade`: enables the modules, sets the media reference key and the shape of `MediaResource`, removes the rows of `medias_pivot` that 1.x wrote without a handle, with `--dry-run` ([#123](https://github.com/folkloreinc/laravel-folklore/issues/123))
+- [x] `folklore:upgrade`: enables the modules, sets the media reference key, removes the rows of `medias_pivot` that 1.x wrote without a handle, with `--dry-run` ([#123](https://github.com/folkloreinc/laravel-folklore/issues/123))
 - [ ] `folklore:upgrade` converts the block data of `blocks_pivot`, with the pages module of 2.0
 - [x] Rector rules: the classes that moved, `$jsonAttributeName`, `new Medias()`, the subclasses of `MediaResource` ([#123](https://github.com/folkloreinc/laravel-folklore/issues/123))
 - [ ] An active site upgrades (the contests platform is the candidate)

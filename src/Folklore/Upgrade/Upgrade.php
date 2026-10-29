@@ -12,10 +12,9 @@ use Illuminate\Database\Query\Builder;
 use Throwable;
 
 /**
- * What `folklore:upgrade` changes in a 1.1 site (docs/upgrade.md, step 3): the modules
- * it uses, the media reference key it stores and the shape of `MediaResource` it gives,
- * in `config/site.php`, and the rows of `medias_pivot` that 1.x wrote without a handle
- * for JSON references.
+ * What `folklore:upgrade` changes in a 1.1 site (docs/upgrade.md, step 4): the modules
+ * it uses and the media reference key it stores, in `config/site.php`, and the rows of
+ * `medias_pivot` that 1.x wrote without a handle for JSON references.
  */
 class Upgrade
 {
@@ -25,27 +24,11 @@ class Upgrade
     public const CONFIG_FILE = 'config/site.php';
 
     /**
-     * The classes whose use means the site gives media in the JSON shape of 1.1.
-     *
-     * @var list<string>
-     */
-    public const RESOURCE_CLASSES = [
-        'Folklore\\Http\\Resources\\MediaResource',
-        'Folklore\\Http\\Resources\\MediasCollection',
-    ];
-
-    /**
      * The traits of laravel-mediatheque 2, whose media `MediaUsagesSync` syncs, and 1.x.
      */
     public const HAS_MEDIAS = 'Folklore\\Mediatheque\\Concerns\\HasMedias';
 
     public const LEGACY_HAS_MEDIAS = 'Folklore\\Mediatheque\\Support\\Traits\\HasMedias';
-
-    /**
-     * The shape of `MediaResource` that 1.1 gave (`MediaResource::LEGACY`, which doesn't
-     * load without the medias module's packages).
-     */
-    public const LEGACY_RESOURCE = 'legacy';
 
     public function plan(Site $site): UpgradePlan
     {
@@ -132,8 +115,7 @@ class Upgrade
     }
 
     /**
-     * The media reference key and the shape of `MediaResource` that the site's front ends
-     * read.
+     * The media reference key that the site stores, which its front ends read.
      *
      * @return list<ConfigChange>
      */
@@ -148,21 +130,6 @@ class Upgrade
                 'medias',
                 'The site stores `medias://` references (by id), which its front ends read: it keeps writing them.',
                 $stored,
-            );
-        }
-
-        $resources = [];
-        foreach (self::RESOURCE_CLASSES as $class) {
-            foreach ($site->references($class) as $occurrence) {
-                $resources[] = $occurrence->location();
-            }
-        }
-        if (count($resources) > 0 && $site->config('site.medias.resource') !== self::LEGACY_RESOURCE) {
-            $changes[] = new ConfigChange(
-                'medias.resource',
-                self::LEGACY_RESOURCE,
-                'The site gives media with Folklore\'s `MediaResource`, in the JSON shape of 1.1 that its front ends read.',
-                array_values(array_unique($resources)),
             );
         }
 
@@ -208,7 +175,7 @@ class Upgrade
 
         foreach ($site->files() as $file) {
             $class = $file->declaredClass();
-            if (! is_null($class) && ! Site::loads($class) && ($site->fileReferences($file, self::HAS_MEDIAS) || $site->fileReferences($file, self::LEGACY_HAS_MEDIAS))) {
+            if (! is_null($class) && ! $site->loads($class) && ($site->fileReferences($file, self::HAS_MEDIAS) || $site->fileReferences($file, self::LEGACY_HAS_MEDIAS))) {
                 $notes[] = Finding::todo(
                     "`{$class}` uses `HasMedias` and doesn't load: its rows of `medias_pivot` without a handle were not looked at.",
                     'Fix it (the Rector rules move it to `Folklore\\Mediatheque\\Concerns\\HasMedias`), then run `folklore:upgrade` again.',

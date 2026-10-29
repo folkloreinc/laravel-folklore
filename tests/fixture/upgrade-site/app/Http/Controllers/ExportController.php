@@ -11,6 +11,11 @@ class ExportController
         return response()->csv(fn ($page) => [], 'export.csv');
     }
 
+    public function open()
+    {
+        return response()->pixel();
+    }
+
     public function subscribe(CustomerIo $customerIo)
     {
         return $customerIo->identify('1', []);

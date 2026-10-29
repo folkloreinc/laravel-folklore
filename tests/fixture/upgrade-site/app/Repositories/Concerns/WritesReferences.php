@@ -13,7 +13,12 @@ trait WritesReferences
         return ! empty($id) ? $prefix.'://'.$id : null;
     }
 
-    protected function url(string $host): string
+    protected function url(string $host, string $scheme = 'https'): string
+    {
+        return $scheme.'://'.$host;
+    }
+
+    protected function secureUrl(string $host): string
     {
         return 'https://'.$host;
     }

@@ -57,24 +57,39 @@ class JsonCodeCheck implements Check
             }
         }
 
-        $writers = $this->referenceWriters($site);
-        if (count($writers) === 0) {
-            return;
-        }
-        yield Finding::todo(
-            'Code that writes `scheme://id` references itself: 2.0 writes them from declarations or schemas, with keys mapped with `JsonData::map()`.',
-            'Move the paths to declarations or schemas of the models, and their keys to `JsonData::map()`; then remove this code.',
-            array_map(fn (Occurrence $occurrence) => $occurrence->location().' ('.trim($occurrence->groups[0]).')', $writers),
-        );
-
-        $syncs = $this->pivotSyncs($site, $writers);
-        if (count($syncs) > 0) {
+        [$writers, $variables] = $this->referenceWriters($site);
+        if (count($writers) > 0) {
             yield Finding::todo(
-                'Pivot syncs next to that code: `JsonDataCast` syncs the relations of declared references when the model is saved.',
+                'Code that writes `scheme://id` references itself: 2.0 writes them from declarations or schemas, with keys mapped with `JsonData::map()`.',
+                'Move the paths to declarations or schemas of the models, and their keys to `JsonData::map()`; then remove this code.',
+                $this->describe($writers),
+            );
+        }
+        if (count($variables) > 0) {
+            yield Finding::info(
+                'Code that may write `scheme://id` references, with a key in a variable, or build URLs: if it writes references, they move to declarations or schemas.',
+                null,
+                $this->describe($variables),
+            );
+        }
+
+        $syncs = $this->pivotSyncs($site, [...$writers, ...$variables]);
+        if (count($syncs) > 0) {
+            yield Finding::info(
+                'Pivot syncs in that code and the classes that use it: `JsonDataCast` syncs the relations of declared references when the model is saved.',
                 'Remove the syncs of the relations that the declarations cover.',
                 array_map(fn (Occurrence $occurrence) => $occurrence->location(), $syncs),
             );
         }
+    }
+
+    /**
+     * @param  list<Occurrence>  $occurrences
+     * @return list<string>
+     */
+    protected function describe(array $occurrences): array
+    {
+        return array_map(fn (Occurrence $occurrence) => $occurrence->location().' ('.trim($occurrence->groups[0]).')', $occurrences);
     }
 
     /**
@@ -105,7 +120,7 @@ class JsonCodeCheck implements Check
     protected function overridesJsonDataCast(Site $site, SourceFile $file, string $attribute): bool
     {
         $class = $file->declaredClass();
-        if (! is_null($class) && Site::loads($class) && is_subclass_of($class, Model::class)) {
+        if (! is_null($class) && $file->looksLikeModel() && $site->loads($class) && is_subclass_of($class, Model::class)) {
             $parent = get_parent_class($class);
             while ($parent !== false) {
                 if (! (new ReflectionClass($parent))->isAbstract()) {
@@ -134,33 +149,44 @@ class JsonCodeCheck implements Check
     }
 
     /**
-     * The lines that build a reference: `'media://'.$id`, `$key.'://'.$id`, `"media://{$id}"`.
+     * The lines that build a reference: with a key that isn't a URL scheme
+     * (`'media://'.$id`, `"media://{$id}"`), then with a key in a variable
+     * (`$key.'://'.$id`), which may be a URL with a variable scheme.
      *
-     * @return list<Occurrence>
+     * @return array{list<Occurrence>, list<Occurrence>}
      */
     protected function referenceWriters(Site $site): array
     {
-        $occurrences = [
-            ...$site->matches('/(\.\s*([\'"]):\/\/\2\s*\.)/'),
+        $writers = [];
+        foreach ([
             ...$site->matches('/(([\'"])([A-Za-z][A-Za-z0-9_-]*):\/\/\2\s*\.\s*\$)/'),
             ...$site->matches('/("([A-Za-z][A-Za-z0-9_-]*):\/\/\{?\$)/'),
-        ];
-        $writers = [];
-        foreach ($occurrences as $occurrence) {
+        ] as $occurrence) {
             $scheme = $occurrence->groups[3] ?? $occurrence->groups[2] ?? null;
-            if (is_string($scheme) && in_array(strtolower($scheme), self::URL_SCHEMES, true)) {
+            if (is_string($scheme) && ! in_array(strtolower($scheme), self::URL_SCHEMES, true)) {
+                $writers[$occurrence->location()] = new Occurrence($occurrence->file, $occurrence->line, [$occurrence->groups[1]]);
+            }
+        }
+
+        $variables = [];
+        foreach ($site->matches('/(\.\s*([\'"]):\/\/\2\s*\.)/') as $occurrence) {
+            // A URL: `$scheme.'://'.$host`, `$request->getScheme().'://'`
+            if (preg_match('/(?:scheme|protocol)\w*(?:\(\))?\s*\.\s*[\'"]:\/\//i', $occurrence->file->lines[$occurrence->line]) === 1) {
                 continue;
             }
-            $writers[$occurrence->location()] = new Occurrence($occurrence->file, $occurrence->line, [$occurrence->groups[1]]);
+            if (! isset($writers[$occurrence->location()])) {
+                $variables[$occurrence->location()] = new Occurrence($occurrence->file, $occurrence->line, [$occurrence->groups[1]]);
+            }
         }
         ksort($writers, SORT_NATURAL);
+        ksort($variables, SORT_NATURAL);
 
-        return array_values($writers);
+        return [array_values($writers), array_values($variables)];
     }
 
     /**
      * The pivot syncs of the files that write references, and of the classes that use
-     * them (a trait of the repositories, a base class).
+     * them: a trait of the repositories, a base class.
      *
      * @param  list<Occurrence>  $writers
      * @return list<Occurrence>
@@ -176,20 +202,18 @@ class JsonCodeCheck implements Check
                 $names[] = $class;
             }
         }
+        // A class that uses the trait (`use WritesReferences;` in its body) or extends the class
         foreach ($site->files() as $file) {
             foreach (array_unique($names) as $name) {
                 $short = preg_quote(class_basename($name), '/');
-                if (
-                    $site->fileReferences($file, $name)
-                    || preg_match('/\b(?:use|extends|implements)\s+[^;{]*\b'.$short.'\b/', $file->code()) === 1
-                ) {
+                if (preg_match('/^[ \t]+use\s+[^;{]*\b'.$short.'\b|\bextends\s+\\\\?(?:[\w\\\\]*\\\\)?'.$short.'\b/m', $file->code()) === 1) {
                     $files[$file->path] = true;
                 }
             }
         }
 
         return array_values(array_filter(
-            $site->matches('/->(?:sync|syncWithoutDetaching|attach)\s*\(/'),
+            $site->matches('/->(?:sync|syncWithoutDetaching)\s*\(/'),
             fn (Occurrence $occurrence) => isset($files[$occurrence->file->path]),
         ));
     }

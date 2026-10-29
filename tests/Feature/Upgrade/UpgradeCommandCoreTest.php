@@ -34,7 +34,7 @@ class UpgradeCommandCoreTest extends TestCase
 
         $this->artisan('folklore:upgrade', ['--dry-run' => true])
             ->expectsOutputToContain('The site uses the `medias` module, which needs folklore/laravel-mediatheque ^2.0')
-            ->expectsOutputToContain("Would set medias.resource → 'legacy'")
+            ->expectsOutputToContain('Would set modules.http → true')
             ->doesntExpectOutputToContain('Would set modules.medias')
             ->assertExitCode(0);
     }
