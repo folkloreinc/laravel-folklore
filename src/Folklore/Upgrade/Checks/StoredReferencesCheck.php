@@ -166,6 +166,29 @@ class StoredReferencesCheck implements Check
 
         [$class, $column] = $target;
         $model = new $class;
+        $total = count($sample);
+        $numeric = $total > 0 && count(array_filter($sample, fn (string $identifier) => ctype_digit($identifier))) === $total;
+        $byId = $numeric && $column !== $model->getKeyName();
+
+        if (! $this->hasColumn($model, $column)) {
+            yield $this->isMediathequeMedia($class)
+                ? Finding::todo(
+                    "`{$model->getTable()}` has no `{$column}` column yet: the mediatheque isn't upgraded to 2.0, so the identifiers of `{$key}://` could not be looked up in `{$class}`.",
+                    'Upgrade the mediatheque first (`php artisan mediatheque:install --upgrade`, `php artisan migrate`, `php artisan mediatheque:upgrade`), then run `folklore:upgrade --check` again.',
+                    $locations,
+                )
+                : Finding::todo(
+                    "`{$model->getTable()}` has no `{$column}` column, so the identifiers of `{$key}://` could not be looked up in `{$class}`, which 2.0 maps `{$key}` to.",
+                    "Map `{$key}` to the model and column its identifiers are, or migrate the table.",
+                    $locations,
+                );
+            if ($byId) {
+                yield $this->identifiersById($key, $total, "`{$class}` by `{$column}`", $locations);
+            }
+
+            return;
+        }
+
         // An integer key can't be compared with a uid on every database (PostgreSQL)
         $candidates = $column === $model->getKeyName() && in_array($model->getKeyType(), ['int', 'integer'], true)
             ? array_values(array_filter($sample, fn (string $identifier) => ctype_digit($identifier)))
@@ -174,19 +197,18 @@ class StoredReferencesCheck implements Check
             $found = count($candidates) === 0 ? 0 : $model->newQueryWithoutScopes()->whereIn($column, $candidates)->distinct()->count($column);
         } catch (Throwable $e) {
             yield Finding::info("The identifiers of `{$key}://` could not be looked up in `{$class}`: ".$e->getMessage());
+            if ($byId) {
+                yield $this->identifiersById($key, $total, "`{$class}` by `{$column}`", $locations);
+            }
 
             return;
         }
 
-        $total = count($sample);
         $where = "`{$class}` by `{$column}`";
         if ($found === 0) {
-            $numeric = count(array_filter($sample, fn (string $identifier) => ctype_digit($identifier))) === $total;
             yield Finding::breaking(
-                "None of the {$total} `{$key}://` identifiers read match {$where}, which 2.0 maps `{$key}` to.".($numeric && $column !== $model->getKeyName() ? ' They look like ids.' : ''),
-                $key === 'media' && $numeric
-                    ? 'Rewrite them to `medias://`, the key of media by id: `json-data:rewrite-references --from=media --to=medias` once the models are cast with `JsonDataCast`, or with the site\'s own code before.'
-                    : "Map `{$key}` to the model and column its identifiers are, or rewrite the references.",
+                "None of the {$total} `{$key}://` identifiers read match {$where}, which 2.0 maps `{$key}` to.".($byId ? ' They look like ids.' : ''),
+                $this->rewriteFix($key, $numeric),
                 $locations,
             );
         } elseif ($found < $total) {
@@ -196,6 +218,51 @@ class StoredReferencesCheck implements Check
                 $locations,
             );
         }
+    }
+
+    /**
+     * The identifiers of a key that are all integers while 2.0 reads them in another column
+     * than the key: `media://12`, written by id, where 2.0 reads `media://` by uid. Found
+     * without looking them up, for a table that isn't upgraded yet.
+     *
+     * @param  list<string>  $locations
+     */
+    protected function identifiersById(string $key, int $total, string $where, array $locations): Finding
+    {
+        return Finding::breaking(
+            "The {$total} `{$key}://` identifiers read are integers, which look like ids, and 2.0 maps `{$key}` to {$where}.",
+            $this->rewriteFix($key, true),
+            $locations,
+        );
+    }
+
+    protected function rewriteFix(string $key, bool $numeric): string
+    {
+        return $key === 'media' && $numeric
+            ? 'Rewrite them to `medias://`, the key of media by id: `json-data:rewrite-references --from=media --to=medias` once the models are cast with `JsonDataCast`, or with the site\'s own code before.'
+            : "Map `{$key}` to the model and column its identifiers are, or rewrite the references.";
+    }
+
+    /**
+     * Whether a model's table has a column. A table that can't be read is left to the query.
+     */
+    protected function hasColumn(Model $model, string $column): bool
+    {
+        try {
+            return $model->getConnection()->getSchemaBuilder()->hasColumn($model->getTable(), $column);
+        } catch (Throwable) {
+            return true;
+        }
+    }
+
+    /**
+     * Whether a class is the mediatheque's media model, which `media://` maps to by uid.
+     */
+    protected function isMediathequeMedia(string $class): bool
+    {
+        $models = 'Folklore\\Mediatheque\\Support\\Models';
+
+        return class_exists($models) && is_a($class, $models::media(), true);
     }
 
     /**

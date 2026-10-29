@@ -25,9 +25,31 @@ class Site
     public const PATHS = ['app', 'config', 'routes', 'resources/views', 'bootstrap/app.php', 'bootstrap/providers.php'];
 
     /**
+     * The deployment and build files read for the commands of the modules, from the site's
+     * base path: a command that 2.0 registers only with its module fails the build.
+     *
+     * @var list<string>
+     */
+    public const DEPLOYMENT_FILES = [
+        'Envoy.blade.php',
+        'composer.json',
+        'package.json',
+        '.github/workflows/*.yml',
+        '.github/workflows/*.yaml',
+        '.gitlab-ci.yml',
+        'deploy*.sh',
+        'Dockerfile*',
+    ];
+
+    /**
      * @var list<SourceFile>|null
      */
     protected ?array $files = null;
+
+    /**
+     * @var list<SourceFile>|null
+     */
+    protected ?array $deploymentFiles = null;
 
     public readonly IsolatedLoader $loader;
 
@@ -80,6 +102,31 @@ class Site
     }
 
     /**
+     * The deployment and build files of the site (`DEPLOYMENT_FILES`), whichever paths
+     * are read: `Envoy.blade.php`, the scripts of `composer.json` and `package.json`, the
+     * CI workflows, `deploy*.sh` and the `Dockerfile`.
+     *
+     * @return list<SourceFile>
+     */
+    public function deploymentFiles(): array
+    {
+        if (is_null($this->deploymentFiles)) {
+            $found = [];
+            foreach (self::DEPLOYMENT_FILES as $pattern) {
+                foreach (glob($this->absolute($pattern)) ?: [] as $file) {
+                    if (is_file($file)) {
+                        $found[] = $file;
+                    }
+                }
+            }
+            $found = array_values(array_unique($found));
+            $this->deploymentFiles = array_map(fn (string $file) => SourceFile::read($file, $this->relative($file)), $found);
+        }
+
+        return $this->deploymentFiles;
+    }
+
+    /**
      * The lines that match a pattern, in every file or in those whose path starts with
      * one of `$in`.
      *
@@ -88,19 +135,21 @@ class Site
      */
     public function matches(string $pattern, array $in = []): array
     {
-        $occurrences = [];
-        foreach ($this->files() as $file) {
-            if (count($in) > 0 && ! $this->isIn($file->path, $in)) {
-                continue;
-            }
-            foreach ($file->lines as $number => $line) {
-                if ($line !== '' && preg_match($pattern, $line, $groups) === 1) {
-                    $occurrences[] = new Occurrence($file, $number, array_values($groups));
-                }
-            }
-        }
+        $files = count($in) > 0
+            ? array_filter($this->files(), fn (SourceFile $file) => $this->isIn($file->path, $in))
+            : $this->files();
 
-        return $occurrences;
+        return $this->matchLines($files, $pattern);
+    }
+
+    /**
+     * The lines of the deployment and build files that match a pattern.
+     *
+     * @return list<Occurrence>
+     */
+    public function deploymentMatches(string $pattern): array
+    {
+        return $this->matchLines($this->deploymentFiles(), $pattern);
     }
 
     /**
@@ -222,6 +271,24 @@ class Site
         $base = rtrim($this->basePath, '/').'/';
 
         return str_starts_with($path, $base) ? substr($path, strlen($base)) : $path;
+    }
+
+    /**
+     * @param  iterable<SourceFile>  $files
+     * @return list<Occurrence>
+     */
+    protected function matchLines(iterable $files, string $pattern): array
+    {
+        $occurrences = [];
+        foreach ($files as $file) {
+            foreach ($file->lines as $number => $line) {
+                if ($line !== '' && preg_match($pattern, $line, $groups) === 1) {
+                    $occurrences[] = new Occurrence($file, $number, array_values($groups));
+                }
+            }
+        }
+
+        return $occurrences;
     }
 
     /**

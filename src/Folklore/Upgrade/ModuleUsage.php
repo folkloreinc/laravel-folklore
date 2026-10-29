@@ -89,15 +89,11 @@ class ModuleUsage
     public const PATTERNS = [
         'auth' => [
             ['/[\'"]driver[\'"]\s*=>\s*[\'"]repository[\'"]/', ['config/auth.php'], 'the `repository` auth provider'],
-            ['/[\'"]users:create\b/', [], 'the `users:create` command'],
         ],
         'http' => [
             ['/\brouteForReactRouter\s*\(/', [], 'the `routeForReactRouter` URL macro'],
             ['/(?:response\(\)|Response::|ResponseFactory)\s*->?\s*csv\s*\(|Response::csv\s*\(/', [], 'the `csv` response macro'],
             ['/(?:response\(\)\s*->|Response::)\s*pixel\s*\(/', [], 'the `pixel` response macro'],
-        ],
-        'assets' => [
-            ['/[\'"]assets:view\b/', [], 'the `assets:view` command'],
         ],
         'customerio' => [
             ['/[\'"]services\.customerio[\'"]/', [], 'the `services.customerio` binding'],
@@ -106,6 +102,18 @@ class ModuleUsage
         'pubnub' => [
             ['/[\'"]driver[\'"]\s*=>\s*[\'"]pubnub[\'"]/', ['config/broadcasting.php'], 'the `pubnub` broadcast driver'],
         ],
+    ];
+
+    /**
+     * The commands that 2.0 registers only with their module, called from the site's code
+     * (`Artisan::call('assets:view')`) or run by its deployment and build files
+     * (`php artisan assets:view` in `Envoy.blade.php`).
+     *
+     * @var array<string, list<string>>
+     */
+    public const COMMANDS = [
+        'auth' => ['users:create'],
+        'assets' => ['assets:view'],
     ];
 
     /**
@@ -143,6 +151,19 @@ class ModuleUsage
                 }
                 foreach ($site->matches($pattern, $in) as $occurrence) {
                     $used[$module][] = $occurrence->location().' ('.$what.')';
+                }
+            }
+        }
+
+        foreach (self::COMMANDS as $module => $commands) {
+            foreach ($commands as $command) {
+                $name = preg_quote($command, '/');
+                $occurrences = [
+                    ...$site->matches('/[\'"]'.$name.'(?![\w:-])/'),
+                    ...$site->deploymentMatches('/(?<![\w:-])'.$name.'(?![\w:-])/'),
+                ];
+                foreach ($occurrences as $occurrence) {
+                    $used[$module][] = $occurrence->location()." (the `{$command}` command)";
                 }
             }
         }

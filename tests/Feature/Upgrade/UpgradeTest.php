@@ -58,6 +58,8 @@ class UpgradeTest extends TestCase
         $this->assertContains('modules.auth', $keys);
         $this->assertContains('modules.http', $keys);
         $this->assertContains('modules.customerio', $keys);
+        // `php artisan assets:view` in Envoy.blade.php
+        $this->assertContains('modules.assets', $keys);
         $this->assertNotContains('modules.sites', $keys);
         $this->assertNotContains('modules.google', $keys);
     }
