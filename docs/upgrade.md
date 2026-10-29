@@ -1,6 +1,6 @@
 # Upgrading from 1.1
 
-> **Draft.** This guide is filled as 2.0 lands. The steps and the mapping below are the plan ([decisions/0003](decisions/0003-evolve-in-place.md)). `json-data:rewrite-references` and `folklore:upgrade --check` exist; `folklore:upgrade` itself and the Rector rules come with the beta ([#123](https://github.com/folkloreinc/laravel-folklore/issues/123)).
+> **Draft.** This guide is filled as 2.0 lands. The steps and the mapping below are the plan ([decisions/0003](decisions/0003-evolve-in-place.md)). `json-data:rewrite-references`, `folklore:upgrade` with its `--check`, and the Rector rules exist ([#123](https://github.com/folkloreinc/laravel-folklore/issues/123)); the conversion of block data comes with the pages module of 2.0.
 
 2.0 keeps the 1.x class names and their protected API. What it replaces is deprecated until 3.0, so a site can upgrade first and clean up its code afterwards. Sites usually upgrade when they move to Panneau 5, since the Panneau plugin ships with 2.0.
 
@@ -15,8 +15,8 @@
 
 1. **Require the new version:** `composer require folklore/laravel-folklore:^2.0`, and the packages of the modules the site uses (they are suggested, no longer required). During the pre-releases, require `folklore/laravel-folklore:^2.0@alpha` and `folklore/laravel-json-data:^1.0@alpha` together: a stability flag doesn't apply to the dependencies of a required package, so a site with `minimum-stability: stable` can't install the alphas of `laravel-json-data` otherwise.
 2. **Check the site:** `php artisan folklore:upgrade --check`. It writes nothing, and exits with an error while something is to do. See [What `--check` reports](#what---check-reports).
-3. **Upgrade:** `php artisan folklore:upgrade`. It enables the site's modules in `config/site.php`, sets the media reference key that the site writes (`medias://`), and converts block data. Every module is off by default: until the command exists, list the modules the site uses under `modules` in `config/site.php`, and set `medias.reference_key` to `medias` so that the site keeps writing `medias://12` ([architecture.md](architecture.md#configuration-and-modules)).
-4. **Run the Rector rules.**
+3. **Run the Rector rules:** they rename what moved and rewrite the 1.x API that code can follow. See [The Rector rules](#the-rector-rules). Then run `folklore:upgrade --check` again: what is left is to do by hand.
+4. **Upgrade:** `php artisan folklore:upgrade --dry-run` says what the upgrade changes; `php artisan folklore:upgrade` does it. It turns on the site's modules in `config/site.php`, sets the media reference key that the site stores (`medias://`), and moves the rows of `medias_pivot` that 1.x wrote without a handle for JSON data under the `json` handle. Run it locally, against a copy of the database, and commit `config/site.php`: on a server, the next deploy replaces the file. Then run it on each environment's database for `medias_pivot`; the config part has nothing left to do there. See [What `folklore:upgrade` does](#what-folkloreupgrade-does). Every module is off by default ([architecture.md](architecture.md#configuration-and-modules)). It runs after the Rector rules: a model that still uses 1.x's `HasMedias` doesn't load, and its rows of `medias_pivot` are left until it does.
 5. **Run the site's tests**, and check pages, forms with media, and logins.
 6. **Fix the deprecations** at your own pace. They are logged on the `deprecations` channel.
 7. **Later:** move media references to `media://` with `php artisan json-data:rewrite-references --from=medias --to=media`, once front ends read both.
@@ -36,6 +36,41 @@ It reads the site's code as text (`app`, `config`, `routes`, `resources/views`, 
 | Block data | The rows of `blocks_pivot`, which 2.0 stores in the page's JSON |
 | Medias | `Folklore\Mediatheque\Support\Traits\HasMedias`, `image.sizes` filters, `new ImageSize()` with filters, `setFilters()`, `getMetadatas()`, `new Medias($typeFactory)`. `MediaResource` with `site.medias.resource` set to `canonical`, and its subclasses that override `toArray($request)` without types or call the entity through the resource |
 | Deprecated API | `JsonDataCast::macro()`, `$jsonAttributeName`, `setGlobalQuery()` |
+
+## What `folklore:upgrade` does
+
+It reads the site as `--check` does (`--path`, `--model`, `--limit`), says what it changes, and changes it. `--dry-run` writes nothing, and says what it would leave to you. In production, it asks first (`--force` doesn't). It can run again: what is done is left as it is. When the configuration is cached, run `php artisan config:cache` again after it.
+
+- **`config/site.php`:** turns on each module the site uses, as `--check` finds them, unless it is on. A module whose packages are missing stays off, since the site wouldn't boot: require them, and run it again. Sets `medias.reference_key` to `medias` when the JSON columns store `medias://` references. It edits the site's file in place, keeping its comments and layout, and starts from the package's `config/site.php` when the site has none. A value that isn't a literal (`'medias' => env('FOLKLORE_MEDIAS', false)`), or a key under a value that isn't an array literal (`'modules' => $modules`), is the site's: the command leaves it, and says what to set. `medias.resource` is `legacy` by default, so the command leaves it.
+- **`medias_pivot`:** 1.x synced the media of JSON references to the mediatheque's pivot without a handle, and 2.0 syncs them under the `json` handle. For each row of the models whose JSON data 2.0 syncs to media (cast with `JsonDataCast`, with laravel-mediatheque 2's `HasMedias`, and a `medias` relation declared in `getJsonDataRelations()` or a schema, without its own `sync`), the command syncs the media that the row's JSON references under the `json` handle, then removes the rows without a handle of those media. A media attached without a handle by other code stays, and so do the rows of a model that replaces the cast with a plain `json` cast, which its own code syncs. The pages module's `Page` and `Block` are read too when the site uses the module.
+- **Block data:** `blocks_pivot` is listed as left to do. Its rows are converted to the page's JSON with the pages module of 2.0 ([decisions/0009](decisions/0009-pages-and-blocks.md)); keep the table until then.
+
+## The Rector rules
+
+The site requires Rector (`composer require --dev rector/rector`) and adds the set to its `rector.php`:
+
+```php
+use Folklore\Rector\FolkloreSetList;
+use Rector\Config\RectorConfig;
+
+return RectorConfig::configure()
+    ->withPaths([__DIR__.'/app', __DIR__.'/config', __DIR__.'/routes', __DIR__.'/database'])
+    ->withSets([FolkloreSetList::UPGRADE_2_0])
+    ->withImportNames(importShortClasses: false, removeUnusedImports: true);
+```
+
+`withImportNames()` imports the new names and removes the old imports; without it, Rector writes the renamed classes fully qualified. Run `vendor/bin/rector process --dry-run` to see the changes, then without `--dry-run`. The set:
+
+| Rule | 1.1 | 2.0 |
+|---|---|---|
+| Renames | `Folklore\Mediatheque\Support\Traits\HasMedias` | `Folklore\Mediatheque\Concerns\HasMedias` |
+| | `Folklore\Eloquent\JsonData`, `JsonReference`, `JsonReferenceEntry`, `ReferenceContext`, `ReferenceOperation`, `ModelReferences`, `Exceptions\*`, `Folklore\Contracts\Eloquent\ReferenceHandler`, `Folklore\Console\JsonReferencesRewriteCommand` | Their classes in `Folklore\JsonData\` |
+| `PanneauContractTypesRector` | `Panneau\Contracts\ResourceItem`, `Panneau\Contracts\Repository` as a parameter, return or property type, or in `instanceof` | `Folklore\Contracts\Entities\Entity`, `Folklore\Contracts\Repositories\Entities`. `Repository::class` stays: a container binding of it would become a binding of Folklore's contract, so `--check` reports it |
+| `JsonAttributeNameRector` | `protected $jsonAttributeName = 'data';` in a repository | `protected $jsonAttributes = ['data'];`. The first one stays next to it, unless the repository is final and doesn't read it: a subclass may read `$this->jsonAttributeName` |
+| `MediasRepositoryConstructorRector` | `new Medias($typeFactory)` | `new Medias()` |
+| `MediaResourceSubclassRector` | In a subclass of `MediaResource`: `toArray($request)`, `$this->files()`, `$this->resource` | `toArray(Request $request): array`, `$this->entity()->files()`, `$this->entity()`. Writes of `$this->resource` (`=`, `??=`, references, `isset()`, `unset()`) stay |
+
+The rest of "What changes" isn't mechanical (image sizes as presets, `getMetadatas()`, `JsonDataCast::macro()`, `setGlobalQuery()`, which mutates where `withGlobalQuery()` returns a copy): `--check` lists it.
 
 ## What changes
 
@@ -61,6 +96,7 @@ It reads the site's code as text (`app`, `config`, `routes`, `resources/views`, 
 | `findById()`, `update()`, `destroy()`, `valueById()` ignore the global query | They apply it, without the default params ([decisions/0017](decisions/0017-finds-apply-the-query-context.md)) | — (breaking) |
 | `findById()` by `id` | By the model's entity key (`HasEntityKey`), or its key | — |
 | `$jsonAttributeName` | `$jsonAttributes` | Kept, deprecated |
+| `Folklore\Eloquent\JsonData` and the other JSON data classes | Their classes in `folklore/laravel-json-data` (`Folklore\JsonData\`) | Aliased, deprecated |
 | `JsonDataCast::macro(...)`, `get`/`set`/`before_set` options | Reference handlers | Kept, deprecated |
 | `lazy` | `withJsonReferences()` | Kept, deprecated |
 | Panneau 1.x fields and resources | Panneau 5 plugin | Removed |
@@ -87,4 +123,4 @@ Stored references don't change. Without `JsonData::enforceMap()`, a key that isn
 
 A site declares nothing new: `getJsonDataRelations()`, `getJsonDataColumnExtract()` and the repositories' `$jsonAttributeFillable` keep working, and are deprecated from the beta on, when `folklore:upgrade` can convert them. A model can move one JSON column at a time to a schema (`jsonDataSchema()`, [json-data.md](json-data.md#schemas)); its repository then fills it with `JsonData::fill()`.
 
-The media referenced in JSON data are synced to the mediatheque's pivot under the `json` handle. 1.x wrote those rows without a handle, and the first sync leaves them: remove them before it (`folklore:upgrade` will), or they stay as usages of their media.
+The media referenced in JSON data are synced to the mediatheque's pivot under the `json` handle. 1.x wrote those rows without a handle, and the first sync leaves them: `folklore:upgrade` removes them, or they stay as usages of their media.
