@@ -8,6 +8,14 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+## [2.0.0-alpha.6] - 2026-10-30
+
+The first part of the Panneau 5 plugin, in the `panneau` module: the adapter of the repositories (#121) and the page fields `Blocks`, `Page`, `Pages` and `PageSlug` (#122). The module needs `folklore/laravel-panneau` 5.0.0-alpha.4 or later. Also fixes to `folklore:upgrade --check` found on a 1.1 site (#130). See [docs/architecture.md](docs/architecture.md#repository-adapter).
+
+### Breaking changes
+
+- A project with `folklore/laravel-panneau` 5.0.0-alpha.1 to 5.0.0-alpha.3 installed updates it to 5.0.0-alpha.4 or later with this package: its older pre-releases conflict, as the panneau module needs its `ChecksSlugs` contract.
+
 ### Added
 
 - The panneau module (`site.modules.panneau`), the first part of the Panneau 5 plugin: a Panneau 5 resource returns a repository contract from `repository()`, and the module adapts every repository with the typed query (`QueriesEntities`) with `Folklore\Panneau\EntitiesRepository`. Lists go through `queryEntities()` (filters as the repository's params, sorts as `order`), the resource's `scope()` is the repository's query context (`withGlobalQuery()`), which a filter can't override, creates are rolled back when their entity is outside the scope, public ids are the entities' `id()`, and the version is a hash of the model's attributes. A repository that implements `Contracts\Repositories\SearchesEntities` is searched through its `search` param (`SearchableEntitiesRepository`); the others have no search in Panneau. It needs `folklore/laravel-panneau` 5.0.0-alpha.4 or later, suggested; its older pre-releases conflict ([architecture.md](docs/architecture.md#repository-adapter), [#121](https://github.com/folkloreinc/laravel-folklore/issues/121)).
@@ -186,7 +194,8 @@ The core and `JsonDataCast`, and the medias module on `laravel-mediatheque` 2 an
 
 - `make:entity` generated an entity and a repository that implemented themselves instead of their contracts, so they didn't load.
 
-[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.5...v2.x
+[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.6...v2.x
+[2.0.0-alpha.6]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.6
 [2.0.0-alpha.5]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.5
 [2.0.0-alpha.4]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.4
 [2.0.0-alpha.3]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.3
