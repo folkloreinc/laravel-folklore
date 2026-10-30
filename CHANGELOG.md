@@ -8,6 +8,10 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+## [2.0.0-alpha.7] - 2026-10-30
+
+Fixes to the upgrade from 1.1 found on a second site, vini-vins.com: artisan, and so `folklore:upgrade --check`, runs when the 1.x admin sets `PageSlug`'s routes resolver (#138), and the Rector set removes `ResourceItem` from the `extends` and `implements` of a site's contracts while keeping `Repository` and its methods' types compatible with laravel-panneau 1.x (#139). No breaking changes.
+
 ### Fixed
 
 - A site that upgrades from 1.1 with laravel-panneau 1.x still boots when its 1.x admin calls `PageSlug::setRoutesResolver()`, so artisan and `folklore:upgrade --check` run: without Panneau 5, `Folklore\Panneau\Fields\PageSlug` is a stub with only that method, which does nothing, deprecated. `--check` reports the call as to do, no longer reports the classes of the Panneau plugin as removed, and reports the 1.x fields `Blocks`, `Page` and `PageSlug` as breaking without Panneau 5, since 2.0 gives their names to Panneau 5 fields ([#138](https://github.com/folkloreinc/laravel-folklore/issues/138)).
@@ -199,7 +203,8 @@ The core and `JsonDataCast`, and the medias module on `laravel-mediatheque` 2 an
 
 - `make:entity` generated an entity and a repository that implemented themselves instead of their contracts, so they didn't load.
 
-[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.6...v2.x
+[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.7...v2.x
+[2.0.0-alpha.7]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.7
 [2.0.0-alpha.6]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.6
 [2.0.0-alpha.5]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.5
 [2.0.0-alpha.4]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.4
