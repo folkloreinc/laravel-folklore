@@ -7,6 +7,14 @@ use Folklore\Contracts\Repositories\Pages as PagesRepository;
 use Folklore\Pages\PageRoutes;
 use Panneau\Fields\Slug;
 
+// Without Panneau 5, as while a site upgrades from 1.1 with laravel-panneau 1.x, this class
+// can't load: a stub keeps 1.x's `setRoutesResolver()`, which the 1.x admin calls at boot
+if (! class_exists(Slug::class)) {
+    class_alias(LegacyPageSlug::class, PageSlug::class);
+
+    return;
+}
+
 /**
  * The slug of a page: Panneau's `slug`, localized, from the `title`, whose check shows the
  * page's URL from the routes of the pages module (docs/decisions/0022).

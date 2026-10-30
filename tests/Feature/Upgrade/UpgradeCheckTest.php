@@ -102,6 +102,40 @@ class UpgradeCheckTest extends TestCase
         $this->assertNull($this->finding($findings, 'Contact', required: false));
     }
 
+    public function test_it_reports_the_1x_routes_resolver_of_the_page_slug()
+    {
+        $resolver = $this->finding($this->check(new RemovedModulesCheck), '`PageSlug::setRoutesResolver()`');
+
+        $this->assertSame(Severity::Todo, $resolver->severity);
+        $this->assertSame(['app/Panneau/PanneauServiceProvider.php:16'], $resolver->locations);
+        $this->assertStringContainsString('`site.pages.routes`', (string) $resolver->fix);
+    }
+
+    public function test_the_classes_of_the_panneau_plugin_are_not_reported_as_removed()
+    {
+        $findings = $this->check(new RemovedModulesCheck);
+
+        // Not the line of `PageSlug`, which 2.0's plugin has
+        $this->assertSame(['app/Panneau/PanneauServiceProvider.php:6 (Folklore\\Panneau)'], $this->finding($findings, 'Panneau 1.x\'s fields and resources')->locations);
+        $this->assertNull($this->finding($findings, '`Blocks`, `Page` and `PageSlug`', required: false));
+    }
+
+    public function test_without_panneau_5_the_1x_fields_named_as_the_plugins_break()
+    {
+        $check = new class extends RemovedModulesCheck
+        {
+            protected function hasPanneau5(): bool
+            {
+                return false;
+            }
+        };
+
+        $fields = $this->finding($this->check($check), '`Blocks`, `Page` and `PageSlug`');
+
+        $this->assertSame(Severity::Breaking, $fields->severity);
+        $this->assertSame(['app/Panneau/PanneauServiceProvider.php:5 (Folklore\\Panneau\\Fields\\PageSlug)'], $fields->locations);
+    }
+
     public function test_it_reports_the_packages_the_site_no_longer_gets()
     {
         $this->turnModulesOff();

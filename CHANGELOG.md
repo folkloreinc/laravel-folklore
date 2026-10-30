@@ -8,6 +8,11 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+### Fixed
+
+- A site that upgrades from 1.1 with laravel-panneau 1.x still boots when its 1.x admin calls `PageSlug::setRoutesResolver()`, so artisan and `folklore:upgrade --check` run: without Panneau 5, `Folklore\Panneau\Fields\PageSlug` is a stub with only that method, which does nothing, deprecated. `--check` reports the call as to do, no longer reports the classes of the Panneau plugin as removed, and reports the 1.x fields `Blocks`, `Page` and `PageSlug` as breaking without Panneau 5, since 2.0 gives their names to Panneau 5 fields ([#138](https://github.com/folkloreinc/laravel-folklore/issues/138)).
+- `PanneauContractTypesRector` rewrites `Panneau\Contracts\ResourceItem` and `Repository` in the `extends` of an interface and the `implements` of a class: removed where `Entity` or `Entities` is already there, through another interface or the parent class. Otherwise `ResourceItem` is replaced by `Entity`, and `Repository` stays, since `Entities` asks for more methods with other signatures; `--check` reports it, and the `use` statements of both that the set leaves unused. In a class or an interface that still implements `Repository`, the types of that contract's methods no longer change, so that they stay compatible with laravel-panneau 1.x's `Repository`. The upgrade guide runs the Rector set without `withImportNames()`, which imports every name of the files, and removes the unused imports with Pint's rule alone ([#139](https://github.com/folkloreinc/laravel-folklore/issues/139)).
+
 ## [2.0.0-alpha.6] - 2026-10-30
 
 The first part of the Panneau 5 plugin, in the `panneau` module: the adapter of the repositories (#121) and the page fields `Blocks`, `Page`, `Pages` and `PageSlug` (#122). The module needs `folklore/laravel-panneau` 5.0.0-alpha.4 or later. Also fixes to `folklore:upgrade --check` found on a 1.1 site (#130). See [docs/architecture.md](docs/architecture.md#repository-adapter).

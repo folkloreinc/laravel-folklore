@@ -23,6 +23,16 @@ class PanneauContractsCheck implements Check
         'Panneau\\Contracts\\Repository' => 'Folklore\\Contracts\\Repositories\\Entities',
     ];
 
+    /**
+     * What the Rector set does with each contract.
+     *
+     * @var array<string, string>
+     */
+    public const RECTOR = [
+        'Panneau\\Contracts\\ResourceItem' => 'The Rector set rewrites it in types and `instanceof`, but not in the methods of `Repository` in a class or an interface that still implements it, and in `extends` and `implements`, where it removes it when `Entity` is already there.',
+        'Panneau\\Contracts\\Repository' => 'The Rector set rewrites it in types and `instanceof`, and removes it from `extends` and `implements` where `Entities` is already there. Elsewhere it stays, with the `ResourceItem` of its methods: `Entities` asks for more methods, with other signatures, which the classes that implement it must have first.',
+    ];
+
     public function title(): string
     {
         return 'Panneau contracts';
@@ -35,7 +45,7 @@ class PanneauContractsCheck implements Check
             if (count($locations) > 0) {
                 yield Finding::breaking(
                     "`{$contract}`: Folklore's entities and repositories no longer implement it in 2.0, so a type hint or an `instanceof` on it no longer matches them.",
-                    "Use `{$replacement}`; in Panneau 5, the plugin's adapter.",
+                    "Use `{$replacement}`; in Panneau 5, the plugin's adapter. ".self::RECTOR[$contract].' A `use` of it that the Rector set leaves unused is reported until it is removed.',
                     $locations,
                 );
             }
