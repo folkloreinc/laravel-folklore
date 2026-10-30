@@ -33,7 +33,9 @@ use Rector\Rector\AbstractRector;
  * removed when Folklore's is already there (`interface Order extends Entity, ResourceItem`),
  * through another interface or the parent class. Otherwise `ResourceItem` is replaced by
  * `Entity`, which declares the same method, and `Repository` stays: `Entities` asks for more
- * methods, with other signatures, which the classes that implement it may not have.
+ * methods, with other signatures, which the classes that implement it may not have. In a
+ * class or an interface that is still a `Repository`, the methods of that contract keep their
+ * types, which must stay compatible with its `ResourceItem` while Panneau 1.x is installed.
  */
 final class PanneauContractTypesRector extends AbstractRector
 {
@@ -53,6 +55,18 @@ final class PanneauContractTypesRector extends AbstractRector
      */
     public const SAME_METHODS = ['Panneau\\Contracts\\ResourceItem'];
 
+    /**
+     * The methods of Panneau 1.x's `Repository`.
+     *
+     * @var list<string>
+     */
+    public const REPOSITORY_METHODS = ['findById', 'get', 'create', 'update', 'destroy'];
+
+    /**
+     * The attribute of the methods, and their parameters, whose types stay.
+     */
+    protected const KEPT = 'folklore_panneau_repository_method';
+
     public function __construct(private readonly ReflectionProvider $reflectionProvider) {}
 
     /**
@@ -70,21 +84,25 @@ final class PanneauContractTypesRector extends AbstractRector
     {
         if ($node instanceof Interface_) {
             $extends = $this->replaceParents($node->extends, []);
-            if (is_null($extends)) {
-                return null;
+            if (! is_null($extends)) {
+                $node->extends = $extends;
             }
-            $node->extends = $extends;
+            $this->keepRepositoryMethods($node, $node->extends);
 
-            return $node;
+            return is_null($extends) ? null : $node;
         }
         if ($node instanceof Class_) {
-            $implements = $this->replaceParents($node->implements, is_null($node->extends) ? [] : [$node->extends]);
-            if (is_null($implements)) {
-                return null;
+            $parents = is_null($node->extends) ? [] : [$node->extends];
+            $implements = $this->replaceParents($node->implements, $parents);
+            if (! is_null($implements)) {
+                $node->implements = $implements;
             }
-            $node->implements = $implements;
+            $this->keepRepositoryMethods($node, [...$node->implements, ...$parents]);
 
-            return $node;
+            return is_null($implements) ? null : $node;
+        }
+        if (($node instanceof ClassMethod || $node instanceof Param) && $node->getAttribute(self::KEPT) === true) {
+            return null;
         }
         if ($node instanceof Instanceof_) {
             if (! $node->class instanceof Name) {
@@ -143,6 +161,28 @@ final class PanneauContractTypesRector extends AbstractRector
         }
 
         return $changed ? $replaced : null;
+    }
+
+    /**
+     * Marks the methods of Panneau 1.x's `Repository`, and their parameters, in a class or an
+     * interface that is still one, through its parents: their types stay. A class or an
+     * interface is visited before its methods.
+     *
+     * @param  array<Name>  $parents
+     */
+    protected function keepRepositoryMethods(Class_|Interface_ $node, array $parents): void
+    {
+        if (! $this->gives($parents, 'Panneau\\Contracts\\Repository')) {
+            return;
+        }
+        foreach ($node->getMethods() as $method) {
+            if ($this->isNames($method, self::REPOSITORY_METHODS)) {
+                $method->setAttribute(self::KEPT, true);
+                foreach ($method->params as $param) {
+                    $param->setAttribute(self::KEPT, true);
+                }
+            }
+        }
     }
 
     /**

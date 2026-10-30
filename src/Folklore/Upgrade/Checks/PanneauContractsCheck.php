@@ -29,8 +29,8 @@ class PanneauContractsCheck implements Check
      * @var array<string, string>
      */
     public const RECTOR = [
-        'Panneau\\Contracts\\ResourceItem' => 'The Rector set rewrites it in types and `instanceof`, and in `extends` and `implements`, where it removes it when `Entity` is already there.',
-        'Panneau\\Contracts\\Repository' => 'The Rector set rewrites it in types and `instanceof`, and removes it from `extends` and `implements` where `Entities` is already there. Elsewhere it stays: `Entities` asks for more methods, with other signatures, which the classes that implement it must have first.',
+        'Panneau\\Contracts\\ResourceItem' => 'The Rector set rewrites it in types and `instanceof`, but not in the methods of `Repository` in a class or an interface that still implements it, and in `extends` and `implements`, where it removes it when `Entity` is already there.',
+        'Panneau\\Contracts\\Repository' => 'The Rector set rewrites it in types and `instanceof`, and removes it from `extends` and `implements` where `Entities` is already there. Elsewhere it stays, with the `ResourceItem` of its methods: `Entities` asks for more methods, with other signatures, which the classes that implement it must have first.',
     ];
 
     public function title(): string
