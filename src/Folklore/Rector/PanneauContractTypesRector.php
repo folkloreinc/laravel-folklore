@@ -31,8 +31,9 @@ use Rector\Rector\AbstractRector;
  *
  * In the `extends` of an interface and the `implements` of a class, the Panneau contract is
  * removed when Folklore's is already there (`interface Order extends Entity, ResourceItem`),
- * through another interface or the parent class, and replaced by it otherwise. A class that
- * implements `Repository` on its own keeps it: `Entities` asks for more methods.
+ * through another interface or the parent class. Otherwise `ResourceItem` is replaced by
+ * `Entity`, which declares the same method, and `Repository` stays: `Entities` asks for more
+ * methods, with other signatures, which the classes that implement it may not have.
  */
 final class PanneauContractTypesRector extends AbstractRector
 {
@@ -45,8 +46,8 @@ final class PanneauContractTypesRector extends AbstractRector
     ];
 
     /**
-     * The Panneau contracts whose Folklore contract declares the same methods, so that a
-     * class can implement it instead.
+     * The Panneau contracts whose Folklore contract declares the same methods, so that it can
+     * replace them in `extends` and `implements`.
      *
      * @var list<string>
      */
@@ -68,7 +69,7 @@ final class PanneauContractTypesRector extends AbstractRector
     public function refactor(Node $node): ?Node
     {
         if ($node instanceof Interface_) {
-            $extends = $this->replaceParents($node->extends, [], true);
+            $extends = $this->replaceParents($node->extends, []);
             if (is_null($extends)) {
                 return null;
             }
@@ -77,7 +78,7 @@ final class PanneauContractTypesRector extends AbstractRector
             return $node;
         }
         if ($node instanceof Class_) {
-            $implements = $this->replaceParents($node->implements, is_null($node->extends) ? [] : [$node->extends], false);
+            $implements = $this->replaceParents($node->implements, is_null($node->extends) ? [] : [$node->extends]);
             if (is_null($implements)) {
                 return null;
             }
@@ -114,14 +115,14 @@ final class PanneauContractTypesRector extends AbstractRector
 
     /**
      * The interfaces that a class implements or an interface extends, without the Panneau
-     * contracts: Folklore's contract replaces each one, unless the other interfaces or the
-     * parents already give it. Null when they name none.
+     * contracts that the other interfaces or the parents already give, and with Folklore's
+     * contract instead of those that declare the same methods. Null when nothing changes.
      *
      * @param  array<Name>  $interfaces
      * @param  array<Name>  $parents  The parent class of a class.
      * @return list<Name>|null
      */
-    protected function replaceParents(array $interfaces, array $parents, bool $interface): ?array
+    protected function replaceParents(array $interfaces, array $parents): ?array
     {
         $others = array_values(array_filter($interfaces, fn (Name $name) => is_null($this->rename($name))));
 
@@ -133,7 +134,7 @@ final class PanneauContractTypesRector extends AbstractRector
                 $replaced[] = $name;
             } elseif ($this->gives([...$others, ...$replaced, ...$parents], $replacement->toString())) {
                 $changed = true;
-            } elseif ($interface || $this->isNames($name, self::SAME_METHODS)) {
+            } elseif ($this->isNames($name, self::SAME_METHODS)) {
                 $replaced[] = $replacement;
                 $changed = true;
             } else {

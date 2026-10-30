@@ -19,6 +19,7 @@ interface Article extends PageContract, ResourceItem {}
 
 interface Orders extends Entities, Repository {}
 
+// `Entities` asks for more methods, with other signatures: the classes that implement it may not have them
 interface Wines extends Repository {}
 -----
 <?php
@@ -28,6 +29,7 @@ namespace App\Contracts\Resources;
 use Folklore\Contracts\Entities\Entity;
 use Folklore\Contracts\Entities\Page as PageContract;
 use Folklore\Contracts\Repositories\Entities;
+use Panneau\Contracts\Repository;
 
 interface Order extends Entity
 {
@@ -40,4 +42,5 @@ interface Article extends PageContract {}
 
 interface Orders extends Entities {}
 
-interface Wines extends Entities {}
+// `Entities` asks for more methods, with other signatures: the classes that implement it may not have them
+interface Wines extends Repository {}
