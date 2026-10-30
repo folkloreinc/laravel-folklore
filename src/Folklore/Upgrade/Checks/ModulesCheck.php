@@ -11,7 +11,8 @@ use Folklore\Upgrade\Site;
  * The modules the site uses, and whether `config/site.php` turns them on: 1.1 booted
  * everything, 2.0 boots a module only when it is on. This covers what the 1.1 service
  * provider did for every site: the `routeForReactRouter`, `csv` and `pixel` macros, the
- * Customer.io client, the `repository` auth provider, the PubNub broadcaster.
+ * Customer.io client, the `repository` auth provider, the PubNub broadcaster, and the
+ * commands of the modules, which the site's deployment and build files may run.
  */
 class ModulesCheck implements Check
 {

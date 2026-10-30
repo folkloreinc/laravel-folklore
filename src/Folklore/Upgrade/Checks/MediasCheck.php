@@ -5,6 +5,7 @@ namespace Folklore\Upgrade\Checks;
 use Folklore\Upgrade\Finding;
 use Folklore\Upgrade\Occurrence;
 use Folklore\Upgrade\Site;
+use Folklore\Upgrade\Upgrade;
 use ReflectionClass;
 use ReflectionMethod;
 
@@ -39,11 +40,17 @@ class MediasCheck implements Check
 
     public function check(Site $site): iterable
     {
-        $hasMedias = $this->locations($site->references('Folklore\\Mediatheque\\Support\\Traits\\HasMedias'));
-        if (count($hasMedias) > 0) {
+        $hasMedias = $this->locations($site->references(Upgrade::LEGACY_HAS_MEDIAS));
+        if (count($hasMedias) > 0 && $this->keepsLegacyHasMedias()) {
+            yield Finding::deprecated(
+                '`Folklore\\Mediatheque\\Support\\Traits\\HasMedias` is a deprecated alias in `laravel-mediatheque` 2, until its 3.0.',
+                'Use `Folklore\\Mediatheque\\Concerns\\HasMedias` (the Rector rules move it).',
+                $hasMedias,
+            );
+        } elseif (count($hasMedias) > 0) {
             yield Finding::breaking(
-                '`Folklore\\Mediatheque\\Support\\Traits\\HasMedias` is gone in `laravel-mediatheque` 2.',
-                'Use `Folklore\\Mediatheque\\Concerns\\HasMedias`.',
+                '`Folklore\\Mediatheque\\Support\\Traits\\HasMedias` doesn\'t exist in the installed packages: `laravel-mediatheque` 2.0.0-alpha.11 and later keep it as a deprecated alias, its earlier pre-releases don\'t.',
+                'Use `Folklore\\Mediatheque\\Concerns\\HasMedias` (the Rector rules move it), or require `folklore/laravel-mediatheque` 2.0.0-alpha.11 or later.',
                 $hasMedias,
             );
         }
@@ -168,6 +175,15 @@ class MediasCheck implements Check
                 $throughResource,
             );
         }
+    }
+
+    /**
+     * Whether the installed mediatheque keeps the 1.x name of `HasMedias`. laravel-folklore 2
+     * conflicts with its 1.x, so the trait is the alias of its 2.x.
+     */
+    protected function keepsLegacyHasMedias(): bool
+    {
+        return trait_exists(Upgrade::LEGACY_HAS_MEDIAS);
     }
 
     /**

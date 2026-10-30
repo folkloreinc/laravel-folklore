@@ -21,7 +21,7 @@ class UpgradeCommandCoreTest extends TestCase
     {
         $this->artisan('folklore:upgrade', ['--check' => true, '--path' => [__DIR__.'/../../fixture/upgrade-site/app', __DIR__.'/../../fixture/upgrade-site/config']])
             ->expectsOutputToContain('The site uses the `medias` module, which is off')
-            ->expectsOutputToContain('`Folklore\\Mediatheque\\Support\\Traits\\HasMedias` is gone')
+            ->expectsOutputToContain(trait_exists('Folklore\\Mediatheque\\Support\\Traits\\HasMedias') ? 'HasMedias` is a deprecated alias' : 'HasMedias` doesn\'t exist in the installed packages')
             ->assertExitCode(1);
     }
 

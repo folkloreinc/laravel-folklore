@@ -1,0 +1,13 @@
+name: Build
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: composer install
+      # Not `php artisan assets:viewer`, nor `assets:view-all`
+      - run: php artisan assets:view-all
+      - run: php artisan assets:view && npm run build

@@ -29,6 +29,9 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 ### Fixed
 
 - The pages and blocks repositories no longer write a block's `id` into its `data` when they update it.
+- `folklore:upgrade --check` reports `Folklore\Mediatheque\Support\Traits\HasMedias` as deprecated where the installed mediatheque keeps it as an alias (`laravel-mediatheque` 2.0.0-alpha.11 and later), and as breaking only otherwise ([#130](https://github.com/folkloreinc/laravel-folklore/issues/130)).
+- Run before the mediatheque is upgraded, `folklore:upgrade --check` says that its media table has no `uid` column yet and that the mediatheque is upgraded first (`mediatheque:install --upgrade`, `migrate`, `mediatheque:upgrade`), instead of a raw SQL error, and reports the integer identifiers stored under `media://` as breaking without looking them up: 2.0 reads `media://` by uid. [docs/upgrade.md](docs/upgrade.md#steps) gives the order ([#130](https://github.com/folkloreinc/laravel-folklore/issues/130)).
+- `folklore:upgrade --check` and `folklore:upgrade` also read the deployment and build files at the site's root (`Envoy.blade.php`, `composer.json`, `package.json`, `.github/workflows`, `.gitlab-ci.yml`, `deploy*.sh`, `Dockerfile*`) for the commands that 2.0 registers only with their module: `php artisan assets:view` in a deployment needs the `assets` module, and `users:create` the `auth` module ([#130](https://github.com/folkloreinc/laravel-folklore/issues/130)).
 
 ## [2.0.0-alpha.5] - 2026-10-29
 

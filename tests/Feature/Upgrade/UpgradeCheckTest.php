@@ -49,6 +49,31 @@ class UpgradeCheckTest extends TestCase
         $this->assertContains('app/Models/Page.php:6 (Folklore\\Models\\Page)', $this->finding($findings, '`pages` module')->locations);
     }
 
+    public function test_it_reports_the_commands_of_modules_that_deployment_and_build_files_run()
+    {
+        $this->turnModulesOff();
+
+        $assets = $this->finding($this->check(new ModulesCheck), 'the `assets` module, which is off');
+
+        // Not the commented `users:create`, nor `assets:view-all`
+        $this->assertSame(Severity::Todo, $assets->severity);
+        $this->assertSame([
+            'Envoy.blade.php:9 (the `assets:view` command)',
+            'package.json:4 (the `assets:view` command)',
+            '.github/workflows/build.yml:13 (the `assets:view` command)',
+        ], $assets->locations);
+    }
+
+    public function test_deployment_files_are_read_whichever_paths_are_given()
+    {
+        $site = new Site(self::SITE, $this->app['config'], $this->app['db'], [self::SITE.'/missing']);
+
+        $paths = array_map(fn ($file) => $file->path, $site->deploymentFiles());
+
+        $this->assertEqualsCanonicalizing(['Envoy.blade.php', 'composer.json', 'package.json', '.github/workflows/build.yml'], $paths);
+        $this->assertSame([], $site->files());
+    }
+
     public function test_a_macro_that_the_site_defines_itself_needs_no_module()
     {
         $this->turnModulesOff();
@@ -144,6 +169,18 @@ class UpgradeCheckTest extends TestCase
         $this->assertSame(Severity::Deprecated, $this->finding($findings, 'setFilters')->severity);
     }
 
+    public function test_the_1x_has_medias_is_deprecated_where_the_mediatheque_keeps_its_alias()
+    {
+        $kept = $this->finding($this->check($this->mediasCheck(keepsAlias: true)), 'Support\\Traits\\HasMedias');
+        $gone = $this->finding($this->check($this->mediasCheck(keepsAlias: false)), 'Support\\Traits\\HasMedias');
+
+        $this->assertSame(Severity::Deprecated, $kept->severity);
+        $this->assertStringContainsString('deprecated alias', $kept->message);
+        $this->assertSame(Severity::Breaking, $gone->severity);
+        $this->assertStringContainsString('2.0.0-alpha.11', (string) $gone->fix);
+        $this->assertSame($kept->locations, $gone->locations);
+    }
+
     public function test_it_reports_media_resource_in_the_canonical_shape()
     {
         $this->assertNull($this->finding($this->check(new MediasCheck), 'is `canonical`', required: false));
@@ -213,6 +250,33 @@ class UpgradeCheckTest extends TestCase
         $this->assertSame(Severity::Breaking, $media->severity);
         $this->assertStringContainsString('They look like ids.', $media->message);
         $this->assertStringContainsString('--from=media --to=medias', (string) $media->fix);
+    }
+
+    public function test_media_references_by_id_break_before_the_mediatheque_is_upgraded()
+    {
+        // A 1.x media table, without the uid that 2.0 reads `media://` by
+        Schema::create((new Media)->getTable(), function (Blueprint $table) {
+            $table->id();
+            $table->string('type');
+            $table->string('name');
+        });
+        Schema::create('upgrade_legacy_articles', function (Blueprint $table) {
+            $table->id();
+            $table->json('data')->nullable();
+        });
+        DB::table((new Media)->getTable())->insert(['type' => 'image', 'name' => 'One']);
+        DB::table('upgrade_legacy_articles')->insert(['data' => json_encode(['cover' => 'media://1'])]);
+
+        $findings = $this->check(new StoredReferencesCheck, [LegacyArticle::class]);
+
+        $upgrade = $this->finding($findings, 'has no `uid` column yet');
+        $this->assertSame(Severity::Todo, $upgrade->severity);
+        $this->assertStringContainsString('`php artisan mediatheque:install --upgrade`, `php artisan migrate`, `php artisan mediatheque:upgrade`', (string) $upgrade->fix);
+        $ids = $this->finding($findings, 'The 1 `media://` identifiers read are integers');
+        $this->assertSame(Severity::Breaking, $ids->severity);
+        $this->assertStringContainsString('--from=media --to=medias', (string) $ids->fix);
+        $this->assertSame([LegacyArticle::class.'::data'], $ids->locations);
+        $this->assertNull($this->finding($findings, 'could not be looked up in `'.Media::class.'`: ', required: false));
     }
 
     public function test_media_keys_are_checked_as_the_medias_module_will_map_them()
@@ -331,6 +395,23 @@ class UpgradeCheckTest extends TestCase
         ]);
 
         return $media;
+    }
+
+    /**
+     * The medias check, with or without the alias of the 1.x `HasMedias` in the
+     * mediatheque (2.0.0-alpha.11 and later), whichever one is installed.
+     */
+    private function mediasCheck(bool $keepsAlias): MediasCheck
+    {
+        return new class($keepsAlias) extends MediasCheck
+        {
+            public function __construct(private bool $keepsAlias) {}
+
+            protected function keepsLegacyHasMedias(): bool
+            {
+                return $this->keepsAlias;
+            }
+        };
     }
 
     private function turnModulesOff(): void
