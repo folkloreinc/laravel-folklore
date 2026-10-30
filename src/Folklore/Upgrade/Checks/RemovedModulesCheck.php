@@ -3,12 +3,14 @@
 namespace Folklore\Upgrade\Checks;
 
 use Folklore\Upgrade\Finding;
+use Folklore\Upgrade\Occurrence;
 use Folklore\Upgrade\Site;
 
 /**
  * What 2.0 removes, which no active site used when it was decided (decisions/0012): the
  * site manager, organisations, PubSubHubbub, the contracts that nothing implements, and
- * Panneau 1.x's fields and resources.
+ * Panneau 1.x's fields and resources. 1.x's `PageSlug::setRoutesResolver()`, which the 1.x
+ * admin calls at boot, is kept so that the site boots, but it does nothing.
  */
 class RemovedModulesCheck implements Check
 {
@@ -81,6 +83,15 @@ class RemovedModulesCheck implements Check
                     $locations,
                 );
             }
+        }
+
+        $resolvers = array_map(fn (Occurrence $occurrence) => $occurrence->location(), $site->matches('/::setRoutesResolver\s*\(/'));
+        if (count($resolvers) > 0) {
+            yield Finding::todo(
+                '`PageSlug::setRoutesResolver()`: 1.x\'s routes of the page slug field. 2.0 keeps the method so that the site boots, but it does nothing.',
+                'Remove the call. Panneau 5\'s `PageSlug` builds the URL from `site.pages.routes`: check that they match the site\'s routes, or set `url()` on the field.',
+                $resolvers,
+            );
         }
 
         foreach (self::MODULES as $module) {

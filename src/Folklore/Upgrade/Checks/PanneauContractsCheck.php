@@ -35,7 +35,7 @@ class PanneauContractsCheck implements Check
             if (count($locations) > 0) {
                 yield Finding::breaking(
                     "`{$contract}`: Folklore's entities and repositories no longer implement it in 2.0, so a type hint or an `instanceof` on it no longer matches them.",
-                    "Use `{$replacement}`; in Panneau 5, the plugin's adapter.",
+                    "Use `{$replacement}`, which the Rector set writes in types, `instanceof`, `extends` and `implements`; in Panneau 5, the plugin's adapter.",
                     $locations,
                 );
             }

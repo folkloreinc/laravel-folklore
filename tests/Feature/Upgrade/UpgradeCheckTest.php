@@ -102,6 +102,15 @@ class UpgradeCheckTest extends TestCase
         $this->assertNull($this->finding($findings, 'Contact', required: false));
     }
 
+    public function test_it_reports_the_1x_routes_resolver_of_the_page_slug()
+    {
+        $resolver = $this->finding($this->check(new RemovedModulesCheck), '`PageSlug::setRoutesResolver()`');
+
+        $this->assertSame(Severity::Todo, $resolver->severity);
+        $this->assertSame(['app/Panneau/PanneauServiceProvider.php:13'], $resolver->locations);
+        $this->assertStringContainsString('`site.pages.routes`', (string) $resolver->fix);
+    }
+
     public function test_it_reports_the_packages_the_site_no_longer_gets()
     {
         $this->turnModulesOff();

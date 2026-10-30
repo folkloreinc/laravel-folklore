@@ -54,6 +54,25 @@ class PageFieldsTest extends TestCase
         return $types;
     }
 
+    public function test_the_1x_routes_resolver_of_the_page_slug_is_kept_and_does_nothing()
+    {
+        $deprecations = [];
+        set_error_handler(function (int $level, string $message) use (&$deprecations) {
+            $deprecations[] = $message;
+
+            return true;
+        }, E_USER_DEPRECATED);
+
+        try {
+            PageSlug::setRoutesResolver(fn ($locale) => ['page' => '/other/:slug']);
+        } finally {
+            restore_error_handler();
+        }
+
+        $this->assertCount(1, $deprecations);
+        $this->assertStringContainsString('`site.pages.routes`', $deprecations[0]);
+    }
+
     public function test_blocks_offer_the_types_of_the_registry()
     {
         $definition = Blocks::make('blocks')->label('Blocks')->toDefinition();

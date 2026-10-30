@@ -13,10 +13,13 @@ use PhpParser\Node\Name;
 use PhpParser\Node\Name\FullyQualified;
 use PhpParser\Node\NullableType;
 use PhpParser\Node\Param;
+use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\ClassMethod;
 use PhpParser\Node\Stmt\Function_;
+use PhpParser\Node\Stmt\Interface_;
 use PhpParser\Node\Stmt\Property;
 use PhpParser\Node\UnionType;
+use PHPStan\Reflection\ReflectionProvider;
 use Rector\Rector\AbstractRector;
 
 /**
@@ -25,6 +28,11 @@ use Rector\Rector\AbstractRector;
  * and property types, `instanceof`. A `::class` constant is left as it is, since a
  * container binding (`bind(Repository::class, ...)`) would become a binding of Folklore's
  * contract: `folklore:upgrade --check` reports it.
+ *
+ * In the `extends` of an interface and the `implements` of a class, the Panneau contract is
+ * removed when Folklore's is already there (`interface Order extends Entity, ResourceItem`),
+ * through another interface or the parent class, and replaced by it otherwise. A class that
+ * implements `Repository` on its own keeps it: `Entities` asks for more methods.
  */
 final class PanneauContractTypesRector extends AbstractRector
 {
@@ -37,18 +45,46 @@ final class PanneauContractTypesRector extends AbstractRector
     ];
 
     /**
+     * The Panneau contracts whose Folklore contract declares the same methods, so that a
+     * class can implement it instead.
+     *
+     * @var list<string>
+     */
+    public const SAME_METHODS = ['Panneau\\Contracts\\ResourceItem'];
+
+    public function __construct(private readonly ReflectionProvider $reflectionProvider) {}
+
+    /**
      * @return array<class-string<Node>>
      */
     public function getNodeTypes(): array
     {
-        return [Param::class, ClassMethod::class, Function_::class, Closure::class, ArrowFunction::class, Property::class, Instanceof_::class];
+        return [Param::class, ClassMethod::class, Function_::class, Closure::class, ArrowFunction::class, Property::class, Instanceof_::class, Class_::class, Interface_::class];
     }
 
     /**
-     * @param  Param|ClassMethod|Function_|Closure|ArrowFunction|Property|Instanceof_  $node
+     * @param  Param|ClassMethod|Function_|Closure|ArrowFunction|Property|Instanceof_|Class_|Interface_  $node
      */
     public function refactor(Node $node): ?Node
     {
+        if ($node instanceof Interface_) {
+            $extends = $this->replaceParents($node->extends, [], true);
+            if (is_null($extends)) {
+                return null;
+            }
+            $node->extends = $extends;
+
+            return $node;
+        }
+        if ($node instanceof Class_) {
+            $implements = $this->replaceParents($node->implements, is_null($node->extends) ? [] : [$node->extends], false);
+            if (is_null($implements)) {
+                return null;
+            }
+            $node->implements = $implements;
+
+            return $node;
+        }
         if ($node instanceof Instanceof_) {
             if (! $node->class instanceof Name) {
                 return null;
@@ -74,6 +110,58 @@ final class PanneauContractTypesRector extends AbstractRector
         }
 
         return $node;
+    }
+
+    /**
+     * The interfaces that a class implements or an interface extends, without the Panneau
+     * contracts: Folklore's contract replaces each one, unless the other interfaces or the
+     * parents already give it. Null when they name none.
+     *
+     * @param  array<Name>  $interfaces
+     * @param  array<Name>  $parents  The parent class of a class.
+     * @return list<Name>|null
+     */
+    protected function replaceParents(array $interfaces, array $parents, bool $interface): ?array
+    {
+        $others = array_values(array_filter($interfaces, fn (Name $name) => is_null($this->rename($name))));
+
+        $replaced = [];
+        $changed = false;
+        foreach ($interfaces as $name) {
+            $replacement = $this->rename($name);
+            if (is_null($replacement)) {
+                $replaced[] = $name;
+            } elseif ($this->gives([...$others, ...$replaced, ...$parents], $replacement->toString())) {
+                $changed = true;
+            } elseif ($interface || $this->isNames($name, self::SAME_METHODS)) {
+                $replaced[] = $replacement;
+                $changed = true;
+            } else {
+                $replaced[] = $name;
+            }
+        }
+
+        return $changed ? $replaced : null;
+    }
+
+    /**
+     * Whether one of the names is the interface, or a class or an interface that extends it.
+     *
+     * @param  array<Name>  $names
+     */
+    protected function gives(array $names, string $interface): bool
+    {
+        foreach ($names as $name) {
+            if ($this->isName($name, $interface)) {
+                return true;
+            }
+            $class = $this->getName($name);
+            if ($this->reflectionProvider->hasClass($class) && $this->reflectionProvider->getClass($class)->isSubclassOf($interface)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

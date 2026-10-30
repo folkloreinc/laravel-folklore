@@ -5,7 +5,16 @@ namespace Folklore\Panneau\Fields;
 use Folklore\Contracts\Entities\Page as PageContract;
 use Folklore\Contracts\Repositories\Pages as PagesRepository;
 use Folklore\Pages\PageRoutes;
+use Folklore\Panneau\Fields\Concerns\KeepsRoutesResolver;
 use Panneau\Fields\Slug;
+
+// Without Panneau 5, as while a site upgrades from 1.1 with laravel-panneau 1.x, this class
+// can't load: a stub keeps 1.x's `setRoutesResolver()` so that the site boots
+if (! class_exists(Slug::class)) {
+    class_alias(LegacyPageSlug::class, PageSlug::class);
+
+    return;
+}
 
 /**
  * The slug of a page: Panneau's `slug`, localized, from the `title`, whose check shows the
@@ -21,6 +30,8 @@ use Panneau\Fields\Slug;
  */
 class PageSlug extends Slug
 {
+    use KeepsRoutesResolver;
+
     protected ?string $parentField = 'parent';
 
     public function __construct(string $name)
