@@ -8,9 +8,11 @@ use Folklore\Models\Media;
 use Folklore\Tests\Feature\Eloquent\Fixtures\Prize;
 use Folklore\Tests\Feature\Eloquent\JsonDataTestCase;
 use Folklore\Tests\Feature\Upgrade\Fixtures\Schemas\BuiltContest;
+use Folklore\Tests\Feature\Upgrade\Fixtures\Schemas\EmptyContest;
 use Folklore\Tests\Feature\Upgrade\Fixtures\Schemas\LegacyContest;
 use Folklore\Tests\Feature\Upgrade\Fixtures\Schemas\LegacyGame;
 use Folklore\Tests\Feature\Upgrade\Fixtures\Schemas\LegacyGames;
+use Folklore\Tests\Feature\Upgrade\Fixtures\Schemas\LocalizedGame;
 use Folklore\Upgrade\Checks\JsonDeclarationsCheck;
 use Folklore\Upgrade\Finding;
 use Folklore\Upgrade\JsonSchemaConversion;
@@ -196,8 +198,48 @@ class JsonSchemaConverterTest extends JsonDataTestCase
     {
         $conversion = $this->conversion(BuiltContest::class);
 
-        $this->assertSame(['`getJsonDataRelations()` builds its array: write the schema by hand'], $conversion->blockers);
+        $this->assertSame(['`getJsonDataRelations()` builds its array from the model or the attribute: write the schema by hand'], $conversion->blockers);
         $this->assertStringContainsString('    // TODO(folklore-3): not converted', $conversion->code);
+    }
+
+    public function test_it_converts_a_return_built_the_same_way_for_every_model_with_a_todo()
+    {
+        DB::table('games')->insert(['data' => json_encode(['title' => ['fr' => 'Jeu', 'en' => 'Game']])]);
+        $conversion = $this->conversion(LocalizedGame::class);
+
+        $this->assertTrue($conversion->converts());
+        $this->assertStringContainsString(<<<'PHP'
+                public function jsonDataSchema(string $attribute): ?ObjectType
+                {
+                    // TODO(folklore-3): `getJsonDataColumnExtract()` built its array in 1.x: this schema is what it returned with the site's config (locales: fr, en); check that nothing else in it depends on the environment.
+                    return match ($attribute) {
+                        'data' => Json::object([
+                            'cover' => Json::media(),
+                            'title' => Json::string()->translatable()->extract('title_{locale}'),
+                        ])->additional(true),
+            PHP, $conversion->code);
+
+        $name = 'ConvertedLocalizedGame'.bin2hex(random_bytes(4));
+        eval(str_replace(['<?php', 'class LocalizedGame '], ['', 'class '.$name.' '], $conversion->code));
+        $class = 'Folklore\\Tests\\Feature\\Upgrade\\Fixtures\\Schemas\\'.$name;
+        foreach ([LocalizedGame::class, $class] as $model) {
+            $game = new $model;
+            $game->data = ['title' => ['fr' => 'Jeu', 'en' => 'Game'], 'cover' => $this->media[0]];
+            $game->save();
+            $this->assertSame(['Jeu', 'Game'], [$game->title_fr, $game->title_en]);
+            $this->assertSame('medias://'.$this->media[0]->id, $this->rawData($game)['cover']);
+        }
+    }
+
+    public function test_empty_declarations_are_removed()
+    {
+        $conversion = $this->conversion(EmptyContest::class);
+
+        $this->assertTrue($conversion->empty);
+        $this->assertStringContainsString("class EmptyContest extends Model\n{", $conversion->code);
+        $this->assertStringNotContainsString('getJsonDataRelations', $conversion->code);
+        $this->assertStringNotContainsString('HasJsonDataRelations', $conversion->code);
+        $this->assertStringNotContainsString('jsonDataSchema', $conversion->code);
     }
 
     public function test_it_replaces_its_todo_when_it_runs_again()
@@ -257,7 +299,10 @@ class JsonSchemaConverterTest extends JsonDataTestCase
 
         $finding = $this->finding([...(new JsonDeclarationsCheck)->check($site)], '$jsonAttributeFillable');
 
+        // Its `newModel()` makes the class it is given
         $this->assertSame(['tests/Feature/Upgrade/Fixtures/Schemas/LegacyGames.php:14'], $finding->locations);
+        $filled = $this->finding([...(new JsonDeclarationsCheck)->check($site)], 'don\'t declare `$jsonAttributeFillable`');
+        $this->assertSame(['tests/Feature/Upgrade/Fixtures/Schemas/PlainGames.php ('.LegacyGame::class.')'], $filled->locations);
     }
 
     public function test_the_command_says_what_it_would_convert_and_writes_nothing_on_a_dry_run()
@@ -399,7 +444,7 @@ class JsonSchemaConverterTest extends JsonDataTestCase
     private function finding(array $findings, string $model): Finding
     {
         foreach ($findings as $finding) {
-            if (str_contains($finding->message, '`'.$model.'`')) {
+            if (str_contains($finding->message, '`'.$model.'`') || str_contains($finding->message, $model)) {
                 return $finding;
             }
         }

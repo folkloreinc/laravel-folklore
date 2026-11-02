@@ -148,7 +148,9 @@ class UpgradeCommand extends Command
             return self::SUCCESS;
         }
         foreach ($conversions as $conversion) {
-            if ($conversion->converts()) {
+            if ($conversion->empty) {
+                $this->line(sprintf('  %s the empty declarations of <fg=green>%s</> (%s)', $dryRun ? 'Would remove' : 'Removes', $conversion->model, $conversion->location()));
+            } elseif ($conversion->converts()) {
                 $this->line(sprintf('  %s <fg=green>%s</> to `jsonDataSchema()` (%s)', $dryRun ? 'Would convert' : 'Converts', $conversion->model, $conversion->location()));
                 foreach ($conversion->todos as $todo) {
                     $this->line('    <fg=yellow>TODO(folklore-3)</> '.$todo);

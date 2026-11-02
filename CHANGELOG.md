@@ -8,6 +8,14 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+### Breaking changes
+
+- A repository that declares `$jsonAttributeFillable` fills its model the 1.x way even when the model has a schema, instead of with `JsonData::fill()`: so a model converted from the 1.x declarations stores what it stored, the keys outside its schema included. A repository that declared both and relied on `JsonData::fill()` removes `$jsonAttributeFillable` and `$jsonAttributeExclude` ([#150](https://github.com/folkloreinc/laravel-folklore/issues/150)).
+
+### Added
+
+- `folklore:upgrade --schemas` converts the 1.x JSON declarations of a site's models, `getJsonDataRelations()` and `getJsonDataColumnExtract()`, to `jsonDataSchema()`: a schema whose root is `additional(true)` and that compiles into the same declarations, with `Json::media()`, `Json::reference()`, `extract()` and translatable columns. Its `*` segments are lists, maps or translatable nodes as the stored data says, with a `// TODO(folklore-3)` when it doesn't. It leaves, with a TODO that says why, the declarations a schema can't give the same behaviour: methods that read the model or the attribute, unmapped keys, and the options and macros without a node. `--dry-run` writes nothing. `--check` has a "JSON declarations" section that reports what converts and what doesn't, and the repositories that declare `$jsonAttributeFillable` ([docs/upgrade.md](docs/upgrade.md#converting-the-json-declarations), [#150](https://github.com/folkloreinc/laravel-folklore/issues/150)).
+
 ### Fixed
 
 - `site.pages.routes` names routes of pages that aren't localized: `Pages\PageRoutes`, and so the `Page` entity's `url()` and the `PageSlug` field, look a name up as `{locale}.{name}` (`fr.page`) first, as before, then as `{name}` (`page`). A page with a parent is at the `page` route when the site has no `page_with_parent` route, instead of a `RouteNotFoundException` from `url()` and no URL in `PageSlug`'s check, which then doesn't look the parent up. A site whose routes are `Route::get('/{page}')->name('page')` no longer has to override `url()` ([#143](https://github.com/folkloreinc/laravel-folklore/issues/143)).

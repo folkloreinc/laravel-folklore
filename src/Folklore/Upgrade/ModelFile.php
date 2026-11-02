@@ -30,11 +30,13 @@ class ModelFile
 
     /**
      * A method declared in the file: its range, from its doc comment, attributes and
-     * modifiers to its closing brace, in bytes, the indentation of its first line, and
-     * whether its body is a single `return` of an array literal that reads no parameter,
-     * no `$this` and calls nothing.
+     * modifiers to its closing brace, in bytes, the position of `function`, the indentation
+     * of its first line, whether its body is a single `return` of an array literal that
+     * reads no parameter, no `$this` and calls nothing, and whether it reads no parameter,
+     * no `$this` and no `self::`, `static::` or `parent::` (its return is the same for every
+     * instance and attribute, as a loop over the locales).
      *
-     * @return array{start: int, end: int, function: int, indent: string, literal: bool}|null
+     * @return array{start: int, end: int, function: int, indent: string, literal: bool, static: bool}|null
      */
     public function method(string $name): ?array
     {
@@ -91,6 +93,7 @@ class ModelFile
                 'function' => $token->pos,
                 'indent' => trim($indent) === '' ? $indent : '',
                 'literal' => $this->returnsLiteral($tokens, $open, $close),
+                'static' => $this->isStatic($tokens, $open, $close),
             ];
         }
 
@@ -138,11 +141,11 @@ class ModelFile
 
     /**
      * Replaces interfaces of the class's `implements` with another one, written as given,
-     * or adds it when the class implements none of them.
+     * or adds it when the class implements none of them. Without one, removes them.
      *
      * @param  list<string>  $remove  Fully qualified names.
      */
-    public function replaceInterfaces(array $remove, string $add, string $addFullName): void
+    public function replaceInterfaces(array $remove, ?string $add = null, ?string $addFullName = null): void
     {
         $tokens = $this->tokens();
         $imports = $this->imports();
@@ -173,6 +176,9 @@ class ModelFile
         }
 
         if (is_null($implements)) {
+            if (is_null($add)) {
+                return;
+            }
             $end = $this->previous($tokens, $body) ?? $body;
             $position = $tokens[$end]->pos + strlen($tokens[$end]->text);
             $this->code = substr($this->code, 0, $position).' implements '.$add.substr($this->code, $position);
@@ -203,7 +209,7 @@ class ModelFile
             }
             $kept[] = $name['text'];
         }
-        if (! $hasAdded) {
+        if (! $hasAdded && ! is_null($add)) {
             $kept[] = $add;
         }
 
@@ -211,6 +217,11 @@ class ModelFile
         $last = $names[count($names) - 1]['end'] ?? null;
         if (is_null($first) || is_null($last)) {
             return;
+        }
+        if (count($kept) === 0) {
+            // ` implements A, B` goes, from the end of the name before it
+            $before = $this->previous($tokens, $implements) ?? $implements;
+            $first = $tokens[$before]->pos + strlen($tokens[$before]->text);
         }
         $this->code = substr($this->code, 0, $first).implode(', ', $kept).substr($this->code, $last);
     }
@@ -408,6 +419,28 @@ class ModelFile
             // A call: a name or a variable followed by `(`
             $next = $body[$k + 1] ?? null;
             if (! is_null($next) && $tokens[$next]->text === '(' && $token->is([T_STRING, T_NAME_QUALIFIED, T_NAME_FULLY_QUALIFIED, T_NAME_RELATIVE, T_VARIABLE, T_STATIC])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param  list<PhpToken>  $tokens
+     */
+    protected function isStatic(array $tokens, int $open, int $close): bool
+    {
+        for ($i = $open + 1; $i < $close; $i++) {
+            $token = $tokens[$i];
+            if ($token->is(T_VARIABLE) && in_array($token->text, self::PARAMETERS, true)) {
+                return false;
+            }
+            if ($token->is([T_INCLUDE, T_INCLUDE_ONCE, T_REQUIRE, T_REQUIRE_ONCE, T_EVAL, T_GLOBAL])) {
+                return false;
+            }
+            $next = $this->next($tokens, $i);
+            if (! is_null($next) && $tokens[$next]->is(T_DOUBLE_COLON) && ($token->is(T_STATIC) || in_array(strtolower($token->text), ['self', 'parent'], true))) {
                 return false;
             }
         }

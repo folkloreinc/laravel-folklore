@@ -18,7 +18,7 @@
 3. **Run the Rector rules:** they rename what moved and rewrite the 1.x API that code can follow. See [The Rector rules](#the-rector-rules). Then run `folklore:upgrade --check` again: what is left is to do by hand.
 4. **Upgrade:** `php artisan folklore:upgrade --dry-run` says what the upgrade changes; `php artisan folklore:upgrade` does it. It turns on the site's modules in `config/site.php`, sets the media reference key that the site stores (`medias://`), and moves the rows of `medias_pivot` that 1.x wrote without a handle for JSON data under the `json` handle. Run it locally, against a copy of the database, and commit `config/site.php`: on a server, the next deploy replaces the file. Then run it on each environment's database for `medias_pivot`; the config part has nothing left to do there. See [What `folklore:upgrade` does](#what-folkloreupgrade-does). Every module is off by default ([architecture.md](architecture.md#configuration-and-modules)). It runs after the Rector rules: with a mediatheque older than 2.0.0-alpha.11, which has no alias of 1.x's `HasMedias`, a model that still uses it doesn't load, and its rows of `medias_pivot` are left until it does.
 5. **Run the site's tests**, and check pages, forms with media, and logins.
-6. **Fix the deprecations** at your own pace. They are logged on the `deprecations` channel.
+6. **Fix the deprecations** at your own pace. They are logged on the `deprecations` channel. `php artisan folklore:upgrade --schemas` converts the 1.x JSON declarations of the models to schemas, where it can: see [Converting the JSON declarations](#converting-the-json-declarations).
 7. **Later:** move media references to `media://` with `php artisan json-data:rewrite-references --from=medias --to=media`, once front ends read both.
 
 ## What `--check` reports
@@ -35,6 +35,7 @@ It reads the site's code as text (`app`, `config`, `routes`, `resources/views`, 
 | Stored JSON references | For each JSON column, the paths and keys of its references (`data.gallery.* → medias:// (12)`): those of a column without `JsonDataCast` are to declare. Keys that aren't mapped, and keys whose identifiers match nothing in the model they map to, such as `media://12` written by id where 2.0 reads `media://` by uid. `medias://` references without `site.medias.reference_key` set to `medias`. Before the mediatheque is upgraded, its media table has no `uid`: the check says to upgrade it first, and reports integer identifiers under `media://` as breaking without looking them up |
 | Block data | The rows of `blocks_pivot`, which 2.0 stores in the page's JSON |
 | Medias | `Folklore\Mediatheque\Support\Traits\HasMedias`: deprecated where the installed mediatheque keeps it as an alias (2.0.0-alpha.11 and later), breaking otherwise. `image.sizes` filters, `new ImageSize()` with filters, `setFilters()`, `getMetadatas()`, `new Medias($typeFactory)`. `MediaResource` with `site.medias.resource` set to `canonical`, and its subclasses that override `toArray($request)` without types or call the entity through the resource |
+| JSON declarations | The models that declare their JSON data with `getJsonDataRelations()` or `getJsonDataColumnExtract()`: those that `folklore:upgrade --schemas` converts, with the TODOs it writes, and those it leaves, with why and the keys to map first. As info, how many convert. The repositories that declare `$jsonAttributeFillable`, which keeps the 1.x fill, and, as info, those of converted models that don't, which fill them with `JsonData::fill()` |
 | Deprecated API | `JsonDataCast::macro()`, `$jsonAttributeName`, `setGlobalQuery()` |
 
 ## What `folklore:upgrade` does
@@ -157,6 +158,63 @@ Blocks keep working through `blocks_pivot`: the field gives each block its id, a
 
 Stored references don't change. Without `JsonData::enforceMap()`, a key that isn't mapped falls back to the relation of the same name, as in 1.x. See [json-data.md](json-data.md#from-1x).
 
-A site declares nothing new: `getJsonDataRelations()`, `getJsonDataColumnExtract()` and the repositories' `$jsonAttributeFillable` keep working, and are deprecated from the beta on, when `folklore:upgrade` can convert them. A model can move one JSON column at a time to a schema (`jsonDataSchema()`, [json-data.md](json-data.md#schemas)); its repository then fills it with `JsonData::fill()`.
+A site declares nothing new: `getJsonDataRelations()`, `getJsonDataColumnExtract()` and the repositories' `$jsonAttributeFillable` keep working, and are deprecated from the beta on. A model can move one JSON column at a time to a schema (`jsonDataSchema()`, [json-data.md](json-data.md#schemas)), by hand or with `folklore:upgrade --schemas`. Its repository keeps filling it the 1.x way while it declares `$jsonAttributeFillable`, and fills it with `JsonData::fill()` without it.
 
 The media referenced in JSON data are synced to the mediatheque's pivot under the `json` handle. 1.x wrote those rows without a handle, and the first sync leaves them: `folklore:upgrade` removes them, or they stay as usages of their media.
+
+### Converting the JSON declarations
+
+`php artisan folklore:upgrade --schemas` replaces the 1.x declarations of the site's models with `jsonDataSchema()`: a schema that compiles into the same declarations, so that the cast reads, writes and syncs the same data. `--dry-run` says what it would convert, and what it would leave, without writing. It runs after `folklore:upgrade`, with the medias module on: before, `medias://` isn't mapped yet. It reads the models as `--check` does (`--path`, `--model`, `--limit`), and rewrites their files in place, keeping the rest of the file as it is; the class must be the site's, not the vendor's. Run it on a clean working tree, read the schemas, run the site's tests, and commit.
+
+```php
+// 1.x
+public function getJsonDataRelations($key, $value, $attributes = [])
+{
+    return [
+        'image.*' => 'medias',
+        'gallery.*' => 'medias',
+        'prizes.*.prize' => ['relation' => 'prizes', 'lazy' => true],
+        'source' => ['relation' => 'prizes', 'sync' => false],
+    ];
+}
+
+public function getJsonDataColumnExtract($key, $value, $attributes = [])
+{
+    return ['title.fr' => 'title_fr', 'title.en' => 'title_en'];
+}
+
+// After folklore:upgrade --schemas
+public function jsonDataSchema(string $attribute): ?ObjectType
+{
+    return match ($attribute) {
+        'data' => Json::object([
+            'image' => Json::media()->translatable(),
+            'gallery' => Json::list(Json::media()),
+            'prizes' => Json::list(Json::object([
+                'prize' => Json::reference('prizes')->relation('prizes'),
+            ])),
+            'source' => Json::reference('prizes'),
+            'title' => Json::string()->translatable()->extract('title_{locale}'),
+        ])->additional(true),
+        default => null,
+    };
+}
+```
+
+- **The root is `additional(true)`**, so the keys that the declarations don't name are kept, as in 1.x. The model implements `HasJsonDataSchema` instead of `HasJsonDataRelations` and `HasJsonDataColumnExtract`, and a schema is written for each attribute cast with `JsonDataCast`: the 1.x methods are called for each of them.
+- **References.** A path of the `medias` relation that writes the medias module's key is `Json::media()`; another relation is `Json::reference()` with the key it writes, the first one mapped to its related model, and `relation()`. `sync => false` is a reference without a relation, which isn't synced. `lazy` is dropped: it has no effect on a mapped key, and `withJsonReferences()` loads references in batches.
+- **`*` segments** are a list, a map, or the locales of a translatable node, which the 1.x paths don't say: the stored data decides. Keys that are the site's locales give `translatable()`, lists give `Json::list()`, other keys `Json::map()`. When no stored row decides, or rows disagree, the node is a map, with a `// TODO(folklore-3)` that says why. The three compile into the same path, so the choice changes what `JsonData::fill()` and `Json::rules()` do, not what the cast does.
+- **Columns.** An extracted path is a scalar node with `extract()`, whose type is that of its stored values (a TODO when they don't say); the columns of every locale of a path (`title.fr`, `title.en`), named after the locale, are one translatable node, `extract('title_{locale}')`.
+- **A method that builds its array** the same way for every model and attribute, reading no parameter, no `$this` and no `self::`, `static::` or `parent::` (a loop over the locales, `array_merge()` of constants), is converted from what it returns, with a TODO to check that nothing in it depends on the environment. Declarations that declare nothing are removed.
+
+It leaves the declarations that a schema can't give the same behaviour, with a `// TODO(folklore-3)` above them that says why, and `--check` lists them:
+
+| Left as they are | Why |
+|---|---|
+| A method that reads its parameters, `$this`, `self::`, `static::` or `parent::` | Its schema may change with the model or the attribute: write it by hand |
+| A relation whose key isn't mapped (`'author' => 'authors'`, `authors://12`) | A schema writes mapped keys only, and an unmapped key resolves through the owner's relation, so only the rows attached to the owner ([decisions/0016](decisions/0016-scope-of-unmapped-keys.md)). `--check` gives the `JsonData::map()` to add, if the site can read those references by id rather than by attachment; then run it again |
+| `delete`, `skip`, `get`, `set`, `before_set`, a `sync` callable, a `relation` callable, a `JsonDataCast` macro of the relation | A schema node has no option for them: move them to a handler (`using()`) first |
+| `**`, a segment such as `*items`, a path that starts with `*`, a path that is a reference and the parent of other paths | No node has that shape. `*items` matches only a key named `*items`: it is usually a typo of `*.items` |
+| A class that gets its declarations from a parent class or a trait of the site | Other models may use them: convert each model |
+
+**Repositories.** A repository that declares `$jsonAttributeFillable` keeps filling its model the 1.x way once the model has a schema: every key that isn't fillable is stored, as before. Remove `$jsonAttributeFillable` and `$jsonAttributeExclude` once the schema names every key the repository stores, and it fills with `JsonData::fill()`, which stores the schema's keys only, and refuses the others under `additional(false)`. A repository without `$jsonAttributeFillable` fills a converted model with `JsonData::fill()` at once: a key of its input named as a property of the schema's root goes into the JSON data, where 1.x left it out. `--check` lists those repositories; `protected $jsonAttributeFillable = [];` keeps the 1.x fill.

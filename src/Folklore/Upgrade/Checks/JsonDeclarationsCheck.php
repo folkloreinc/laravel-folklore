@@ -6,8 +6,8 @@ use Folklore\Upgrade\Finding;
 use Folklore\Upgrade\JsonSchemaConversion;
 use Folklore\Upgrade\JsonSchemaConverter;
 use Folklore\Upgrade\ModelFile;
-use Folklore\Upgrade\Occurrence;
 use Folklore\Upgrade\Site;
+use Folklore\Upgrade\SourceFile;
 use Throwable;
 
 /**
@@ -63,6 +63,14 @@ class JsonDeclarationsCheck implements Check
     {
         $methods = implode(' and ', array_map(fn (string $method) => "`{$method}()`", $conversion->methods));
 
+        if ($conversion->empty) {
+            return Finding::deprecated(
+                "`{$conversion->model}` declares no JSON data with {$methods}: `folklore:upgrade --schemas` removes them.",
+                null,
+                [$conversion->location()],
+            );
+        }
+
         if ($conversion->converts()) {
             $todos = count($conversion->todos);
 
@@ -99,7 +107,7 @@ class JsonDeclarationsCheck implements Check
     {
         $locations = [];
         foreach ($site->matches('/^\s*(?:protected|public)\s+\$jsonAttributeFillable\s*=/') as $occurrence) {
-            $model = $this->modelOf($occurrence);
+            $model = $this->modelOf($occurrence->file);
             $conversion = is_null($model) ? null : ($conversions[$model] ?? null);
             $status = match (true) {
                 is_null($model) => '',
@@ -117,14 +125,31 @@ class JsonDeclarationsCheck implements Check
                 $locations,
             );
         }
+
+        // The repositories of converted models that fill them with `JsonData::fill()`
+        $filled = [];
+        foreach ($site->filesMatching('/function\s+newModel\s*\(/') as $file) {
+            $model = $this->modelOf($file);
+            $conversion = is_null($model) ? null : ($conversions[$model] ?? null);
+            if (! is_null($conversion) && $conversion->converts() && ! $conversion->empty && preg_match('/\$jsonAttributeFillable\s*=/', $file->code()) !== 1) {
+                $filled[] = "{$file->path} ({$model})";
+            }
+        }
+        if (count($filled) > 0) {
+            yield Finding::info(
+                'These repositories don\'t declare `$jsonAttributeFillable`, so they fill their model with `JsonData::fill()` once it has a schema: an input key named as a property of the schema\'s root goes into the JSON data, where 1.x left it out.',
+                'Check what they are given, or declare `protected $jsonAttributeFillable = [];` to keep the 1.x fill.',
+                $filled,
+            );
+        }
     }
 
     /**
      * The model that a repository's `newModel()` makes.
      */
-    protected function modelOf(Occurrence $occurrence): ?string
+    protected function modelOf(SourceFile $file): ?string
     {
-        $code = $occurrence->file->code();
+        $code = $file->code();
         if (preg_match('/function\s+newModel\s*\([^)]*\)[^{]*\{[^}]*?\bnew\s+(\\\\?[\w\\\\]+)/', $code, $match) !== 1) {
             return null;
         }

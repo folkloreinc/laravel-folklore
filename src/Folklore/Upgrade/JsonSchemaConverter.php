@@ -133,9 +133,18 @@ class JsonSchemaConverter
         if (! is_null($declaredIn)) {
             $blockers[] = "`{$class}` gets its declarations from `{$declaredIn[1]}`, which other models may use: convert them in each model";
         }
+        // A method that builds its array the same way for every model and attribute (a loop
+        // over the locales) gives the schema of what it returns, with a TODO to check it
+        $built = [];
         foreach ($methods as $name) {
-            if (! ($file->method($name)['literal'] ?? false)) {
-                $blockers[] = "`{$name}()` builds its array: write the schema by hand";
+            $method = $file->method($name);
+            if ($method['literal'] ?? false) {
+                continue;
+            }
+            if ($method['static'] ?? false) {
+                $built[] = $name;
+            } else {
+                $blockers[] = "`{$name}()` builds its array from the model or the attribute: write the schema by hand";
             }
         }
 
@@ -166,11 +175,28 @@ class JsonSchemaConverter
             return new JsonSchemaConversion($class, $site->relative($path), $path, $line, $methods, $file->code(), $blockers, [], $keysToMap);
         }
 
+        // Declarations that declare nothing are removed: an empty schema would only change
+        // how the model's repository fills it
+        if (count(array_filter($schemas, fn (SchemaNode $root) => count($root->properties) > 0)) === 0) {
+            foreach ($methods as $name) {
+                $file->removeMethod($name);
+            }
+            $file->replaceInterfaces(array_values(self::METHODS));
+            foreach (self::METHODS as $interface) {
+                $file->removeUnusedImport($interface);
+            }
+
+            return new JsonSchemaConversion($class, $site->relative($path), $path, $line, $methods, $file->code(), empty: true);
+        }
+
         $names = [
             'json' => $file->import(Json::class),
             'object' => $file->import(ObjectType::class),
             'contract' => $file->import(HasJsonDataSchema::class),
         ];
+        foreach ($built as $name) {
+            $todos[] = "`{$name}()` built its array in 1.x: this schema is what it returned with the site's config".(count($this->locales()) > 0 ? ' (locales: '.implode(', ', $this->locales()).')' : '').'; check that nothing else in it depends on the environment.';
+        }
         $indent = $file->method($methods[0])['indent'] ?? '    ';
         $file->replaceMethod($methods[0], $this->method($schemas, $names, $indent, $todos));
         foreach (array_slice($methods, 1) as $name) {
@@ -240,7 +266,9 @@ class JsonSchemaConverter
     {
         $options = is_string($options) ? ['relation' => $options] : $options;
         if (! is_array($options) || ! is_string($options['relation'] ?? null)) {
-            $blockers[] = "`{$path}` isn't declared with a relation";
+            $blockers[] = is_array($options) && is_callable($options['relation'] ?? null)
+                ? "`{$path}` picks its relation with a callable"
+                : "`{$path}` isn't declared with a relation";
 
             return null;
         }
@@ -476,8 +504,12 @@ class JsonSchemaConverter
         $lines = [
             "public function jsonDataSchema(string \$attribute): ?{$names['object']}",
             $indent.'{',
-            $indent.$unit.'return match ($attribute) {',
         ];
+        // The TODOs of the whole method, given before those of its nodes
+        foreach ($todos as $todo) {
+            $lines[] = $indent.$unit.'// TODO(folklore-3): '.$todo;
+        }
+        $lines[] = $indent.$unit.'return match ($attribute) {';
         foreach ($schemas as $attribute => $root) {
             $code = $this->object($root, $names, $indent.$unit.$unit, $unit, $todos);
             $lines[] = $indent.$unit.$unit.$this->export($attribute).' => '.$code.'->additional(true),';

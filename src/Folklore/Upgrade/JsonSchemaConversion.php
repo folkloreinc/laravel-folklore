@@ -20,6 +20,7 @@ final readonly class JsonSchemaConversion
      * @param  array<string, class-string>  $keysToMap  The keys to map before converting: the
      *                                                  relation names the site stores, by the
      *                                                  model they refer to.
+     * @param  bool  $empty  Whether the declarations declare nothing, and are only removed.
      */
     public function __construct(
         public string $model,
@@ -31,6 +32,7 @@ final readonly class JsonSchemaConversion
         public array $blockers = [],
         public array $todos = [],
         public array $keysToMap = [],
+        public bool $empty = false,
     ) {}
 
     public function converts(): bool
