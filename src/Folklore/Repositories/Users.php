@@ -58,12 +58,14 @@ class Users extends Entities implements UsersContract
             $data = Arr::except($data, ['role']);
         }
 
-        // An empty password, like a form's blank field, keeps the current one.
+        // An empty password, like a form's blank field, keeps the current one. A password
+        // that is already hashed, by a form field or a Fortify action, is kept as it is, as
+        // Laravel's `hashed` cast does.
         $password = is_array($data) ? Arr::pull($data, 'password') : null;
         parent::fillModel($model, $data);
 
-        if (! empty($password)) {
-            $model->password = Hash::make($password);
+        if (is_string($password) && $password !== '') {
+            $model->password = Hash::isHashed($password) ? $password : Hash::make($password);
         }
     }
 

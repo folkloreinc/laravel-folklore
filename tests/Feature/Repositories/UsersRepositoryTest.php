@@ -79,6 +79,24 @@ class UsersRepositoryTest extends TestCase
         $this->assertTrue(Hash::check('new-secret', $password));
     }
 
+    public function test_a_hashed_password_is_not_hashed_again()
+    {
+        $this->users->create([
+            'name' => 'John',
+            'email' => 'john@example.com',
+            'password' => Hash::make('secret'),
+        ]);
+        $user = $this->users->findByEmail('john@example.com');
+
+        $this->assertTrue(Hash::check('secret', UserModel::find($user->id())->password));
+
+        $hash = Hash::make('new-secret');
+        $this->users->update($user->id(), ['password' => $hash]);
+
+        $this->assertSame($hash, UserModel::find($user->id())->password);
+        $this->assertTrue(Hash::check('new-secret', UserModel::find($user->id())->password));
+    }
+
     protected function createUser(string $email): void
     {
         $this->users->create([
