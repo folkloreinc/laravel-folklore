@@ -8,6 +8,8 @@ use Folklore\Eloquent\JsonReference;
 use Folklore\Eloquent\JsonReferenceEntry;
 use Folklore\Tests\Feature\Eloquent\Fixtures\BrandGame;
 use Folklore\Tests\Feature\Eloquent\Fixtures\Game;
+use Folklore\Tests\Feature\Eloquent\Fixtures\NestedBlock;
+use Folklore\Tests\Feature\Eloquent\Fixtures\NestedBlocks;
 use Folklore\Tests\Feature\Eloquent\Fixtures\Prize;
 use Folklore\Tests\Feature\Eloquent\Fixtures\PrizesExceptSecret;
 use Folklore\Tests\Feature\Eloquent\Fixtures\RegistryGame;
@@ -15,6 +17,7 @@ use Folklore\Tests\Feature\Eloquent\Fixtures\RegistryGames;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use InvalidArgumentException;
 
 /**
  * Batch resolution, the reference listing, several JSON attributes per repository, and the
@@ -200,6 +203,46 @@ class JsonDataBatchesTest extends JsonDataTestCase
         $this->assertTrue($loading->loadsJsonReferences());
         $this->assertSame([], $reading);
         $this->assertCount(2, $results);
+    }
+
+    /**
+     * Pages that hold blocks that hold blocks and media (#153).
+     */
+    public function test_with_json_references_loads_the_resolved_models_to_a_depth()
+    {
+        $image = $this->makeMedia();
+        $leaf = $this->nestedBlock(['image' => ['fr' => $image]]);
+        $middle = $this->nestedBlock(['blocks' => [$leaf]]);
+        $this->nestedBlock(['blocks' => [$middle]], 'page');
+        $read = fn (NestedBlock $page) => $page->data['blocks'][0]->data['blocks'][0]->data['image']['fr'];
+        $page = fn (iterable $results) => collect($results)->map->getModel()->first(fn (NestedBlock $block) => $block->type === 'page');
+
+        $deep = $page((new NestedBlocks)->withJsonReferences(depth: 3)->get());
+        $reading = $this->queriesOf(fn () => $read($deep));
+        $this->assertSame([], $reading);
+        $this->assertTrue($read($deep)->is($image));
+
+        $shallow = $page((new NestedBlocks)->withJsonReferences()->get());
+        $this->assertNotSame([], $this->queriesOf(fn () => $read($shallow)));
+    }
+
+    public function test_the_depth_of_with_json_references_is_at_least_one()
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        (new NestedBlocks)->withJsonReferences(depth: 0);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function nestedBlock(array $data, string $type = 'block'): NestedBlock
+    {
+        $block = new NestedBlock(['type' => $type]);
+        $block->data = $data;
+        $block->save();
+
+        return $block;
     }
 
     public function test_a_repository_merges_an_update_into_its_other_json_attributes()
