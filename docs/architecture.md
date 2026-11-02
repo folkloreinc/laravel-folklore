@@ -155,12 +155,14 @@ On `laravel-mediatheque` 2 and `laravel-image` 2 ([decisions/0008](decisions/000
 ([decisions/0009](decisions/0009-pages-and-blocks.md))
 
 - Blocks are stored in the page's JSON; `blocks_pivot` goes away and `folklore:upgrade` converts existing data.
-- The `slug_{locale}` columns stay. Route names (`home`, `page`, `page_with_parent`) are configurable, in `site.pages.routes`: `Pages\PageRoutes` gives the URLs of pages from them, for the `Page` entity and the `PageSlug` field.
+- The `slug_{locale}` columns stay. Route names (`home`, `page`, `page_with_parent`) are configurable, in `site.pages.routes`: `Pages\PageRoutes` gives the URLs of pages from them, for the `Page` entity and the `PageSlug` field. A name is looked up with the locale first, `{locale}.{name}` (`fr.page`), as laravel-locale names localized routes, then without it (`page`), for a site whose routes of pages aren't localized. A site without a `page_with_parent` route serves the pages that have a parent at `page`, since slugs are unique across parents ([decisions/0022](decisions/0022-page-fields.md), [#143](https://github.com/folkloreinc/laravel-folklore/issues/143)).
 - A type registry maps page and block types to entity classes, in `config/site.php` or in code. `HasTypedEntity` reads `$entitiesByType` on the model first, then the registry.
 
 ## Auth module
 
 ([decisions/0010](decisions/0010-users-and-auth.md)) The `repository` auth driver, the `User` entity with two-factor authentication, and the Fortify callbacks boot only when the module is enabled.
+
+- **Passwords in the users repository.** `Repositories\Users` hashes the `password` it is given, unless it is already a hash of the app's hasher and options (`Hash::isHashed()` and `Hash::verifyConfiguration()`, as Laravel's `hashed` cast does; a hash of another algorithm is hashed), so a form field or a Fortify action that hashes it first doesn't get it hashed twice. An empty password (`null` or `''`, a form's blank field) keeps the current one ([#144](https://github.com/folkloreinc/laravel-folklore/issues/144)).
 
 ## Panneau 5 plugin
 

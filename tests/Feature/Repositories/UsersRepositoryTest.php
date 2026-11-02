@@ -79,6 +79,54 @@ class UsersRepositoryTest extends TestCase
         $this->assertTrue(Hash::check('new-secret', $password));
     }
 
+    public function test_a_hashed_password_is_not_hashed_again()
+    {
+        $this->users->create([
+            'name' => 'John',
+            'email' => 'john@example.com',
+            'password' => Hash::make('secret'),
+        ]);
+        $user = $this->users->findByEmail('john@example.com');
+
+        $this->assertTrue(Hash::check('secret', UserModel::find($user->id())->password));
+
+        $hash = Hash::make('new-secret');
+        $this->users->update($user->id(), ['password' => $hash]);
+
+        $this->assertSame($hash, UserModel::find($user->id())->password);
+        $this->assertTrue(Hash::check('new-secret', UserModel::find($user->id())->password));
+    }
+
+    public function test_a_hash_the_app_could_not_verify_is_hashed()
+    {
+        $this->createUser('john@example.com');
+        $user = $this->users->findByEmail('john@example.com');
+        $password = fn (): string => UserModel::find($user->id())->password;
+
+        // Another algorithm than the app's bcrypt: stored as is, the login would throw
+        $argon = password_hash('secret', PASSWORD_ARGON2ID);
+        $this->users->update($user->id(), ['password' => $argon]);
+        $this->assertNotSame($argon, $password());
+        $this->assertTrue(Hash::check($argon, $password()));
+
+        // A value that only looks like a hash, with a cost above the app's
+        $lookalike = password_hash('secret', PASSWORD_BCRYPT, ['cost' => 11]);
+        Hash::driver('bcrypt')->setRounds(10);
+        $this->users->update($user->id(), ['password' => $lookalike]);
+        $this->assertNotSame($lookalike, $password());
+        $this->assertTrue(Hash::check($lookalike, $password()));
+    }
+
+    public function test_a_number_is_hashed_as_a_password()
+    {
+        $this->createUser('john@example.com');
+        $user = $this->users->findByEmail('john@example.com');
+
+        $this->users->update($user->id(), ['password' => 12345678]);
+
+        $this->assertTrue(Hash::check('12345678', UserModel::find($user->id())->password));
+    }
+
     protected function createUser(string $email): void
     {
         $this->users->create([

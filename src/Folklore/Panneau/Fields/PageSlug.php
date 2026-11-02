@@ -84,14 +84,16 @@ class PageSlug extends Slug
     }
 
     /**
-     * The URL of a page with this slug: under its parent's slug when it has one.
+     * The URL of a page with this slug: under its parent's slug when it has one, and the site
+     * has a `page_with_parent` route. Without that route, the page is at `page`, as the `Page`
+     * entity's `url()` gives it, and its parent isn't looked up.
      *
      * @param  array<array-key, mixed>  $values
      */
     protected function pageUrl(string $slug, string $locale, array $values): ?string
     {
         $parentId = $this->parentField !== null ? self::idOf($values[$this->parentField] ?? null) : null;
-        if ($parentId === null) {
+        if ($parentId === null || PageRoutes::routeName('page_with_parent', $locale) === null) {
             return PageRoutes::page($slug, $locale);
         }
 

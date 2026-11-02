@@ -136,9 +136,9 @@ class EntitiesRepository implements ChecksSlugs, ResourceRepository
     /**
      * A hash of the attributes of the entity's model as they were read or last saved, so
      * that the values a cast or an accessor computes don't change it. For an entity with
-     * blocks (`HasBlocks`), the attributes of its blocks, at every level, count too: a page
-     * whose blocks are rows of their own (`blocks_pivot`) doesn't change when only a block
-     * does.
+     * blocks (`HasBlocks`, or a `blocks()` method, which the `Blocks` field reads too), the
+     * attributes of its blocks, at every level, count too: a page whose blocks are rows of
+     * their own (`blocks_pivot`) doesn't change when only a block does.
      */
     public function version(object $item): ?string
     {
@@ -146,7 +146,7 @@ class EntitiesRepository implements ChecksSlugs, ResourceRepository
             return null;
         }
         $version = self::attributesOf($item);
-        if ($item instanceof HasBlocks) {
+        if ($item instanceof HasBlocks || method_exists($item, 'blocks')) {
             $version = [$version, self::blocksOf($item->blocks())];
         }
 

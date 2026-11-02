@@ -167,8 +167,30 @@ class StoredReferencesCheck implements Check
         [$class, $column] = $target;
         $model = new $class;
         $total = count($sample);
-        $numeric = $total > 0 && count(array_filter($sample, fn (string $identifier) => ctype_digit($identifier))) === $total;
-        $byId = $numeric && $column !== $model->getKeyName();
+        $integers = count(array_filter($sample, fn (string $identifier) => ctype_digit($identifier)));
+        $numeric = $total > 0 && $integers === $total;
+        // Integers read in another column than the key: ids, where 2.0 reads uids. Without a
+        // lookup, all of them are reported, even in a sample that has other identifiers
+        $byId = $integers > 0 && $column !== $model->getKeyName();
+
+        if (! $this->hasTable($model)) {
+            yield $this->isMediathequeMedia($class)
+                ? Finding::todo(
+                    "The table `{$model->getTable()}` doesn't exist: the mediatheque isn't installed, so the identifiers of `{$key}://` could not be looked up in `{$class}`.",
+                    'Install the mediatheque (`php artisan mediatheque:install`, `php artisan migrate`), or map `media` to the model its identifiers are in, then run `folklore:upgrade --check` again.',
+                    $locations,
+                )
+                : Finding::todo(
+                    "The table `{$model->getTable()}` doesn't exist, so the identifiers of `{$key}://` could not be looked up in `{$class}`, which 2.0 maps `{$key}` to.",
+                    "Map `{$key}` to the model and column its identifiers are, or create the table.",
+                    $locations,
+                );
+            if ($byId) {
+                yield $this->identifiersById($key, $integers, $total, "`{$class}` by `{$column}`", $locations);
+            }
+
+            return;
+        }
 
         if (! $this->hasColumn($model, $column)) {
             yield $this->isMediathequeMedia($class)
@@ -183,7 +205,7 @@ class StoredReferencesCheck implements Check
                     $locations,
                 );
             if ($byId) {
-                yield $this->identifiersById($key, $total, "`{$class}` by `{$column}`", $locations);
+                yield $this->identifiersById($key, $integers, $total, "`{$class}` by `{$column}`", $locations);
             }
 
             return;
@@ -198,7 +220,7 @@ class StoredReferencesCheck implements Check
         } catch (Throwable $e) {
             yield Finding::info("The identifiers of `{$key}://` could not be looked up in `{$class}`: ".$e->getMessage());
             if ($byId) {
-                yield $this->identifiersById($key, $total, "`{$class}` by `{$column}`", $locations);
+                yield $this->identifiersById($key, $integers, $total, "`{$class}` by `{$column}`", $locations);
             }
 
             return;
@@ -207,7 +229,7 @@ class StoredReferencesCheck implements Check
         $where = "`{$class}` by `{$column}`";
         if ($found === 0) {
             yield Finding::breaking(
-                "None of the {$total} `{$key}://` identifiers read match {$where}, which 2.0 maps `{$key}` to.".($byId ? ' They look like ids.' : ''),
+                "None of the {$total} `{$key}://` identifiers read match {$where}, which 2.0 maps `{$key}` to.".($numeric && $byId ? ' They look like ids.' : ''),
                 $this->rewriteFix($key, $numeric),
                 $locations,
             );
@@ -221,16 +243,20 @@ class StoredReferencesCheck implements Check
     }
 
     /**
-     * The identifiers of a key that are all integers while 2.0 reads them in another column
-     * than the key: `media://12`, written by id, where 2.0 reads `media://` by uid. Found
-     * without looking them up, for a table that isn't upgraded yet.
+     * The identifiers of a key that are integers while 2.0 reads them in another column than
+     * the key: `media://12`, written by id, where 2.0 reads `media://` by uid. Found without
+     * looking them up, for a table that isn't upgraded yet, or that can't be read.
      *
      * @param  list<string>  $locations
      */
-    protected function identifiersById(string $key, int $total, string $where, array $locations): Finding
+    protected function identifiersById(string $key, int $integers, int $total, string $where, array $locations): Finding
     {
+        $read = $integers === $total
+            ? "The {$total} `{$key}://` identifiers read are integers"
+            : "{$integers} of the {$total} `{$key}://` identifiers read are integers";
+
         return Finding::breaking(
-            "The {$total} `{$key}://` identifiers read are integers, which look like ids, and 2.0 maps `{$key}` to {$where}.",
+            "{$read}, which look like ids, and 2.0 maps `{$key}` to {$where}.",
             $this->rewriteFix($key, true),
             $locations,
         );
@@ -241,6 +267,18 @@ class StoredReferencesCheck implements Check
         return $key === 'media' && $numeric
             ? 'Rewrite them to `medias://`, the key of media by id: `json-data:rewrite-references --from=media --to=medias` once the models are cast with `JsonDataCast`, or with the site\'s own code before.'
             : "Map `{$key}` to the model and column its identifiers are, or rewrite the references.";
+    }
+
+    /**
+     * Whether a model's table exists. A database that can't be read is left to the query.
+     */
+    protected function hasTable(Model $model): bool
+    {
+        try {
+            return $model->getConnection()->getSchemaBuilder()->hasTable($model->getTable());
+        } catch (Throwable) {
+            return true;
+        }
     }
 
     /**

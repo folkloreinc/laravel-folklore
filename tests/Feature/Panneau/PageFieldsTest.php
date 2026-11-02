@@ -2,6 +2,7 @@
 
 namespace Folklore\Tests\Feature\Panneau;
 
+use Folklore\Contracts\Repositories\Pages as PagesContract;
 use Folklore\Pages\PageRoutes;
 use Folklore\Panneau\BlockTypes;
 use Folklore\Panneau\Fields\Blocks;
@@ -224,6 +225,17 @@ class PageFieldsTest extends TestCase
         $this->assertSame(url('fr/vacances/ete'), PageRoutes::page('ete', 'fr', 'vacances'));
         $this->assertNull(PageRoutes::page('summer', 'en'));
         $this->assertNull(PageRoutes::home('fr'));
+    }
+
+    public function test_the_page_slug_without_a_route_for_pages_with_a_parent_does_not_look_the_parent_up()
+    {
+        Route::get('{page}', fn () => '')->name('page');
+        $this->app['router']->getRoutes()->refreshNameLookups();
+        $this->app->bind(PagesContract::class, fn () => throw new LogicException('The parent is looked up'));
+
+        $check = PageSlug::make('slug')->check(new FieldCheck('ete', 'fr', null, ['parent' => '12'], fn (): bool => false));
+
+        $this->assertSame(url('ete'), $check['url']);
     }
 
     public function test_the_page_slug_without_a_parent_field_ignores_the_parent()

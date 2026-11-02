@@ -64,18 +64,20 @@ class Page implements HasModel, PageContract
     }
 
     /**
-     * The URL of the page, from the routes of `site.pages.routes` (Pages\PageRoutes).
+     * The URL of the page, from the routes of `site.pages.routes` (Pages\PageRoutes), with or
+     * without the locale in their names. A page with a parent is at `page` when the site has
+     * no `page_with_parent` route.
      */
     public function url(string $locale, bool $absolute = false): string
     {
         if ($this->handle() === 'home') {
-            return route_with_locale(PageRoutes::name('home'), $locale, [], $absolute);
+            return $this->routeUrl('home', $locale, [], $absolute);
         }
 
         $parent = $this->parent();
-        if (! is_null($parent)) {
-            return route_with_locale(
-                PageRoutes::name('page_with_parent'),
+        if (! is_null($parent) && PageRoutes::routeName('page_with_parent', $locale) !== null) {
+            return $this->routeUrl(
+                'page_with_parent',
                 $locale,
                 [
                     'parent' => $parent->slug($locale),
@@ -85,14 +87,27 @@ class Page implements HasModel, PageContract
             );
         }
 
-        return route_with_locale(
-            PageRoutes::name('page'),
+        return $this->routeUrl(
+            'page',
             $locale,
             [
                 'page' => $this->slug($locale),
             ],
             $absolute
         );
+    }
+
+    /**
+     * The URL of a route of pages. When the site has no such route, the route with the locale
+     * is asked for, and is not found.
+     *
+     * @param  array<string, string|null>  $parameters
+     */
+    private function routeUrl(string $route, string $locale, array $parameters, bool $absolute): string
+    {
+        $name = PageRoutes::routeName($route, $locale) ?? $locale.'.'.PageRoutes::name($route);
+
+        return app('url')->route($name, $parameters, $absolute);
     }
 
     public function image(): ?ImageContract

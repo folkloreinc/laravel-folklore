@@ -32,10 +32,12 @@ return [
     ],
 
     'pages' => [
-        // The names of the routes of pages, without their locale (laravel-locale's
-        // `{locale}.{name}`): the home page, a page (`{page}`, its slug) and a page with
-        // a parent (`{parent}/{page}`). Page entities and the `PageSlug` field of the
-        // Panneau plugin give URLs from them.
+        // The names of the routes of pages, without their locale: the home page, a page
+        // (`{page}`, its slug) and a page with a parent (`{parent}/{page}`). A name is
+        // looked up as laravel-locale's localized route (`{locale}.{name}`) first, then
+        // as a route without a locale. Without a `page_with_parent` route, pages with a
+        // parent are at `page`. Page entities and the `PageSlug` field of the Panneau
+        // plugin give URLs from them.
         'routes' => [
             'home' => 'home',
             'page' => 'page',
