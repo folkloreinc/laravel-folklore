@@ -53,6 +53,12 @@ jobs:
           key: composer-${{ runner.os }}-php${{ matrix.php }}-laravel${{ matrix.laravel }}-${{ hashFiles('composer.json') }}
           restore-keys: composer-${{ runner.os }}-php${{ matrix.php }}-laravel${{ matrix.laravel }}-
 
+      - name: Allow Laravel 11 despite its security advisories
+        if: matrix.laravel == '11.*'
+        # Packagist lists unpatched advisories for every Laravel 11 release, so
+        # Composer refuses to install it; 1.x still supports it for its sites.
+        run: composer config policy.advisories.block false
+
       - name: Install dependencies
         run: |
           composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
@@ -104,6 +110,12 @@ jobs:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: composer-${{ runner.os }}-php8.4-laravel${{ matrix.laravel }}-panneau1.3-${{ hashFiles('composer.json') }}
           restore-keys: composer-${{ runner.os }}-php8.4-laravel${{ matrix.laravel }}-panneau1.3-
+
+      - name: Allow Laravel 11 despite its security advisories
+        if: matrix.laravel == '11.*'
+        # Packagist lists unpatched advisories for every Laravel 11 release, so
+        # Composer refuses to install it; 1.x still supports it for its sites.
+        run: composer config policy.advisories.block false
 
       - name: Install dependencies
         run: |
@@ -216,6 +228,12 @@ jobs:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: composer-${{ runner.os }}-php8.4-laravel${{ matrix.laravel }}-${{ hashFiles('composer.json') }}
           restore-keys: composer-${{ runner.os }}-php8.4-laravel${{ matrix.laravel }}-
+
+      - name: Allow Laravel 11 despite its security advisories
+        if: matrix.laravel == '11.*'
+        # Packagist lists unpatched advisories for every Laravel 11 release, so
+        # Composer refuses to install it; 1.x still supports it for its sites.
+        run: composer config policy.advisories.block false
 
       - name: Install dependencies
         run: |
