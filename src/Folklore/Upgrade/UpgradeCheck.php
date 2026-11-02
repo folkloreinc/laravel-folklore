@@ -6,6 +6,7 @@ use Folklore\Upgrade\Checks\BlocksCheck;
 use Folklore\Upgrade\Checks\Check;
 use Folklore\Upgrade\Checks\DeprecatedApiCheck;
 use Folklore\Upgrade\Checks\JsonCodeCheck;
+use Folklore\Upgrade\Checks\JsonDeclarationsCheck;
 use Folklore\Upgrade\Checks\MediasCheck;
 use Folklore\Upgrade\Checks\ModulesCheck;
 use Folklore\Upgrade\Checks\PackagesCheck;
@@ -28,6 +29,7 @@ class UpgradeCheck
         PanneauContractsCheck::class,
         JsonCodeCheck::class,
         StoredReferencesCheck::class,
+        JsonDeclarationsCheck::class,
         BlocksCheck::class,
         MediasCheck::class,
         DeprecatedApiCheck::class,

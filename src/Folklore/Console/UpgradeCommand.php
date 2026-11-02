@@ -5,6 +5,8 @@ namespace Folklore\Console;
 use Folklore\Upgrade\ConfigChange;
 use Folklore\Upgrade\Finding;
 use Folklore\Upgrade\IsolatedLoader;
+use Folklore\Upgrade\JsonSchemaConversion;
+use Folklore\Upgrade\JsonSchemaConverter;
 use Folklore\Upgrade\MediaPivotRows;
 use Folklore\Upgrade\Severity;
 use Folklore\Upgrade\Site;
@@ -23,7 +25,8 @@ use RuntimeException;
  * changes in 2.0, without writing anything. Without it, the command sets the site's
  * modules and media reference key in `config/site.php`, and replaces the rows of
  * `medias_pivot` that 1.x wrote without a handle for JSON data with rows under the
- * `json` handle; `--dry-run` says what it would do.
+ * `json` handle; `--dry-run` says what it would do. `--schemas` converts the 1.x JSON
+ * declarations of the site's models to `jsonDataSchema()`, instead.
  */
 class UpgradeCommand extends Command
 {
@@ -42,6 +45,7 @@ class UpgradeCommand extends Command
     protected $signature = 'folklore:upgrade
         {--check : Report what changes in 2.0, without writing anything}
         {--dry-run : Say what the upgrade would change, without writing anything}
+        {--schemas : Convert the 1.x JSON declarations of the models to jsonDataSchema(), instead of the upgrade}
         {--force : Upgrade in production without asking}
         {--path=* : A directory or file of the site to read, from its base path; by default app, config, routes, resources/views and bootstrap}
         {--model=* : A model whose JSON data to read, besides those of the paths}
@@ -58,6 +62,10 @@ class UpgradeCommand extends Command
     public function handle(UpgradeCheck $upgradeCheck, Upgrade $upgrade, Repository $config, ConnectionResolverInterface $db): int
     {
         $site = $this->site($config, $db);
+
+        if ($this->option('schemas') && ! $this->option('check')) {
+            return $this->schemas(new JsonSchemaConverter, $site);
+        }
 
         if (! $this->option('check')) {
             return $this->upgrade($upgrade, $site);
@@ -119,6 +127,60 @@ class UpgradeCommand extends Command
         if ($this->laravel->configurationIsCached()) {
             $this->components->warn('The configuration is cached: run `php artisan config:cache` again for config/site.php to apply.');
         }
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Converts the 1.x JSON declarations of the site's models to `jsonDataSchema()`, and
+     * comments those it leaves with why.
+     */
+    protected function schemas(JsonSchemaConverter $converter, Site $site): int
+    {
+        $dryRun = (bool) $this->option('dry-run');
+        $conversions = array_values(array_filter($converter->conversions($site), fn (JsonSchemaConversion $conversion) => $conversion->changes()));
+
+        $this->newLine();
+        $this->line('<options=bold>JSON declarations</>');
+        if (count($conversions) === 0) {
+            $this->line('  Nothing to convert.');
+
+            return self::SUCCESS;
+        }
+        foreach ($conversions as $conversion) {
+            if ($conversion->converts()) {
+                $this->line(sprintf('  %s <fg=green>%s</> to `jsonDataSchema()` (%s)', $dryRun ? 'Would convert' : 'Converts', $conversion->model, $conversion->location()));
+                foreach ($conversion->todos as $todo) {
+                    $this->line('    <fg=yellow>TODO(folklore-3)</> '.$todo);
+                }
+            } else {
+                $this->line(sprintf('  %s <fg=yellow>%s</> (%s): %s.', $dryRun ? 'Would leave' : 'Leaves', $conversion->model, $conversion->location(), implode('; ', $conversion->blockers)));
+            }
+        }
+
+        if ($dryRun) {
+            $this->newLine();
+            $this->line('<options=bold>Dry run: nothing was written.</> Run `folklore:upgrade --schemas` to apply it.');
+
+            return self::SUCCESS;
+        }
+
+        if (! $this->confirmToProceed()) {
+            return self::FAILURE;
+        }
+
+        $this->newLine();
+        foreach ($conversions as $conversion) {
+            try {
+                $converter->write($conversion);
+            } catch (RuntimeException $e) {
+                $this->components->error($e->getMessage());
+
+                return self::FAILURE;
+            }
+        }
+        $converted = count(array_filter($conversions, fn (JsonSchemaConversion $conversion) => $conversion->converts()));
+        $this->components->info("Converted {$converted} models; wrote why in the ".(count($conversions) - $converted).' others. Read the schemas, then run the site\'s tests.');
 
         return self::SUCCESS;
     }
