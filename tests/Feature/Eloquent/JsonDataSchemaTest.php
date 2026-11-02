@@ -135,4 +135,23 @@ class JsonDataSchemaTest extends JsonDataTestCase
 
         $this->assertSame(0, DB::table('games')->count());
     }
+
+    public function test_a_repository_that_declares_json_attribute_fillable_keeps_the_1x_fill()
+    {
+        $games = new class extends SchemaGames
+        {
+            protected $jsonAttributeFillable = '*';
+        };
+
+        $entity = $games->create(['handle' => 'quiz', 'title' => ['fr' => 'Le quiz'], 'subtitle' => 'Trois questions', 'colour' => 'red']);
+
+        // Every key that isn't fillable, as given: `subtitle` isn't read as `intro`
+        $this->assertEquals([
+            'title' => ['fr' => 'Le quiz'],
+            'subtitle' => 'Trois questions',
+            'colour' => 'red',
+        ], $this->rawData($entity->getModel()));
+        // The schema's columns are still extracted
+        $this->assertSame('Le quiz', DB::table('games')->where('id', $entity->id())->value('title_fr'));
+    }
 }

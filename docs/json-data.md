@@ -13,7 +13,7 @@ Sites upgraded from 1.x keep their code; everything below is deprecated and remo
 - **Declarations.** A model without a schema keeps `getJsonDataRelations()` and `getJsonDataColumnExtract()` (`HasJsonDataRelations`, `HasJsonDataColumnExtract`): `LegacyJsonDataDeclarations` feeds them to the cast through laravel-json-data's `JsonData::declareUsing()` hook.
 - **Entities.** A value that is an entity (`HasModel`, `ToEntity`, `Entity`) is unwrapped to its model through `JsonData::unwrapUsing()`, so an entity can be written at a reference path.
 
-The 1.x declarations aren't marked `@deprecated` yet: the `Page` and `Block` models of the pages module still use them. They get their notices at the beta, when the pages module moves to schemas and `folklore:upgrade` can convert a site ([roadmap.md](roadmap.md#beta-upgrade-path)).
+The 1.x declarations aren't marked `@deprecated` yet: the `Page` and `Block` models of the pages module still use them. They get their notices at the beta, when the pages module moves to schemas ([roadmap.md](roadmap.md#beta-upgrade-path)). `folklore:upgrade --schemas` converts a site's ([upgrade.md](upgrade.md#converting-the-json-declarations)).
 
 ## Syncing media references
 
@@ -122,7 +122,8 @@ A file or a URL written to a media path is ingested by the fake, which returns a
 ## Repositories
 
 - A repository lists its JSON columns (`$jsonAttributes = ['data', 'images']`). The first one takes the data that isn't fillable, as `$jsonAttributeName` (`data`) does in 1.x, which keeps working, deprecated. Each of the others is given as a whole (`['images' => ['logo' => $media]]`) and merged into its stored value: the keys given replace theirs, the others stay, and the references that don't resolve are put back first. `null` clears it.
-- **A model with a schema** (one of its JSON attributes has one) is filled with `JsonData::fill()`, which puts the flat input (`title`, `seo_title`) at the paths of its schemas, keeps the paths it doesn't give and the references that don't resolve, and refuses the keys that are neither fillable nor in a schema when its root is `additional(false)`. `$jsonAttributeFillable` and `$jsonAttributeExclude` don't apply to it. An attribute of `$jsonAttributes` without a schema is still given as a whole and merged.
+- **A model with a schema** (one of its JSON attributes has one) is filled with `JsonData::fill()`, which puts the flat input (`title`, `seo_title`) at the paths of its schemas, keeps the paths it doesn't give and the references that don't resolve, and refuses the keys that are neither fillable nor in a schema when its root is `additional(false)`. An attribute of `$jsonAttributes` without a schema is still given as a whole and merged.
+- **A repository that declares `$jsonAttributeFillable`** fills the 1.x way, with `$jsonAttributeFillable` and `$jsonAttributeExclude`, even when its model has a schema: a model converted from the 1.x declarations stores what it stored, the keys that aren't in its schema included. Remove them to fill with `JsonData::fill()`.
 - `withJsonReferences()` returns a copy of the repository that loads the references of each result with `JsonData::load()`, so `lazy` is no longer needed. The repository it is called on doesn't change. `withJsonReferences(depth: 3)` loads the models that the references resolve to in turn, one level at a time, as 1.x sites eager-loaded `with('blocks.blocks.medias')`: the pages' blocks, the blocks' blocks, and their media, with one query per key for each level ([#153](https://github.com/folkloreinc/laravel-folklore/issues/153)).
 
 ## From 1.x
@@ -134,7 +135,7 @@ The changes of the cast itself are in [laravel-json-data's json-data.md](https:/
 | `JsonDataCast::macro('{relation}:get')`, `':set'`, `':before_set'`, per model or global | Handlers per key, `using` per path | Macros run, deprecated |
 | One JSON column per repository (`$jsonAttributeName`) | `$jsonAttributes` | Kept, deprecated |
 | `getJsonDataRelations()`, `getJsonDataColumnExtract()` | `jsonDataSchema()` | Kept for the attributes without a schema |
-| `$jsonAttributeFillable`, `$jsonAttributeExclude` (`'*'`: every key that isn't fillable) | `JsonData::fill()`, from the schema; unknown keys refused under `additional(false)` | Kept for the models without a schema |
+| `$jsonAttributeFillable`, `$jsonAttributeExclude` (`'*'`: every key that isn't fillable) | `JsonData::fill()`, from the schema; unknown keys refused under `additional(false)` | Kept: a repository that declares them fills the 1.x way, with or without a schema |
 | Synced by the base repository, after `saveData()` | Synced by the cast after any save with events; the base repository's `syncRelations($model, $data)` stays as a hook for its own relations | — |
 | `syncRelations()` then `refresh()` | Relations and memoized values unset | — |
 | Media references written to `medias_pivot` without a handle | Synced under the `json` handle | — |

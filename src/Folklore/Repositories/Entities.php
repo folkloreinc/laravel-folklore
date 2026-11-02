@@ -76,6 +76,11 @@ abstract class Entities implements EntitiesContract, QueriesEntities
      */
     protected $jsonReferencesDepth = 1;
 
+    /**
+     * The keys of the data stored in the JSON attribute, or `'*'` for every key that isn't
+     * fillable (1.x). A repository that declares it fills the 1.x way, even when its model
+     * has a schema; without it, a model with a schema is filled with `JsonData::fill()`.
+     */
     protected $jsonAttributeFillable = null;
 
     protected $jsonAttributeExclude = null;
@@ -460,7 +465,9 @@ abstract class Entities implements EntitiesContract, QueriesEntities
 
     protected function fillModelJsonAttributes($model, $data)
     {
-        if ($model instanceof Model && is_array($data) && $this->hasJsonDataSchema($model)) {
+        // `$jsonAttributeFillable` keeps the 1.x fill, so that a model converted to a schema
+        // stores what its repository stored (docs/upgrade.md, "JSON data")
+        if ($model instanceof Model && is_array($data) && is_null($this->getJsonAttributeFillable()) && $this->hasJsonDataSchema($model)) {
             $this->fillJsonDataSchemas($model, $data);
 
             return;
@@ -506,9 +513,9 @@ abstract class Entities implements EntitiesContract, QueriesEntities
     }
 
     /**
-     * Whether one of the model's JSON attributes has a schema (`HasJsonDataSchema`): its
-     * JSON attributes are then filled with `JsonData::fill()`, and `$jsonAttributeFillable`
-     * and `$jsonAttributeExclude` don't apply (docs/json-data.md, "Repositories").
+     * Whether one of the model's JSON attributes has a schema (`HasJsonDataSchema`): unless
+     * the repository declares `$jsonAttributeFillable`, its JSON attributes are then filled
+     * with `JsonData::fill()` (docs/json-data.md, "Repositories").
      */
     protected function hasJsonDataSchema(Model $model): bool
     {

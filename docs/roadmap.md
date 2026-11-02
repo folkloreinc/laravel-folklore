@@ -117,6 +117,7 @@ Not scheduled yet: each item goes into the slice that needs it. The JSON data it
 - [x] `folklore:upgrade`: enables the modules, sets the media reference key, moves the rows of `medias_pivot` that 1.x wrote without a handle under the `json` handle, with `--dry-run` ([#123](https://github.com/folkloreinc/laravel-folklore/issues/123)) — 2.0.0-alpha.5
 - [x] `withJsonReferences(depth:)`: the references of the models that references resolve to, for sites that eager-loaded the blocks of blocks through their pivots ([#153](https://github.com/folkloreinc/laravel-folklore/issues/153), on laravel-json-data's 1.0.0-alpha.5)
 - [ ] `folklore:upgrade` converts the block data of `blocks_pivot`, with the pages module of 2.0
+- [ ] `folklore:upgrade --schemas`: converts the 1.x JSON declarations (`getJsonDataRelations()`, `getJsonDataColumnExtract()`) to `jsonDataSchema()` where a schema gives the same behaviour, deciding the `*` segments from the stored data, and leaves the others with a `TODO(folklore-3)`; `--check` reports both; a repository that declares `$jsonAttributeFillable` keeps the 1.x fill ([#150](https://github.com/folkloreinc/laravel-folklore/issues/150))
 - [x] Rector rules: the classes that moved, `$jsonAttributeName`, `new Medias()`, the subclasses of `MediaResource` ([#123](https://github.com/folkloreinc/laravel-folklore/issues/123)) — 2.0.0-alpha.5
 - [ ] An active site upgrades (the contests platform is the candidate)
 

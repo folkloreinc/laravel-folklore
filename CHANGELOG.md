@@ -10,10 +10,12 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ### Breaking changes
 
+- A repository that declares `$jsonAttributeFillable` fills its model the 1.x way even when the model has a schema, instead of with `JsonData::fill()`: so a model converted from the 1.x declarations stores what it stored, the keys outside its schema included. A repository that declared both and relied on `JsonData::fill()` removes `$jsonAttributeFillable` and `$jsonAttributeExclude` ([#150](https://github.com/folkloreinc/laravel-folklore/issues/150)).
 - Requires `folklore/laravel-json-data` `^1.0.0-alpha.5` ([v1.0.0-alpha.5](https://github.com/folkloreinc/laravel-json-data/releases/tag/v1.0.0-alpha.5)): its `json-data:sync-references` reports a `Deleted` (`To delete`) column, and the `delete` option of a 1.x declaration throws on a relation that doesn't own its rows (a `BelongsToMany`, a `BelongsTo`), where it deleted the related models themselves, or the parent. Its other changes are additive: `Json::relation()`, `deletesUnreferenced()`, `paths()`, `--from-column` for `json-data:rewrite-references`, and the sync after a `saved` listener that saves the model again.
 
 ### Added
 
+- `folklore:upgrade --schemas` converts the 1.x JSON declarations of a site's models, `getJsonDataRelations()` and `getJsonDataColumnExtract()`, to `jsonDataSchema()`: a schema whose root is `additional(true)` and that compiles into the same declarations, with `Json::media()`, `Json::reference()`, `extract()` and translatable columns. Its `*` segments are lists, maps or translatable nodes as the stored data says, with a `// TODO(folklore-3)` when it doesn't. It leaves, with a TODO that says why, the declarations a schema can't give the same behaviour: methods that read the model or the attribute, unmapped keys, and the options and macros without a node. `--dry-run` writes nothing. `--check` has a "JSON declarations" section that reports what converts and what doesn't, and the repositories that declare `$jsonAttributeFillable` ([docs/upgrade.md](docs/upgrade.md#converting-the-json-declarations), [#150](https://github.com/folkloreinc/laravel-folklore/issues/150)).
 - `withJsonReferences(depth: 3)`: a repository loads the models that the references of its results resolve to in turn, one level at a time, such as the blocks of a page's blocks and their media, with `JsonData::load()`'s depth ([#153](https://github.com/folkloreinc/laravel-folklore/issues/153), [laravel-json-data#24](https://github.com/folkloreinc/laravel-json-data/issues/24)).
 
 ### Fixed
