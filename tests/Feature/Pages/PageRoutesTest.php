@@ -36,11 +36,21 @@ class PageRoutesTest extends TestCase
 
         $this->assertSame(url('ete'), PageRoutes::page('ete', 'fr'));
         $this->assertSame(url('/'), PageRoutes::home('fr'));
-        $this->assertNull(PageRoutes::page('ete', 'fr', 'vacances'));
 
         $this->assertSame('/ete', $this->page()->url('fr'));
         $this->assertSame(url('/'), $this->page('home')->url('fr', true));
         $this->assertSame('page', PageRoutes::routeName('page', 'fr'));
+    }
+
+    public function test_pages_with_a_parent_are_at_the_page_route_without_a_route_for_them()
+    {
+        Route::get('/{page}', fn () => '')->name('page');
+        $this->refreshRoutes();
+        $parent = new PageModel;
+        $parent->forceFill(['slug_fr' => 'vacances']);
+
+        $this->assertSame(url('ete'), PageRoutes::page('ete', 'fr', 'vacances'));
+        $this->assertSame('/ete', $this->page(null, $parent)->url('fr'));
     }
 
     public function test_routes_with_the_locale_come_first()

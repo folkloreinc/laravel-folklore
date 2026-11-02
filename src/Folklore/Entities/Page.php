@@ -65,7 +65,8 @@ class Page implements HasModel, PageContract
 
     /**
      * The URL of the page, from the routes of `site.pages.routes` (Pages\PageRoutes), with or
-     * without the locale in their names.
+     * without the locale in their names. A page with a parent is at `page` when the site has
+     * no `page_with_parent` route.
      */
     public function url(string $locale, bool $absolute = false): string
     {
@@ -74,7 +75,7 @@ class Page implements HasModel, PageContract
         }
 
         $parent = $this->parent();
-        if (! is_null($parent)) {
+        if (! is_null($parent) && PageRoutes::routeName('page_with_parent', $locale) !== null) {
             return $this->routeUrl(
                 'page_with_parent',
                 $locale,

@@ -6,7 +6,9 @@ namespace Folklore\Pages;
  * The routes of pages, whose names `site.pages.routes` sets: `home`, `page` (`{page}`, the
  * page's slug) and `page_with_parent` (`{parent}/{page}`). A name is looked up with the locale
  * first, `{locale}.{name}` (`fr.page`), as laravel-locale names localized routes, then without
- * it (`page`), for a site whose routes of pages aren't localized.
+ * it (`page`), for a site whose routes of pages aren't localized. A site without the route
+ * `page_with_parent` serves the pages that have a parent at `page`: their slugs are unique
+ * across parents (docs/decisions/0022).
  */
 class PageRoutes
 {
@@ -54,12 +56,13 @@ class PageRoutes
     }
 
     /**
-     * The URL of a page from its slug, and the slug of its parent if it has one. Null when the
-     * site has no such route.
+     * The URL of a page from its slug, and the slug of its parent if it has one: at the route
+     * `page_with_parent`, or `page` when the site has no such route. Null when the site has
+     * neither.
      */
     public static function page(string $slug, string $locale, ?string $parentSlug = null, bool $absolute = true): ?string
     {
-        return $parentSlug !== null
+        return $parentSlug !== null && self::routeName('page_with_parent', $locale) !== null
             ? self::url('page_with_parent', $locale, ['parent' => $parentSlug, 'page' => $slug], $absolute)
             : self::url('page', $locale, ['page' => $slug], $absolute);
     }
