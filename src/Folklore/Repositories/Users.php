@@ -58,10 +58,12 @@ class Users extends Entities implements UsersContract
             $data = Arr::except($data, ['role']);
         }
 
+        // An empty password, like a form's blank field, keeps the current one.
+        $password = is_array($data) ? Arr::pull($data, 'password') : null;
         parent::fillModel($model, $data);
 
-        if (isset($data['password']) && ! empty($data['password'])) {
-            $model->password = Hash::make($data['password']);
+        if (! empty($password)) {
+            $model->password = Hash::make($password);
         }
     }
 
