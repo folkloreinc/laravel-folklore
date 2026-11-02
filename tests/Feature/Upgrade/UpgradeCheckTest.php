@@ -450,9 +450,6 @@ class UpgradeCheckTest extends TestCase
     }
 
     /**
-     * @return list<Media>
-     */
-    /**
      * The table of `LegacyArticle`, with a row for each reference.
      *
      * @param  list<string>  $references
@@ -468,6 +465,9 @@ class UpgradeCheckTest extends TestCase
         }
     }
 
+    /**
+     * @return list<Media>
+     */
     private function seedReferences(): array
     {
         $this->migrateMediatheque();
