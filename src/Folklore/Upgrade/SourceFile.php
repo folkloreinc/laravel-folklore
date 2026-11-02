@@ -3,7 +3,8 @@
 namespace Folklore\Upgrade;
 
 /**
- * A PHP file of the site, read line by line, without its comment lines.
+ * A PHP file of the site, read line by line, without its comment lines: PHP's, those of a
+ * shell or YAML file (`#`), and Blade's (`{{-- --}}`).
  */
 final readonly class SourceFile
 {
@@ -20,14 +21,18 @@ final readonly class SourceFile
     {
         $contents = @file_get_contents($absolutePath);
         $lines = [];
-        $inComment = false;
+        // The end of the comment the current line is in, if any
+        $inComment = null;
         foreach (preg_split('/\R/', is_string($contents) ? $contents : '') ?: [] as $index => $line) {
             $trimmed = ltrim($line);
-            if ($inComment) {
-                $inComment = ! str_contains($line, '*/');
+            if ($inComment !== null) {
+                $inComment = str_contains($line, $inComment) ? null : $inComment;
                 $line = '';
             } elseif (str_starts_with($trimmed, '/*')) {
-                $inComment = ! str_contains($trimmed, '*/');
+                $inComment = str_contains($trimmed, '*/') ? null : '*/';
+                $line = '';
+            } elseif (str_starts_with($trimmed, '{{--')) {
+                $inComment = str_contains($trimmed, '--}}') ? null : '--}}';
                 $line = '';
             } elseif (str_starts_with($trimmed, '//') || (str_starts_with($trimmed, '#') && ! str_starts_with($trimmed, '#[')) || str_starts_with($trimmed, '*')) {
                 $line = '';

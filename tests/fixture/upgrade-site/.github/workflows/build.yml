@@ -11,3 +11,7 @@ jobs:
       # Not `php artisan assets:viewer`, nor `assets:view-all`
       - run: php artisan assets:view-all
       - run: php artisan assets:view && npm run build
+      # Not `npm run assets:view`, nor a comment at the end of a line
+      - run: npm run assets:view
+      - run: npm run build # after assets:view
+      - run: php artisan --no-interaction assets:view

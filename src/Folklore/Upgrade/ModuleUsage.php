@@ -158,9 +158,11 @@ class ModuleUsage
         foreach (self::COMMANDS as $module => $commands) {
             foreach ($commands as $command) {
                 $name = preg_quote($command, '/');
+                // In deployment files, only after `artisan` and its options: not `npm run
+                // assets:view`, a script named after the command, or a comment
                 $occurrences = [
                     ...$site->matches('/[\'"]'.$name.'(?![\w:-])/'),
-                    ...$site->deploymentMatches('/(?<![\w:-])'.$name.'(?![\w:-])/'),
+                    ...$site->deploymentMatches('/(?<![\w:-])artisan\s+(?:-\S+\s+)*'.$name.'(?![\w:-])/'),
                 ];
                 foreach ($occurrences as $occurrence) {
                     $used[$module][] = $occurrence->location()." (the `{$command}` command)";

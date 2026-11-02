@@ -8,6 +8,7 @@ use Folklore\ServiceProvider;
 use Folklore\Tests\Feature\Upgrade\Fixtures\BrokenModel;
 use Folklore\Tests\Feature\Upgrade\Fixtures\CastArticle;
 use Folklore\Tests\Feature\Upgrade\Fixtures\LegacyArticle;
+use Folklore\Tests\Feature\Upgrade\Fixtures\UnreadableModel;
 use Folklore\Tests\TestCase;
 use Folklore\Upgrade\Checks\BlocksCheck;
 use Folklore\Upgrade\Checks\Check;
@@ -55,12 +56,15 @@ class UpgradeCheckTest extends TestCase
 
         $assets = $this->finding($this->check(new ModulesCheck), 'the `assets` module, which is off');
 
-        // Not the commented `users:create`, nor `assets:view-all`
+        // Not the commented `users:create` and `assets:view`, nor `assets:view-all`, nor the
+        // command's name without `artisan` (`npm run assets:view`, a script, a comment)
         $this->assertSame(Severity::Todo, $assets->severity);
         $this->assertSame([
             'Envoy.blade.php:9 (the `assets:view` command)',
+            'Envoy.blade.php:11 (the `assets:view` command)',
             'package.json:4 (the `assets:view` command)',
             '.github/workflows/build.yml:13 (the `assets:view` command)',
+            '.github/workflows/build.yml:17 (the `assets:view` command)',
         ], $assets->locations);
     }
 
@@ -153,7 +157,9 @@ class UpgradeCheckTest extends TestCase
     {
         $findings = $this->check(new PanneauContractsCheck);
 
-        $this->assertSame(['app/Repositories/Concerns/WritesReferences.php:5'], $this->finding($findings, 'ResourceItem')->locations);
+        $resourceItem = $this->finding($findings, 'ResourceItem');
+        $this->assertSame(['app/Repositories/Concerns/WritesReferences.php:5'], $resourceItem->locations);
+        $this->assertStringContainsString('they keep `ResourceItem`, and its `use` is still reported, until the repository implements `Entities` instead.', (string) $resourceItem->fix);
         $this->assertSame(['app/Providers/AppServiceProvider.php:9'], $this->finding($findings, 'Contracts\\Repository`')->locations);
     }
 
@@ -313,6 +319,56 @@ class UpgradeCheckTest extends TestCase
         $this->assertNull($this->finding($findings, 'could not be looked up in `'.Media::class.'`: ', required: false));
     }
 
+    public function test_media_references_by_id_break_when_the_mediatheque_is_not_installed()
+    {
+        $this->legacyArticles(['media://1']);
+
+        $findings = $this->check(new StoredReferencesCheck, [LegacyArticle::class]);
+
+        $table = $this->finding($findings, 'The table `'.(new Media)->getTable().'` doesn\'t exist: the mediatheque isn\'t installed');
+        $this->assertSame(Severity::Todo, $table->severity);
+        $this->assertStringContainsString('`php artisan mediatheque:install`', (string) $table->fix);
+        $this->assertNull($this->finding($findings, 'has no `uid` column', required: false));
+        $this->assertSame(Severity::Breaking, $this->finding($findings, 'The 1 `media://` identifiers read are integers')->severity);
+    }
+
+    public function test_references_to_a_model_without_its_table_or_its_column_are_not_looked_up()
+    {
+        $this->legacyArticles(['thing://2', 'thing://abc']);
+        JsonData::map(['thing' => [CastArticle::class, 'uid']]);
+
+        $findings = $this->check(new StoredReferencesCheck, [LegacyArticle::class]);
+
+        $table = $this->finding($findings, 'The table `upgrade_cast_articles` doesn\'t exist, so the identifiers of `thing://`');
+        $this->assertSame(Severity::Todo, $table->severity);
+        $this->assertSame('Map `thing` to the model and column its identifiers are, or create the table.', $table->fix);
+        // The integers of a sample that has other identifiers too
+        $ids = $this->finding($findings, '1 of the 2 `thing://` identifiers read are integers');
+        $this->assertSame(Severity::Breaking, $ids->severity);
+        $this->assertSame([LegacyArticle::class.'::data'], $ids->locations);
+
+        Schema::create('upgrade_cast_articles', function (Blueprint $table) {
+            $table->id();
+        });
+
+        $findings = $this->check(new StoredReferencesCheck, [LegacyArticle::class]);
+
+        $column = $this->finding($findings, '`upgrade_cast_articles` has no `uid` column, so the identifiers of `thing://` could not be looked up in `'.CastArticle::class.'`, which 2.0 maps `thing` to.');
+        $this->assertSame(Severity::Todo, $column->severity);
+        $this->assertSame(Severity::Breaking, $this->finding($findings, '1 of the 2 `thing://` identifiers read are integers')->severity);
+    }
+
+    public function test_integer_references_break_when_they_cant_be_looked_up()
+    {
+        $this->legacyArticles(['thing://2']);
+        JsonData::map(['thing' => [UnreadableModel::class, 'uid']]);
+
+        $findings = $this->check(new StoredReferencesCheck, [LegacyArticle::class]);
+
+        $this->assertSame(Severity::Info, $this->finding($findings, 'The identifiers of `thing://` could not be looked up in `'.UnreadableModel::class.'`: ')->severity);
+        $this->assertSame(Severity::Breaking, $this->finding($findings, 'The 1 `thing://` identifiers read are integers')->severity);
+    }
+
     public function test_media_keys_are_checked_as_the_medias_module_will_map_them()
     {
         $this->seedReferences();
@@ -396,6 +452,22 @@ class UpgradeCheckTest extends TestCase
     /**
      * @return list<Media>
      */
+    /**
+     * The table of `LegacyArticle`, with a row for each reference.
+     *
+     * @param  list<string>  $references
+     */
+    private function legacyArticles(array $references): void
+    {
+        Schema::create('upgrade_legacy_articles', function (Blueprint $table) {
+            $table->id();
+            $table->json('data')->nullable();
+        });
+        foreach ($references as $reference) {
+            DB::table('upgrade_legacy_articles')->insert(['data' => json_encode(['cover' => $reference])]);
+        }
+    }
+
     private function seedReferences(): array
     {
         $this->migrateMediatheque();

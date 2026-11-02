@@ -1,6 +1,8 @@
 {
     "private": true,
     "scripts": {
-        "build": "php artisan assets:view && vite build"
+        "build": "php artisan assets:view && vite build",
+        "assets:view": "npm run build",
+        "view": "npm run assets:view"
     }
 }

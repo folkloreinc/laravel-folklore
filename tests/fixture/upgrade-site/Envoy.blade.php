@@ -7,4 +7,6 @@
     # php artisan users:create, once, by hand
     php artisan migrate --force
     php artisan assets:view
+    {{-- php artisan assets:view runs again in the build --}}
+    {{ $phpBinary }} artisan assets:view
 @endtask
