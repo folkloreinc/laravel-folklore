@@ -8,6 +8,14 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+### Breaking changes
+
+- Requires `folklore/laravel-json-data` `^1.0.0-alpha.5` ([v1.0.0-alpha.5](https://github.com/folkloreinc/laravel-json-data/releases/tag/v1.0.0-alpha.5)): its `json-data:sync-references` reports a `Deleted` (`To delete`) column, and the `delete` option of a 1.x declaration throws on a relation that doesn't own its rows (a `BelongsToMany`, a `BelongsTo`), where it deleted the related models themselves, or the parent. Its other changes are additive: `Json::relation()`, `deletesUnreferenced()`, `paths()`, `--from-column` for `json-data:rewrite-references`, and the sync after a `saved` listener that saves the model again.
+
+### Added
+
+- `withJsonReferences(depth: 3)`: a repository loads the models that the references of its results resolve to in turn, one level at a time, such as the blocks of a page's blocks and their media, with `JsonData::load()`'s depth ([#153](https://github.com/folkloreinc/laravel-folklore/issues/153), [laravel-json-data#24](https://github.com/folkloreinc/laravel-json-data/issues/24)).
+
 ### Fixed
 
 - `site.pages.routes` names routes of pages that aren't localized: `Pages\PageRoutes`, and so the `Page` entity's `url()` and the `PageSlug` field, look a name up as `{locale}.{name}` (`fr.page`) first, as before, then as `{name}` (`page`). A page with a parent is at the `page` route when the site has no `page_with_parent` route, instead of a `RouteNotFoundException` from `url()` and no URL in `PageSlug`'s check, which then doesn't look the parent up. A site whose routes are `Route::get('/{page}')->name('page')` no longer has to override `url()` ([#143](https://github.com/folkloreinc/laravel-folklore/issues/143)).

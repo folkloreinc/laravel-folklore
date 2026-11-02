@@ -69,6 +69,13 @@ abstract class Entities implements EntitiesContract, QueriesEntities
      */
     protected $loadsJsonReferences = false;
 
+    /**
+     * How many levels of resolved models `withJsonReferences()` loads (`JsonData::load()`).
+     *
+     * @var int
+     */
+    protected $jsonReferencesDepth = 1;
+
     protected $jsonAttributeFillable = null;
 
     protected $jsonAttributeExclude = null;
@@ -133,7 +140,7 @@ abstract class Entities implements EntitiesContract, QueriesEntities
 
         $models = $builder->paginate($query->perPage, ['*'], 'page', $query->page);
         if ($this->loadsJsonReferences) {
-            JsonData::load($models->getCollection());
+            JsonData::load($models->getCollection(), depth: $this->jsonReferencesDepth);
         }
         $entities = [];
         foreach ($models->getCollection() as $model) {
@@ -166,12 +173,20 @@ abstract class Entities implements EntitiesContract, QueriesEntities
 
     /**
      * A copy of the repository that resolves the references in the JSON attributes of its
-     * results together, with one query per key for a whole page (`JsonData::load()`).
+     * results together, with one query per key for a whole page (`JsonData::load()`). With
+     * a depth, the models that the references resolve to are loaded in turn, one level at
+     * a time, such as the blocks of a page's blocks and their media (`depth: 3`).
+     *
+     * @param  int  $depth  How many levels of resolved models to load: 1, the results only.
      */
-    public function withJsonReferences(): static
+    public function withJsonReferences(int $depth = 1): static
     {
+        if ($depth < 1) {
+            throw new InvalidArgumentException("The depth of withJsonReferences() is at least 1, [{$depth}] given.");
+        }
         $repository = clone $this;
         $repository->loadsJsonReferences = true;
+        $repository->jsonReferencesDepth = $depth;
 
         return $repository;
     }
@@ -273,7 +288,7 @@ abstract class Entities implements EntitiesContract, QueriesEntities
         if ($this->loadsJsonReferences) {
             $loaded = $models instanceof AbstractPaginator ? $models->getCollection() : $models;
             if (is_iterable($loaded)) {
-                JsonData::load($loaded);
+                JsonData::load($loaded, depth: $this->jsonReferencesDepth);
             }
         }
 
