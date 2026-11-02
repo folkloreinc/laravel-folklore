@@ -11,10 +11,12 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 ### Breaking changes
 
 - A repository that declares `$jsonAttributeFillable` fills its model the 1.x way even when the model has a schema, instead of with `JsonData::fill()`: so a model converted from the 1.x declarations stores what it stored, the keys outside its schema included. A repository that declared both and relied on `JsonData::fill()` removes `$jsonAttributeFillable` and `$jsonAttributeExclude` ([#150](https://github.com/folkloreinc/laravel-folklore/issues/150)).
+- Requires `folklore/laravel-json-data` 1.0.0-alpha.5, whose `delete` option of a 1.x declaration throws `InvalidJsonReference` on a relation that doesn't own its rows (a `BelongsToMany`, a `BelongsTo`), where it deleted the related models themselves, and whose `json-data:sync-references` reports a `Deleted` column ([its CHANGELOG](https://github.com/folkloreinc/laravel-json-data/releases/tag/v1.0.0-alpha.5)).
 
 ### Added
 
 - `folklore:upgrade --schemas` converts the 1.x JSON declarations of a site's models, `getJsonDataRelations()` and `getJsonDataColumnExtract()`, to `jsonDataSchema()`: a schema whose root is `additional(true)` and that compiles into the same declarations, with `Json::media()`, `Json::reference()`, `extract()` and translatable columns. Its `*` segments are lists, maps or translatable nodes as the stored data says, with a `// TODO(folklore-3)` when it doesn't. It leaves, with a TODO that says why, the declarations a schema can't give the same behaviour: methods that read the model or the attribute, unmapped keys, and the options and macros without a node. `--dry-run` writes nothing. `--check` has a "JSON declarations" section that reports what converts and what doesn't, and the repositories that declare `$jsonAttributeFillable` ([docs/upgrade.md](docs/upgrade.md#converting-the-json-declarations), [#150](https://github.com/folkloreinc/laravel-folklore/issues/150)).
+- `folklore:upgrade --schemas` converts the declarations that it left before, with the nodes of laravel-json-data 1.0.0-alpha.5: a relation whose key isn't mapped is `Json::relation()`, which writes and resolves it as 1.x, `delete` on a relation that owns its rows is `deletesUnreferenced()`, and a `*` that no stored row decides, or paths that aren't one tree (`cards.*` and `cards.fr.*`), are declared with `paths()`, without a TODO. `--check` no longer gives a `JsonData::map()` to add ([#152](https://github.com/folkloreinc/laravel-folklore/issues/152)).
 
 ### Fixed
 

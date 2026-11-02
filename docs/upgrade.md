@@ -35,7 +35,7 @@ It reads the site's code as text (`app`, `config`, `routes`, `resources/views`, 
 | Stored JSON references | For each JSON column, the paths and keys of its references (`data.gallery.* → medias:// (12)`): those of a column without `JsonDataCast` are to declare. Keys that aren't mapped, and keys whose identifiers match nothing in the model they map to, such as `media://12` written by id where 2.0 reads `media://` by uid. `medias://` references without `site.medias.reference_key` set to `medias`. Before the mediatheque is upgraded, its media table has no `uid`: the check says to upgrade it first, and reports integer identifiers under `media://` as breaking without looking them up |
 | Block data | The rows of `blocks_pivot`, which 2.0 stores in the page's JSON |
 | Medias | `Folklore\Mediatheque\Support\Traits\HasMedias`: deprecated where the installed mediatheque keeps it as an alias (2.0.0-alpha.11 and later), breaking otherwise. `image.sizes` filters, `new ImageSize()` with filters, `setFilters()`, `getMetadatas()`, `new Medias($typeFactory)`. `MediaResource` with `site.medias.resource` set to `canonical`, and its subclasses that override `toArray($request)` without types or call the entity through the resource |
-| JSON declarations | The models that declare their JSON data with `getJsonDataRelations()` or `getJsonDataColumnExtract()`: those that `folklore:upgrade --schemas` converts, with the TODOs it writes, and those it leaves, with why and the keys to map first. As info, how many convert. The repositories that declare `$jsonAttributeFillable`, which keeps the 1.x fill, and, as info, those of converted models that don't, which fill them with `JsonData::fill()` |
+| JSON declarations | The models that declare their JSON data with `getJsonDataRelations()` or `getJsonDataColumnExtract()`: those that `folklore:upgrade --schemas` converts, with the TODOs it writes, and those it leaves, with why. As info, how many convert. The repositories that declare `$jsonAttributeFillable`, which keeps the 1.x fill, and, as info, those of converted models that don't, which fill them with `JsonData::fill()` |
 | Deprecated API | `JsonDataCast::macro()`, `$jsonAttributeName`, `setGlobalQuery()` |
 
 ## What `folklore:upgrade` does
@@ -175,6 +175,9 @@ public function getJsonDataRelations($key, $value, $attributes = [])
         'gallery.*' => 'medias',
         'prizes.*.prize' => ['relation' => 'prizes', 'lazy' => true],
         'source' => ['relation' => 'prizes', 'sync' => false],
+        'credits.*.author' => 'authors',
+        'uris.*' => ['relation' => 'uris', 'delete' => true],
+        'blocks.*.media' => 'medias',
     ];
 }
 
@@ -194,6 +197,15 @@ public function jsonDataSchema(string $attribute): ?ObjectType
                 'prize' => Json::reference('prizes')->relation('prizes'),
             ])),
             'source' => Json::reference('prizes'),
+            // `authors://` isn't mapped
+            'credits' => Json::list(Json::object([
+                'author' => Json::relation('authors'),
+            ])),
+            'uris' => Json::list(Json::relation('uris')->deletesUnreferenced()),
+            // No stored row has blocks
+            'blocks' => Json::any()->paths([
+                '*.media' => Json::media(),
+            ]),
             'title' => Json::string()->translatable()->extract('title_{locale}'),
         ])->additional(true),
         default => null,
@@ -202,8 +214,9 @@ public function jsonDataSchema(string $attribute): ?ObjectType
 ```
 
 - **The root is `additional(true)`**, so the keys that the declarations don't name are kept, as in 1.x. The model implements `HasJsonDataSchema` instead of `HasJsonDataRelations` and `HasJsonDataColumnExtract`, and a schema is written for each attribute cast with `JsonDataCast`: the 1.x methods are called for each of them.
-- **References.** A path of the `medias` relation that writes the medias module's key is `Json::media()`; another relation is `Json::reference()` with the key it writes, the first one mapped to its related model, and `relation()`. `sync => false` is a reference without a relation, which isn't synced. `lazy` is dropped: it has no effect on a mapped key, and `withJsonReferences()` loads references in batches.
-- **`*` segments** are a list, a map, or the locales of a translatable node, which the 1.x paths don't say: the stored data decides. Keys that are the site's locales give `translatable()`, lists give `Json::list()`, other keys `Json::map()`. When no stored row decides, or rows disagree, the node is a map, with a `// TODO(folklore-3)` that says why. The three compile into the same path, so the choice changes what `JsonData::fill()` and `Json::rules()` do, not what the cast does.
+- **References.** A path of the `medias` relation that writes the medias module's key is `Json::media()`; another relation is `Json::reference()` with the key it writes, the first one mapped to its related model, and `relation()`. A relation whose key isn't mapped (`authors://12`) is `Json::relation('authors')`, which writes and resolves it as the 1.x declaration does: through the owner's relation, so only the rows attached to the owner ([decisions/0016](decisions/0016-scope-of-unmapped-keys.md)), until the site maps the key. `sync => false` is a reference without a relation, which isn't synced, and needs a mapped key. `delete` is `deletesUnreferenced()`, on a relation that owns its rows (`HasMany`, `MorphMany`). `lazy` is dropped: `withJsonReferences()` loads references in batches.
+- **`*` segments** are a list, a map, or the locales of a translatable node, which the 1.x paths don't say: the stored data decides. Keys that are the site's locales give `translatable()`, lists give `Json::list()`, other keys `Json::map()`. The three compile into the same path, so the choice changes what `JsonData::fill()` and `Json::rules()` do, not what the cast does.
+- **`paths()`.** When no stored row decides a `*`, or rows disagree, its references are declared at their 1.x paths under it, `Json::any()->paths(['*.media' => Json::media()])`, without describing the structure in between. So is a property of the root whose paths aren't one tree (`cards.*` and `cards.fr.*`).
 - **Columns.** An extracted path is a scalar node with `extract()`, whose type is that of its stored values (a TODO when they don't say); the columns of every locale of a path (`title.fr`, `title.en`), named after the locale, are one translatable node, `extract('title_{locale}')`.
 - **A method that builds its array** the same way for every model and attribute, reading no parameter, no `$this` and no `self::`, `static::` or `parent::` (a loop over the locales, `array_merge()` of constants), is converted from what it returns, with a TODO to check that nothing in it depends on the environment. Declarations that declare nothing are removed.
 
@@ -212,9 +225,10 @@ It leaves the declarations that a schema can't give the same behaviour, with a `
 | Left as they are | Why |
 |---|---|
 | A method that reads its parameters, `$this`, `self::`, `static::` or `parent::` | Its schema may change with the model or the attribute: write it by hand |
-| A relation whose key isn't mapped (`'author' => 'authors'`, `authors://12`) | A schema writes mapped keys only, and an unmapped key resolves through the owner's relation, so only the rows attached to the owner ([decisions/0016](decisions/0016-scope-of-unmapped-keys.md)). `--check` gives the `JsonData::map()` to add, if the site can read those references by id rather than by attachment; then run it again |
-| `delete`, `skip`, `get`, `set`, `before_set`, a `sync` callable, a `relation` callable, a `JsonDataCast` macro of the relation | A schema node has no option for them: move them to a handler (`using()`) first |
-| `**`, a segment such as `*items`, a path that starts with `*`, a path that is a reference and the parent of other paths | No node has that shape. `*items` matches only a key named `*items`: it is usually a typo of `*.items` |
+| `skip`, `get`, `set`, `before_set`, a `sync` callable, a `relation` callable, a `JsonDataCast` macro of the relation | A schema node has no option for them: move them to a handler (`using()`) first |
+| `delete` on a relation that doesn't own its rows (`BelongsToMany`, `BelongsTo`) | It deletes the related models themselves; laravel-json-data refuses it since 1.0.0-alpha.5 |
+| `sync => false` on a relation whose key isn't mapped | A reference that isn't synced needs a mapped key |
+| `**`, a segment such as `*items`, a path that starts with `*`, a property of the root that is a reference or a column and the parent of other paths | No node has that shape. `*items` matches only a key named `*items`: it is usually a typo of `*.items` |
 | A class that gets its declarations from a parent class or a trait of the site | Other models may use them: convert each model |
 
 **Repositories.** A repository that declares `$jsonAttributeFillable` keeps filling its model the 1.x way once the model has a schema: every key that isn't fillable is stored, as before. Remove `$jsonAttributeFillable` and `$jsonAttributeExclude` once the schema names every key the repository stores, and it fills with `JsonData::fill()`, which stores the schema's keys only, and refuses the others under `additional(false)`. A repository without `$jsonAttributeFillable` fills a converted model with `JsonData::fill()` at once: a key of its input named as a property of the schema's root goes into the JSON data, where 1.x left it out. `--check` lists those repositories; `protected $jsonAttributeFillable = [];` keeps the 1.x fill.

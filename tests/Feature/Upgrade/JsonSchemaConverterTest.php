@@ -13,6 +13,7 @@ use Folklore\Tests\Feature\Upgrade\Fixtures\Schemas\LegacyContest;
 use Folklore\Tests\Feature\Upgrade\Fixtures\Schemas\LegacyGame;
 use Folklore\Tests\Feature\Upgrade\Fixtures\Schemas\LegacyGames;
 use Folklore\Tests\Feature\Upgrade\Fixtures\Schemas\LocalizedGame;
+use Folklore\Tests\Feature\Upgrade\Fixtures\Schemas\OwningContest;
 use Folklore\Upgrade\Checks\JsonDeclarationsCheck;
 use Folklore\Upgrade\Finding;
 use Folklore\Upgrade\JsonSchemaConversion;
@@ -81,8 +82,9 @@ class JsonSchemaConverterTest extends JsonDataTestCase
                                 'prize' => Json::reference('prizes')->relation('prizes'),
                             ])),
                             'source' => Json::reference('prizes'),
-                            // TODO(folklore-3): no stored row says what `extras` holds: a map takes any keys; Json::list() for a list, ->translatable() on its node for one value per locale.
-                            'extras' => Json::map(Json::media()),
+                            'extras' => Json::any()->paths([
+                                '*' => Json::media(),
+                            ]),
                             'title' => Json::string()->translatable()->extract('title_{locale}'),
                         ])->additional(true),
                         default => null,
@@ -100,7 +102,7 @@ class JsonSchemaConverterTest extends JsonDataTestCase
             use Folklore\JsonData\Schema\ObjectType;
             use Folklore\Mediatheque\Concerns\HasMedias;
             PHP, $conversion->code);
-        $this->assertCount(1, $conversion->todos);
+        $this->assertSame([], $conversion->todos);
     }
 
     public function test_the_converted_model_reads_the_rows_the_1x_model_wrote()
@@ -183,15 +185,79 @@ class JsonSchemaConverterTest extends JsonDataTestCase
 
         $this->assertFalse($conversion->converts());
         $this->assertSame([
-            '`prizes://` isn\'t mapped, and a schema writes mapped keys only',
-            '`links.*` has `delete`, which a schema node doesn\'t have',
+            '`links.*` has `delete` on `medias`, which doesn\'t own its rows: it would delete the related models themselves, and laravel-json-data refuses it',
         ], $conversion->blockers);
-        $this->assertSame(['prizes' => Prize::class], $conversion->keysToMap);
         $this->assertStringContainsString(
-            "    // TODO(folklore-3): not converted to jsonDataSchema() by folklore:upgrade --schemas: `prizes://` isn't mapped, and a schema writes mapped keys only; `links.*` has `delete`, which a schema node doesn't have.\n    public function getJsonDataRelations(",
+            "    // TODO(folklore-3): not converted to jsonDataSchema() by folklore:upgrade --schemas: `links.*` has `delete` on `medias`, which doesn't own its rows: it would delete the related models themselves, and laravel-json-data refuses it.\n    public function getJsonDataRelations(",
             $conversion->code,
         );
         $this->assertStringContainsString('implements HasJsonDataRelations', $conversion->code);
+    }
+
+    public function test_it_converts_unmapped_relations_delete_and_paths_that_arent_one_tree()
+    {
+        $contest = new OwningContest;
+        $contest->data = ['prizes' => [$this->prizes[0]]];
+        $contest->save();
+
+        $conversion = $this->conversion(OwningContest::class);
+
+        $this->assertTrue($conversion->converts());
+        $this->assertStringContainsString(<<<'PHP'
+                        'data' => Json::object([
+                            'logo' => Json::media(),
+                            'prizes' => Json::list(Json::relation('prizes')->deletesUnreferenced()),
+                            'menus' => Json::any()->paths([
+                                '*' => Json::media(),
+                                'fr.*' => Json::media(),
+                            ]),
+                        ])->additional(true),
+            PHP, $conversion->code);
+    }
+
+    public function test_the_converted_model_resolves_syncs_and_deletes_as_the_1x_model()
+    {
+        $contest = new OwningContest;
+        $contest->data = ['prizes' => [$this->prizes[0]]];
+        $contest->save();
+        $name = 'ConvertedContest'.bin2hex(random_bytes(4));
+        eval(str_replace(['<?php', 'class OwningContest '], ['', 'class '.$name.' '], $this->conversion(OwningContest::class)->code));
+        $converted = 'Folklore\\Tests\\Feature\\Upgrade\\Fixtures\\Schemas\\'.$name;
+
+        $results = [];
+        foreach ([OwningContest::class, $converted] as $class) {
+            $prizes = [Prize::create(['handle' => 'one']), Prize::create(['handle' => 'two']), Prize::create(['handle' => 'other'])];
+            /** @var Model $model */
+            $model = new $class;
+            $model->data = [
+                'logo' => $this->media[0],
+                'prizes' => [$prizes[0], $prizes[1]],
+                'menus' => ['main' => $this->media[1], 'fr' => [$this->media[2]]],
+            ];
+            $model->save();
+            $synced = Prize::query()->where('contest_id', $model->getKey())->pluck('handle')->sort()->values()->all();
+            $read = $this->normalize($class::query()->findOrFail($model->getKey())->data);
+
+            // `delete`: the prize that the JSON no longer references is deleted
+            $model = $class::query()->findOrFail($model->getKey());
+            $model->data = ['prizes' => [$prizes[0]]] + $model->data;
+            $model->save();
+
+            $results[] = [
+                'stored' => $this->rawShape($this->rawData($model)),
+                'synced' => $synced,
+                'read' => $read,
+                'left' => Prize::query()->whereIn('id', array_map(fn (Prize $prize) => $prize->id, $prizes))->pluck('handle')->sort()->values()->all(),
+                'medias' => $model->medias(MediaUsagesSync::HANDLE)->pluck('medias.id')->sort()->values()->all(),
+            ];
+        }
+
+        $this->assertSame(['one', 'two'], $results[0]['synced']);
+        $this->assertSame(['one', 'other'], $results[0]['left']);
+        // The unmapped key resolves through the relation, to the prizes attached
+        $this->assertSame(Prize::class, $results[0]['read']['prizes'][0][0]);
+        $this->assertSame([$results[0]['synced'], $results[0]['left'], $results[0]['medias'], $results[0]['stored']], [$results[1]['synced'], $results[1]['left'], $results[1]['medias'], $results[1]['stored']]);
+        $this->assertSame($this->rawShape($results[0]['read']), $this->rawShape($results[1]['read']));
     }
 
     public function test_it_leaves_a_built_return()
@@ -263,8 +329,7 @@ class JsonSchemaConverterTest extends JsonDataTestCase
 
         $conversion = $this->conversion(LegacyGame::class);
 
-        $this->assertStringContainsString("'gallery' => Json::map(Json::media()),", $conversion->code);
-        $this->assertContains('`gallery` is stored as a list in 1 rows and as an object in 1: a map takes both, Json::list() refuses the objects.', $conversion->todos);
+        $this->assertStringContainsString("'gallery' => Json::any()->paths([\n                    '*' => Json::media(),\n                ]),", $conversion->code);
     }
 
     public function test_the_check_reports_what_converts_and_what_doesnt()
@@ -278,18 +343,11 @@ class JsonSchemaConverterTest extends JsonDataTestCase
         $this->assertSame('1 of the 2 models with 1.x JSON declarations convert to `jsonDataSchema()`, which reads and writes the same data. The others keep their declarations until 3.0.', $findings[0]->message);
         $game = $this->finding($findings, LegacyGame::class);
         $this->assertSame(Severity::Deprecated, $game->severity);
-        $this->assertStringContainsString('converts them to `jsonDataSchema()`, with 1 `TODO(folklore-3)` to check.', $game->message);
+        $this->assertStringContainsString('converts them to `jsonDataSchema()`.', $game->message);
         $built = $this->finding($findings, BuiltContest::class);
         $this->assertStringContainsString('builds its array', $built->message);
         // The check writes nothing
         $this->assertStringContainsString('getJsonDataRelations', (string) file_get_contents(__DIR__.'/Fixtures/Schemas/LegacyGame.php'));
-    }
-
-    public function test_the_check_says_which_keys_to_map()
-    {
-        $finding = $this->finding([...(new JsonDeclarationsCheck)->check($this->site([LegacyContest::class]))], LegacyContest::class);
-
-        $this->assertStringContainsString("`JsonData::map(['prizes' => \\".Prize::class.'::class])`', (string) $finding->fix);
     }
 
     public function test_the_check_lists_the_repositories_that_keep_the_1x_fill()
@@ -424,6 +482,22 @@ class JsonSchemaConverterTest extends JsonDataTestCase
     private function site(array $models): Site
     {
         return new Site((string) realpath(__DIR__.'/../../..'), $this->app['config'], $this->app['db'], [], $models);
+    }
+
+    /**
+     * A value with the identifiers of its models and references as `N`, to compare two
+     * models that refer to different rows.
+     */
+    private function rawShape(mixed $value): mixed
+    {
+        if (is_string($value)) {
+            return preg_replace('/:\/\/\d+$/', '://N', $value);
+        }
+        if (is_int($value)) {
+            return 'N';
+        }
+
+        return is_array($value) ? array_map(fn ($item) => $this->rawShape($item), $value) : $value;
     }
 
     /**

@@ -14,6 +14,7 @@ use Folklore\JsonData\Schema\ReferenceType;
 use Folklore\Upgrade\Checks\StoredReferencesCheck;
 use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Collection;
 use ReflectionClass;
@@ -28,15 +29,17 @@ use Throwable;
  * name are kept.
  *
  * A `*` segment is a list, a map or the locales of a translatable node, which the 1.x
- * declarations don't say: the stored data decides, and a `// TODO(folklore-3)` says when
- * it doesn't. The three compile into the same path, so the choice changes what
- * `JsonData::fill()` and `Json::rules()` do, not what the cast does.
+ * declarations don't say: the stored data decides. The three compile into the same path,
+ * so the choice changes what `JsonData::fill()` and `Json::rules()` do, not what the cast
+ * does. Where the stored data doesn't decide, or the paths aren't one tree (`cards.*` and
+ * `cards.fr.*`), the references are declared with `paths()`, as the 1.x paths are written.
  *
+ * A relation whose key isn't mapped is `Json::relation()`, which writes and resolves it as
+ * a 1.x declaration does (docs/decisions/0016), and `delete` is `deletesUnreferenced()`.
  * Declarations that a schema can't give the same behaviour are left as they are, with a
- * `// TODO(folklore-3)` that says why: a return that isn't a literal array, a relation whose
- * key isn't mapped (a schema writes mapped keys only, and an unmapped key resolves through
- * the owner's relation, docs/decisions/0016), and the options without a node: `delete`,
- * `skip`, `get`, `set`, `before_set`, a `sync` callable, and the macros of a relation.
+ * `// TODO(folklore-3)` that says why: a method that reads the model or the attribute, the
+ * options without a node (`skip`, `get`, `set`, `before_set`, callables, `delete` on a
+ * relation that doesn't own its rows), and the macros of a relation.
  */
 class JsonSchemaConverter
 {
@@ -52,8 +55,9 @@ class JsonSchemaConverter
 
     /**
      * The options of a 1.x declaration that a schema can give: `relation` and `key` are its
-     * reference node, `sync => false` a reference without a relation, and `lazy` is what
-     * `JsonData::load()` and `withJsonReferences()` do (it has no effect on a mapped key).
+     * reference node, `sync => false` a reference without a relation, `delete` is
+     * `deletesUnreferenced()`, and `lazy` is what `JsonData::load()` and
+     * `withJsonReferences()` do.
      *
      * @var list<string>
      */
@@ -148,7 +152,6 @@ class JsonSchemaConverter
             }
         }
 
-        $keysToMap = [];
         $todos = [];
         $schemas = [];
         if (count($blockers) === 0) {
@@ -159,7 +162,7 @@ class JsonSchemaConverter
                 $blockers[] = 'no attribute is cast with `JsonDataCast`';
             }
             foreach ($attributes as $attribute) {
-                $root = $this->tree($model, (string) $attribute, $blockers, $keysToMap);
+                $root = $this->tree($model, (string) $attribute, $blockers);
                 if (count($blockers) > 0) {
                     break;
                 }
@@ -172,7 +175,7 @@ class JsonSchemaConverter
             $blockers = array_values(array_unique($blockers));
             $file->commentMethod($methods[0], 'not converted to jsonDataSchema() by folklore:upgrade --schemas: '.implode('; ', $blockers).'.');
 
-            return new JsonSchemaConversion($class, $site->relative($path), $path, $line, $methods, $file->code(), $blockers, [], $keysToMap);
+            return new JsonSchemaConversion($class, $site->relative($path), $path, $line, $methods, $file->code(), $blockers);
         }
 
         // Declarations that declare nothing are removed: an empty schema would only change
@@ -221,22 +224,27 @@ class JsonSchemaConverter
     }
 
     /**
-     * The tree of the declarations of an attribute.
+     * The tree of the declarations of an attribute. A property of the root whose paths
+     * aren't one tree (`cards.*` and `cards.fr.*`) declares them with `paths()`.
      *
      * @param  list<string>  $blockers
-     * @param  array<string, class-string>  $keysToMap
      */
-    protected function tree(Model $model, string $attribute, array &$blockers, array &$keysToMap): SchemaNode
+    protected function tree(Model $model, string $attribute, array &$blockers): SchemaNode
     {
         $root = new SchemaNode(SchemaNode::OBJECT);
+        /** @var array<string, string> $references */
+        $references = [];
+        /** @var array<string, string> $conflicts */
+        $conflicts = [];
 
         $relations = $model instanceof HasJsonDataRelations ? $model->getJsonDataRelations($attribute, null, []) : [];
         $relations = $relations instanceof Collection ? $relations->all() : (is_array($relations) ? $relations : []);
         foreach ($relations as $path => $options) {
             $path = (string) $path;
-            $reference = $this->reference($model, $path, $options, $blockers, $keysToMap);
-            if (! is_null($reference)) {
-                $this->insert($root, $path, $reference, null, $blockers);
+            $reference = $this->reference($model, $path, $options, $blockers);
+            if (! is_null($reference) && $this->isPath($path, $blockers)) {
+                $references[$path] = $reference;
+                $this->insert($root, $path, $reference, null, $blockers, $conflicts);
             }
         }
 
@@ -250,19 +258,80 @@ class JsonSchemaConverter
 
                 continue;
             }
-            $this->insert($root, (string) $path, null, $column, $blockers);
+            if ($this->isPath((string) $path, $blockers)) {
+                $this->insert($root, (string) $path, null, $column, $blockers, $conflicts);
+            }
+        }
+
+        foreach ($conflicts as $property => $conflict) {
+            $node = new SchemaNode(SchemaNode::PATHS, [$property]);
+            foreach ($references as $path => $reference) {
+                if (str_starts_with($path, $property.'.')) {
+                    $node->paths[substr($path, strlen($property) + 1)] = $reference;
+                }
+            }
+            // A reference or a column at the property itself has no place among paths
+            $own = $root->properties[$property] ?? null;
+            if (isset($references[$property]) || ! is_null($own?->column) || $this->hasColumns($own)) {
+                $blockers[] = $conflict;
+
+                continue;
+            }
+            $root->properties[$property] = $node;
         }
 
         return $root;
     }
 
     /**
+     * Whether a declared path has segments that a schema takes: property names and `*`,
+     * not first.
+     *
+     * @param  list<string>  $blockers
+     */
+    protected function isPath(string $path, array &$blockers): bool
+    {
+        foreach (explode('.', $path) as $index => $segment) {
+            $blocker = match (true) {
+                $segment === '' => "`{$path}` has an empty segment",
+                $segment === '**' => "`{$path}` has `**`: declare it as a `Json::document()` by hand",
+                $segment !== '*' && str_contains($segment, '*') => "`{$path}` has the segment `{$segment}`, which matches only that key (a typo of `*.`?)",
+                $index === 0 && $segment === '*' => "`{$path}` starts with `*`: the root of a schema is an object",
+                default => null,
+            };
+            if (! is_null($blocker)) {
+                $blockers[] = $blocker;
+
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    protected function hasColumns(?SchemaNode $node): bool
+    {
+        if (is_null($node)) {
+            return false;
+        }
+        if (! is_null($node->column)) {
+            return true;
+        }
+        foreach ([...$node->properties, ...(is_null($node->items) ? [] : [$node->items])] as $child) {
+            if ($this->hasColumns($child)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * The code of the reference node of a declaration, or null with why when it has none.
      *
      * @param  list<string>  $blockers
-     * @param  array<string, class-string>  $keysToMap
      */
-    protected function reference(Model $model, string $path, mixed $options, array &$blockers, array &$keysToMap): ?string
+    protected function reference(Model $model, string $path, mixed $options, array &$blockers): ?string
     {
         $options = is_string($options) ? ['relation' => $options] : $options;
         if (! is_array($options) || ! is_string($options['relation'] ?? null)) {
@@ -275,7 +344,8 @@ class JsonSchemaConverter
         $relationName = $options['relation'];
 
         $unsupported = array_diff(array_keys($options), self::OPTIONS);
-        if (($options['delete'] ?? false) !== false) {
+        $delete = $options['delete'] ?? false;
+        if (! is_bool($delete)) {
             $unsupported[] = 'delete';
         }
         if (isset($options['path']) && $options['path'] !== $path) {
@@ -310,6 +380,11 @@ class JsonSchemaConverter
             return null;
         }
         $related = $relation->getRelated()::class;
+        if ($delete && ! $relation instanceof HasOneOrMany) {
+            $blockers[] = "`{$path}` has `delete` on `{$relationName}`, which doesn't own its rows: it would delete the related models themselves, and laravel-json-data refuses it";
+
+            return null;
+        }
 
         $key = $options['key'] ?? null;
         if (is_string($key)) {
@@ -322,52 +397,41 @@ class JsonSchemaConverter
         } else {
             $key = JsonData::keyFor($related);
         }
+        // A path that isn't synced deletes nothing, in 1.x too
+        $deletes = $delete && $sync ? '->deletesUnreferenced()' : '';
+        // A key that isn't mapped: written and resolved as by the 1.x declaration
         if (is_null($key)) {
-            $keysToMap[$relationName] = $related;
-            $blockers[] = "`{$relationName}://` isn't mapped, and a schema writes mapped keys only";
+            if (! $sync) {
+                $blockers[] = "`{$path}` has `sync => false` on `{$relationName}://`, which isn't mapped: a reference that isn't synced needs a mapped key";
 
-            return null;
+                return null;
+            }
+
+            return '{json}::relation('.$this->export($relationName).')'.$deletes;
         }
 
         // The medias module's `Json::media()`, when it is on
         $media = Json::hasMacro('media') ? Json::__callStatic('media', []) : null;
         if ($sync && $relationName === 'medias' && $media instanceof ReferenceType && $media->getKey() === $key && $media->getRelation() === 'medias') {
-            return '{json}::media()';
+            return '{json}::media()'.$deletes;
         }
 
-        return '{json}::reference('.$this->export($key).')'.($sync ? '->relation('.$this->export($relationName).')' : '');
+        return '{json}::reference('.$this->export($key).')'.($sync ? '->relation('.$this->export($relationName).')' : '').$deletes;
     }
 
     /**
-     * Puts a reference or an extracted column at its path.
+     * Puts a reference or an extracted column at its path. A path that doesn't fit the
+     * tree is recorded in `$conflicts`, by the property of the root it is under.
      *
      * @param  list<string>  $blockers
+     * @param  array<string, string>  $conflicts
      */
-    protected function insert(SchemaNode $root, string $path, ?string $reference, ?string $column, array &$blockers): void
+    protected function insert(SchemaNode $root, string $path, ?string $reference, ?string $column, array &$blockers, array &$conflicts): void
     {
         $segments = explode('.', $path);
-        foreach ($segments as $index => $segment) {
-            if ($segment === '') {
-                $blockers[] = "`{$path}` has an empty segment";
-
-                return;
-            }
-            if ($segment === '**') {
-                $blockers[] = "`{$path}` has `**`: declare it as a `Json::document()` by hand";
-
-                return;
-            }
-            if ($segment !== '*' && str_contains($segment, '*')) {
-                $blockers[] = "`{$path}` has the segment `{$segment}`, which matches only that key (a typo of `*.`?)";
-
-                return;
-            }
-            if ($index === 0 && $segment === '*') {
-                $blockers[] = "`{$path}` starts with `*`: the root of a schema is an object";
-
-                return;
-            }
-        }
+        $conflict = function (string $why) use ($segments, &$conflicts): void {
+            $conflicts[$segments[0]] ??= $why;
+        };
 
         $node = $root;
         foreach ($segments as $index => $segment) {
@@ -377,14 +441,14 @@ class JsonSchemaConverter
 
             if ($segment === '*') {
                 if ($node->kind !== SchemaNode::ITEMS) {
-                    $blockers[] = "`{$path}` is under a path declared otherwise";
+                    $conflict("`{$path}` is under a path declared otherwise");
 
                     return;
                 }
                 $child = $node->items ??= new SchemaNode($kind, $sub);
             } else {
                 if ($node->kind !== SchemaNode::OBJECT) {
-                    $blockers[] = "`{$path}` is under a path declared otherwise";
+                    $conflict("`{$path}` is under a path declared otherwise");
 
                     return;
                 }
@@ -402,7 +466,7 @@ class JsonSchemaConverter
                     return;
                 }
                 if ($child->kind !== SchemaNode::REFERENCE && $child->kind !== SchemaNode::SCALAR) {
-                    $blockers[] = "`{$path}` is a reference or a column, and the path of other declarations";
+                    $conflict("`{$path}` is a reference or a column, and the path of other declarations");
 
                     return;
                 }
@@ -412,7 +476,7 @@ class JsonSchemaConverter
                 return;
             }
             if ($child->kind !== $kind) {
-                $blockers[] = "`{$path}` is under a path declared otherwise";
+                $conflict("`{$path}` is under a path declared otherwise");
 
                 return;
             }
@@ -568,23 +632,46 @@ class JsonSchemaConverter
                 if ($items->kind === SchemaNode::REFERENCE && $observed > 0 && $node->localized === $observed) {
                     return $this->node($items, $names, $indent, $unit, $comments).'->translatable()';
                 }
-                $of = $this->node($items, $names, $indent, $unit, $comments);
                 if ($observed > 0 && $node->lists === $observed) {
-                    return $names['json'].'::list('.$of.')';
+                    return $names['json'].'::list('.$this->node($items, $names, $indent, $unit, $comments).')';
                 }
-                if ($observed === 0) {
-                    $comments[] = "no stored row says what `{$node->path()}` holds: a map takes any keys; Json::list() for a list, ->translatable() on its node for one value per locale.";
-                } elseif ($node->lists > 0) {
-                    $comments[] = "`{$node->path()}` is stored as a list in {$node->lists} rows and as an object in ".($observed - $node->lists).': a map takes both, Json::list() refuses the objects.';
+                if ($observed > 0 && $node->lists === 0) {
+                    return $names['json'].'::map('.$this->node($items, $names, $indent, $unit, $comments).')';
                 }
+                // No stored row says, or rows disagree: the references at their 1.x paths
+                $paths = new SchemaNode(SchemaNode::PATHS, $node->segments);
+                $this->collectPaths($items, count($node->segments), $paths->paths);
 
-                return $names['json'].'::map('.$of.')';
+                return $this->node($paths, $names, $indent, $unit, $comments);
+            case SchemaNode::PATHS:
+                $lines = [$names['json'].'::any()->paths(['];
+                foreach ($node->paths as $path => $reference) {
+                    $lines[] = $indent.$unit.$this->export((string) $path).' => '.str_replace('{json}', $names['json'], $reference).',';
+                }
+                $lines[] = $indent.'])';
+
+                return implode("\n", $lines);
             case SchemaNode::REFERENCE:
                 $code = str_replace('{json}', $names['json'], (string) $node->reference);
 
                 return $code.(is_null($node->column) ? '' : '->extract('.$this->export($node->column).')');
             default:
                 return $this->scalar($node, $names, $comments).(is_null($node->column) ? '' : '->extract('.$this->export($node->column).')');
+        }
+    }
+
+    /**
+     * The references under a node, by their path from the node at `$depth` segments.
+     *
+     * @param  array<string, string>  $paths
+     */
+    protected function collectPaths(SchemaNode $node, int $depth, array &$paths): void
+    {
+        if ($node->kind === SchemaNode::REFERENCE && ! is_null($node->reference)) {
+            $paths[implode('.', array_slice($node->segments, $depth))] = $node->reference;
+        }
+        foreach ([...$node->properties, ...(is_null($node->items) ? [] : [$node->items])] as $child) {
+            $this->collectPaths($child, $depth, $paths);
         }
     }
 

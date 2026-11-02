@@ -37,10 +37,10 @@ class MediaUsagesSyncTest extends JsonDataTestCase
         $id = DB::table('games')->insertGetId(['handle' => 'quiz', 'data' => json_encode(['image' => ['fr' => 'medias://'.$image->id]])]);
         $game = Game::findOrFail($id);
         $game->attachMedia($cover, 'cover');
-        $headers = ['Model', 'Rows', 'Rows to change', 'To attach', 'To detach', 'Synced by callbacks, not compared', 'Unresolved references'];
+        $headers = ['Model', 'Rows', 'Rows to change', 'To attach', 'To detach', 'To delete', 'Synced by callbacks, not compared', 'Unresolved references'];
 
         $this->artisan('json-data:sync-references', ['--model' => [Game::class], '--dry-run' => true])
-            ->expectsTable($headers, [[Game::class, 1, 1, 1, 0, 0, 0]])
+            ->expectsTable($headers, [[Game::class, 1, 1, 1, 0, 0, 0, 0]])
             ->assertSuccessful();
 
         $this->artisan('json-data:sync-references', ['--model' => [Game::class]])->assertSuccessful();
@@ -48,7 +48,7 @@ class MediaUsagesSyncTest extends JsonDataTestCase
         $this->assertSame([$cover->id], $game->fresh()?->medias('cover')->map->getKey()->all());
 
         $this->artisan('json-data:sync-references', ['--model' => [Game::class], '--dry-run' => true])
-            ->expectsTable($headers, [[Game::class, 1, 0, 0, 0, 0, 0]])
+            ->expectsTable($headers, [[Game::class, 1, 0, 0, 0, 0, 0, 0]])
             ->assertSuccessful();
     }
 }

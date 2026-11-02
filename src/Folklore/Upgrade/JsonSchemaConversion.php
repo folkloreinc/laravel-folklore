@@ -17,9 +17,6 @@ final readonly class JsonSchemaConversion
      * @param  string  $code  The file once converted, or with its TODO.
      * @param  list<string>  $blockers  Why the declarations are left as they are.
      * @param  list<string>  $todos  The `TODO(folklore-3)` written in the schema.
-     * @param  array<string, class-string>  $keysToMap  The keys to map before converting: the
-     *                                                  relation names the site stores, by the
-     *                                                  model they refer to.
      * @param  bool  $empty  Whether the declarations declare nothing, and are only removed.
      */
     public function __construct(
@@ -31,7 +28,6 @@ final readonly class JsonSchemaConversion
         public string $code,
         public array $blockers = [],
         public array $todos = [],
-        public array $keysToMap = [],
         public bool $empty = false,
     ) {}
 
