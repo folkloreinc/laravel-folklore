@@ -8,6 +8,10 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+### Fixed
+
+- `Repositories\Users` keeps the current password when it is updated with an empty one, like a blank password field of a form: the password was mass assigned before being hashed, so the stored hash was overwritten with `null` or `''`.
+
 ## [2.0.0-alpha.7] - 2026-10-30
 
 Fixes to the upgrade from 1.1 found on a second site, vini-vins.com: artisan, and so `folklore:upgrade --check`, runs when the 1.x admin sets `PageSlug`'s routes resolver (#138), and the Rector set removes `ResourceItem` from the `extends` and `implements` of a site's contracts while keeping `Repository` and its methods' types compatible with laravel-panneau 1.x (#139). No breaking changes.

@@ -5047,12 +5047,6 @@ parameters:
 			path: src/Folklore/Repositories/Users.php
 
 		-
-			message: '#^Cannot access offset ''password'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
-			count: 1
-			path: src/Folklore/Repositories/Users.php
-
-		-
 			message: '#^Cannot access property \$password on mixed\.$#'
 			identifier: property.nonObject
 			count: 1
