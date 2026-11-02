@@ -162,7 +162,7 @@ On `laravel-mediatheque` 2 and `laravel-image` 2 ([decisions/0008](decisions/000
 
 ([decisions/0010](decisions/0010-users-and-auth.md)) The `repository` auth driver, the `User` entity with two-factor authentication, and the Fortify callbacks boot only when the module is enabled.
 
-- **Passwords in the users repository.** `Repositories\Users` hashes the `password` it is given, unless it is already a hash (`Hash::isHashed()`, as Laravel's `hashed` cast does), so a form field or a Fortify action that hashes it first doesn't get it hashed twice. An empty password (`null` or `''`, a form's blank field) keeps the current one ([#144](https://github.com/folkloreinc/laravel-folklore/issues/144)).
+- **Passwords in the users repository.** `Repositories\Users` hashes the `password` it is given, unless it is already a hash of the app's hasher and options (`Hash::isHashed()` and `Hash::verifyConfiguration()`, as Laravel's `hashed` cast does; a hash of another algorithm is hashed), so a form field or a Fortify action that hashes it first doesn't get it hashed twice. An empty password (`null` or `''`, a form's blank field) keeps the current one ([#144](https://github.com/folkloreinc/laravel-folklore/issues/144)).
 
 ## Panneau 5 plugin
 
