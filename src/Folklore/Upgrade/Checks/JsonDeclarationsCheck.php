@@ -81,13 +81,7 @@ class JsonDeclarationsCheck implements Check
             );
         }
 
-        $fix = count($conversion->keysToMap) > 0
-            ? 'Map the keys, if the site can read their references by id rather than through the relation (docs/decisions/0016): `JsonData::map(['.implode(', ', array_map(
-                fn (string $key, string $model) => "'{$key}' => \\{$model}::class",
-                array_keys($conversion->keysToMap),
-                $conversion->keysToMap,
-            )).'])`, then run `folklore:upgrade --check` again. Or write the schema by hand, or keep the declarations until 3.0.'
-            : 'Write the schema by hand (`jsonDataSchema()`, docs/json-data.md), or keep the declarations until 3.0.';
+        $fix = 'Write the schema by hand (`jsonDataSchema()`, docs/json-data.md), or keep the declarations until 3.0.';
 
         return Finding::deprecated(
             "`{$conversion->model}` keeps {$methods}: `folklore:upgrade --schemas` doesn't convert them, since ".implode('; ', $conversion->blockers).'.',

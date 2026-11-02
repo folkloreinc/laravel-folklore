@@ -25,11 +25,24 @@ final class SchemaNode
     public const SCALAR = 'scalar';
 
     /**
+     * References at their 1.x paths under the node, which isn't described:
+     * `Json::any()->paths([...])`.
+     */
+    public const PATHS = 'paths';
+
+    /**
      * @var array<string, SchemaNode>
      */
     public array $properties = [];
 
     public ?SchemaNode $items = null;
+
+    /**
+     * The references of a `PATHS` node, by their path from it.
+     *
+     * @var array<string, string>
+     */
+    public array $paths = [];
 
     /**
      * The code of a reference node: `Json::media()`, `Json::reference('prize')->relation('prizes')`.
