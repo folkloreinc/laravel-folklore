@@ -4,8 +4,9 @@ namespace Folklore\Pages;
 
 /**
  * The routes of pages, whose names `site.pages.routes` sets: `home`, `page` (`{page}`, the
- * page's slug) and `page_with_parent` (`{parent}/{page}`). They are localized routes of
- * laravel-locale, named `{locale}.{name}` (`fr.page`).
+ * page's slug) and `page_with_parent` (`{parent}/{page}`). A name is looked up with the locale
+ * first, `{locale}.{name}` (`fr.page`), as laravel-locale names localized routes, then without
+ * it (`page`), for a site whose routes of pages aren't localized.
  */
 class PageRoutes
 {
@@ -24,6 +25,24 @@ class PageRoutes
         $name = config('site.pages.routes.'.$route);
 
         return is_string($name) && $name !== '' ? $name : (self::DEFAULTS[$route] ?? $route);
+    }
+
+    /**
+     * The name of the site's route of pages in a locale: `{locale}.{name}` when the site has
+     * that route, `{name}` otherwise. Null when the site has neither.
+     */
+    public static function routeName(string $route, string $locale): ?string
+    {
+        $name = self::name($route);
+        $router = app('router');
+
+        foreach ([$locale.'.'.$name, $name] as $candidate) {
+            if ($router->has($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -50,8 +69,8 @@ class PageRoutes
      */
     private static function url(string $route, string $locale, array $parameters, bool $absolute): ?string
     {
-        $name = $locale.'.'.self::name($route);
-        if (! app('router')->has($name)) {
+        $name = self::routeName($route, $locale);
+        if ($name === null) {
             return null;
         }
 
