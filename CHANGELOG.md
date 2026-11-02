@@ -8,6 +8,10 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+## [2.0.0-alpha.8] - 2026-11-02
+
+The upgrade of the 1.x JSON declarations to schemas, `folklore:upgrade --schemas`, run on two 1.1 sites ([#150](https://github.com/folkloreinc/laravel-folklore/issues/150), [#152](https://github.com/folkloreinc/laravel-folklore/issues/152)), `withJsonReferences(depth:)` ([#153](https://github.com/folkloreinc/laravel-folklore/issues/153)), and fixes to pages routes, users' passwords, the Panneau adapter and `folklore:upgrade --check`. Requires laravel-json-data 1.0.0-alpha.5.
+
 ### Breaking changes
 
 - A repository that declares `$jsonAttributeFillable` fills its model the 1.x way even when the model has a schema, instead of with `JsonData::fill()`: so a model converted from the 1.x declarations stores what it stored, the keys outside its schema included. A repository that declared both and relied on `JsonData::fill()` removes `$jsonAttributeFillable` and `$jsonAttributeExclude` ([#150](https://github.com/folkloreinc/laravel-folklore/issues/150)).
@@ -223,7 +227,8 @@ The core and `JsonDataCast`, and the medias module on `laravel-mediatheque` 2 an
 
 - `make:entity` generated an entity and a repository that implemented themselves instead of their contracts, so they didn't load.
 
-[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.7...v2.x
+[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.8...v2.x
+[2.0.0-alpha.8]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.8
 [2.0.0-alpha.7]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.7
 [2.0.0-alpha.6]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.6
 [2.0.0-alpha.5]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.5
