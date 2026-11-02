@@ -14,7 +14,7 @@ class RepositoryOutputLoadsTest extends TestCase
     public function test_the_upgraded_repository_loads_with_panneau_1x_contracts()
     {
         [, $output] = explode("-----\n", (string) file_get_contents(__DIR__.'/Fixture/ExternalRepository.php.inc'));
-        $file = (string) tempnam(sys_get_temp_dir(), 'folklore-rector-').'.php';
+        $file = sys_get_temp_dir().'/folklore-rector-'.bin2hex(random_bytes(8)).'.php';
         file_put_contents($file, $output);
 
         $process = new Process([
