@@ -59,13 +59,21 @@ class Users extends Entities implements UsersContract
         }
 
         // An empty password, like a form's blank field, keeps the current one. A password
-        // that is already hashed, by a form field or a Fortify action, is kept as it is, as
-        // Laravel's `hashed` cast does.
+        // that is already hashed with the app's hasher and options, by a form field or a
+        // Fortify action, is kept as it is, as Laravel's `hashed` cast does; any other value,
+        // a hash of another algorithm included, is hashed.
         $password = is_array($data) ? Arr::pull($data, 'password') : null;
         parent::fillModel($model, $data);
 
+        if (is_int($password) || is_float($password)) {
+            $password = (string) $password;
+        }
         if (is_string($password) && $password !== '') {
-            $model->password = Hash::isHashed($password) ? $password : Hash::make($password);
+            // As the `hashed` cast calls it: its docblock asks for an array, but it reads a hash
+            /** @phpstan-ignore argument.type */
+            $model->password = Hash::isHashed($password) && Hash::verifyConfiguration($password)
+                ? $password
+                : Hash::make($password);
         }
     }
 
