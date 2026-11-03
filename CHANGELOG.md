@@ -8,6 +8,14 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+### Added
+
+- The pages module's `Folklore\Models\Page` and `Block` declare the references of their data with `jsonDataSchema()`: the paths of their 1.x declarations (`parent`, `image`, `blocks`), as `Json::relation()` nodes, under an `additional(true)` root, so they read, write and sync the same data. A subclass that overrides `getJsonDataRelations()` keeps its 1.x declarations, and one that describes its own keys adds to the package's properties. Their repositories keep `$jsonAttributeFillable = '*'`, so they store what they stored ([docs/json-data.md](docs/json-data.md#pages-and-blocks), [#158](https://github.com/folkloreinc/laravel-folklore/issues/158)).
+
+### Deprecated
+
+- `getJsonDataRelations()` of `Folklore\Models\Page` and `Block`, kept for the subclasses that override it, until 3.0.
+
 ## [2.0.0-alpha.8] - 2026-11-02
 
 The upgrade of the 1.x JSON declarations to schemas, `folklore:upgrade --schemas`, run on two 1.1 sites ([#150](https://github.com/folkloreinc/laravel-folklore/issues/150), [#152](https://github.com/folkloreinc/laravel-folklore/issues/152)), `withJsonReferences(depth:)` ([#153](https://github.com/folkloreinc/laravel-folklore/issues/153)), and fixes to pages routes, users' passwords, the Panneau adapter and `folklore:upgrade --check`. Requires laravel-json-data 1.0.0-alpha.5.

@@ -59,6 +59,36 @@ class Game extends Model implements HasJsonDataSchema
 
 An attribute without a schema keeps the 1.x declarations, `getJsonDataRelations()` and `getJsonDataColumnExtract()`, and the macros, through the declarations hook.
 
+### Pages and blocks
+
+The pages module's models declare the references of their `data` with a schema ([#158](https://github.com/folkloreinc/laravel-folklore/issues/158)): the paths of their 1.x declarations, as relations, under a root that is `additional(true)`, so that they read, write and sync what 1.x did, and keep the keys they don't name.
+
+| Model | Schema |
+|---|---|
+| `Folklore\Models\Page` | `parent` (`Json::relation('parent')`), `image` (`Json::relation('medias')`), `blocks` (`Json::list(Json::relation('blocks'))`) |
+| `Folklore\Models\Block` | `image`, `blocks`, as on a page |
+
+`Json::relation()` writes the key mapped to the relation's model, else the relation's name, as the 1.x declarations do: the image is `media://` or `medias://` as the medias module maps them (`site.medias.reference_key`), and the parent and the blocks are `parent://` and `blocks://` unless the site maps them.
+
+- **A subclass that overrides `getJsonDataRelations()`** keeps its 1.x declarations: the schema is `null` for it, so the declarations hook applies, as before. `folklore:upgrade --schemas` leaves such a method when it calls `parent::`; convert it by hand to a schema that adds to the package's.
+- **A subclass describes its own keys** by adding to the package's properties, and can then close the root:
+
+  ```php
+  public function jsonDataSchema(string $attribute): ?ObjectType
+  {
+      $schema = parent::jsonDataSchema($attribute);
+
+      return is_null($schema) ? null : Json::object([
+          ...$schema->getProperties(),
+          'title' => Json::string()->translatable(),
+          'body' => Json::string()->translatable(),
+      ])->additional(false);
+  }
+  ```
+
+- **The repositories** of the module, `Folklore\Repositories\Pages` and `Blocks`, keep `$jsonAttributeFillable = '*'`: with the package's schemas alone, `JsonData::fill()` would store only the parent, the image and the blocks, and drop the site's keys. A site whose schema names every key that its pages or blocks store sets `protected $jsonAttributeFillable = null;` in its repository, which then fills with `JsonData::fill()`.
+- `getJsonDataRelations()` stays on both models, deprecated, for the subclasses that call it; it goes in 3.0.
+
 ## Media references
 
 The medias module registers two keys, when `laravel-mediatheque` 2 is installed:
