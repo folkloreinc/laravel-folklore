@@ -8,6 +8,8 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+## [2.0.0-alpha.9] - 2026-11-03
+
 Blocks in the page's JSON ([decisions/0023](docs/decisions/0023-blocks-in-the-page.md)). Requires laravel-json-data 1.0.0-alpha.6, for `Json::union()`.
 
 ### Breaking changes
@@ -247,7 +249,8 @@ The core and `JsonDataCast`, and the medias module on `laravel-mediatheque` 2 an
 
 - `make:entity` generated an entity and a repository that implemented themselves instead of their contracts, so they didn't load.
 
-[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.8...v2.x
+[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.9...v2.x
+[2.0.0-alpha.9]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.9
 [2.0.0-alpha.8]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.8
 [2.0.0-alpha.7]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.7
 [2.0.0-alpha.6]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.6
