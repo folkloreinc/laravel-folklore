@@ -1,6 +1,6 @@
 # Upgrading from 1.1
 
-> **Draft.** This guide is filled as 2.0 lands. The steps and the mapping below are the plan ([decisions/0003](decisions/0003-evolve-in-place.md)). `json-data:rewrite-references`, `folklore:upgrade` with its `--check`, and the Rector rules exist ([#123](https://github.com/folkloreinc/laravel-folklore/issues/123)); the conversion of block data comes with the pages module of 2.0.
+> **Draft.** This guide is filled as 2.0 lands. The steps and the mapping below are the plan ([decisions/0003](decisions/0003-evolve-in-place.md)). `json-data:rewrite-references`, `folklore:upgrade` with its `--check`, and the Rector rules exist ([#123](https://github.com/folkloreinc/laravel-folklore/issues/123)); and so does the conversion of block data into the page's JSON ([decisions/0023](decisions/0023-blocks-in-the-page.md)).
 
 2.0 keeps the 1.x class names and their protected API. What it replaces is deprecated until 3.0, so a site can upgrade first and clean up its code afterwards. Sites usually upgrade when they move to Panneau 5, since the Panneau plugin ships with 2.0.
 
@@ -33,7 +33,7 @@ It reads the site's code as text (`app`, `config`, `routes`, `resources/views`, 
 | Panneau contracts | Site code that uses `Panneau\Contracts\ResourceItem` or `Repository`, which Folklore's entities and repositories no longer implement, the site's contracts that extend them included, and the `use` statements of them that the Rector set leaves unused |
 | JSON references in the code | Models that replace the `JsonDataCast` of their Folklore model with a plain `json` cast, and code that writes `scheme://id` references itself (`'media://'.$id`). As info: code with the key in a variable (`$key.'://'.$id`), which may build URLs, and the `sync()` calls of that code and of the classes that use it or extend it |
 | Stored JSON references | For each JSON column, the paths and keys of its references (`data.gallery.* → medias:// (12)`): those of a column without `JsonDataCast` are to declare. Keys that aren't mapped, and keys whose identifiers match nothing in the model they map to, such as `media://12` written by id where 2.0 reads `media://` by uid. `medias://` references without `site.medias.reference_key` set to `medias`. Before the mediatheque is upgraded, its media table has no `uid`: the check says to upgrade it first, and reports integer identifiers under `media://` as breaking without looking them up |
-| Block data | The rows of `blocks_pivot`, which 2.0 stores in the page's JSON |
+| Block data | The rows of `blocks_pivot`, which 2.0 stores in the page's JSON, and `folklore:upgrade` converts |
 | Medias | `Folklore\Mediatheque\Support\Traits\HasMedias`: deprecated where the installed mediatheque keeps it as an alias (2.0.0-alpha.11 and later), breaking otherwise. `image.sizes` filters, `new ImageSize()` with filters, `setFilters()`, `getMetadatas()`, `new Medias($typeFactory)`. `MediaResource` with `site.medias.resource` set to `canonical`, and its subclasses that override `toArray($request)` without types or call the entity through the resource |
 | JSON declarations | The models that declare their JSON data with `getJsonDataRelations()` or `getJsonDataColumnExtract()`: those that `folklore:upgrade --schemas` converts, with the TODOs it writes, and those it leaves, with why. As info, how many convert. The repositories that declare `$jsonAttributeFillable`, which keeps the 1.x fill, and, as info, those of converted models that don't, which fill them with `JsonData::fill()` |
 | Deprecated API | `JsonDataCast::macro()`, `$jsonAttributeName`, `setGlobalQuery()` |
@@ -44,7 +44,7 @@ It reads the site as `--check` does (`--path`, `--model`, `--limit`), says what 
 
 - **`config/site.php`:** turns on each module the site uses, as `--check` finds them, unless it is on. A module whose packages are missing stays off, since the site wouldn't boot: require them, and run it again. Sets `medias.reference_key` to `medias` when the JSON columns store `medias://` references. It edits the site's file in place, keeping its comments and layout, and starts from the package's `config/site.php` when the site has none. A value that isn't a literal (`'medias' => env('FOLKLORE_MEDIAS', false)`), or a key under a value that isn't an array literal (`'modules' => $modules`), is the site's: the command leaves it, and says what to set. `medias.resource` is `legacy` by default, so the command leaves it.
 - **`medias_pivot`:** 1.x synced the media of JSON references to the mediatheque's pivot without a handle, and 2.0 syncs them under the `json` handle. For each row of the models whose JSON data 2.0 syncs to media (cast with `JsonDataCast`, with laravel-mediatheque 2's `HasMedias`, and a `medias` relation declared in `getJsonDataRelations()` or a schema, without its own `sync`), the command syncs the media that the row's JSON references under the `json` handle, then removes the rows without a handle of those media. A media attached without a handle by other code stays, and so do the rows of a model that replaces the cast with a plain `json` cast, which its own code syncs. The pages module's `Page` and `Block` are read too when the site uses the module.
-- **Block data:** `blocks_pivot` is listed as left to do. Its rows are converted to the page's JSON with the pages module of 2.0 ([decisions/0009](decisions/0009-pages-and-blocks.md)); keep the table until then.
+- **Pages** (with the pages module on): each `blocks://` reference of a page's `blocks`, at every level, becomes the block's object, from its row of `blocks`: its id as a string, its `type`, its `handle` and its data ([decisions/0023](decisions/0023-blocks-in-the-page.md)). `parent://` references become `page://`. Then the page's relations are synced, so the media of its blocks are the page's, under the `json` handle. A reference to a block that doesn't exist is left out; the rows of `blocks_pivot` of blocks that no page's data references, or of other models, are listed and stay. It writes the rows without model events, then syncs them. Keep `blocks` and `blocks_pivot` until it has run on every database; then drop them.
 
 ## The Rector rules
 
@@ -137,7 +137,7 @@ The page fields of 1.x have Panneau 5 equivalents in `Folklore\Panneau\Fields` (
 | `->isDisabled()` on the home page's slug | Disabled for the page whose `handle` is `home` |
 | Slugs not checked (`'unique' => false` in the model's `sluggable()`) | `PageSlug` is unique, across the types of pages; `notUnique()` turns it off |
 
-Blocks keep working through `blocks_pivot`: the field gives each block its id, and saving a page updates its blocks. The pages repository now implements `ChecksSlugs`: a site's subclass of it with its own `slugExists()` must match that contract. Media inside blocks aren't media references yet ([folkloreinc/laravel-panneau#117](https://github.com/folkloreinc/laravel-panneau/issues/117)).
+Blocks are stored in the page's JSON ([Pages and blocks](#pages-and-blocks)): the field gives each block its id, and the pages repository gives one to a new block. The pages repository now implements `ChecksSlugs`: a site's subclass of it with its own `slugExists()` must match that contract. Media inside blocks aren't media references yet ([folkloreinc/laravel-panneau#117](https://github.com/folkloreinc/laravel-panneau/issues/117)).
 
 ### Medias
 
@@ -153,6 +153,34 @@ Blocks keep working through `blocks_pivot`: the field gives each block its id, a
 | `new Medias($typeFactory)` | `new Medias()` |
 | `MediaResource`: the 1.x shape | The 1.x shape by default, on the mediatheque's resource; `site.medias.resource` set to `canonical`, or `->canonical()`, gives the mediatheque's shape (`id` is the uid, `files` by handle), for front ends that moved to it |
 | A subclass of `MediaResource` overrides `toArray($request)` and calls the entity through the resource (`$this->files()`) | `toArray(Request $request): array`, and `$this->entity()->files()`: the resource is the mediatheque's model |
+
+### Pages and blocks
+
+Since 2.0.0-alpha.9, the pages module stores a page's blocks in its `data.blocks`, typed by `site.pages.blocks` ([decisions/0023](decisions/0023-blocks-in-the-page.md)), and pages refer to pages with the `page` key, mapped to `site.pages.model`.
+
+| 1.x, and 2.0 up to alpha.8 | 2.0 |
+|---|---|
+| Rows of `blocks`, linked through `blocks_pivot`, and `blocks://12` in `data.blocks` | The blocks' objects in `data.blocks`, each with `id`, `type` and `handle` |
+| `$entitiesByType` on the site's `Block` model | `site.pages.blocks.types`: the entity class of each type, which extends `Folklore\Entities\Block` and declares its data (`blockSchema()`) |
+| A block entity built from its model (`$this->model->handle`) | Built from its object: `handle()`, `data()`, `blocks()` |
+| `parent://12` | `page://12` |
+| `Folklore\Models\Page::getJsonDataRelations()` | `jsonDataSchema()`: `title`, `description`, `slug`, `image`, `parent` and `blocks`; a site's page model adds its own properties |
+| `Folklore\Models\Page::blocks()`, the pages repository's `Blocks` dependency | Removed |
+| `Folklore\Models\Block`, `Folklore\Repositories\Blocks` | Deprecated, kept for the conversion |
+
+Run `folklore:upgrade` once the code is deployed: it converts the stored data. A site's page model that extends the package's adds its keys to the schema:
+
+```php
+public function jsonDataSchema(string $attribute): ?ObjectType
+{
+    $schema = parent::jsonDataSchema($attribute);
+
+    return is_null($schema) ? null : Json::object([
+        ...$schema->getProperties(),
+        'body' => Json::string()->translatable(),
+    ])->additional(false);
+}
+```
 
 ### JSON data
 

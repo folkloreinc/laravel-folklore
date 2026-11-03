@@ -41,6 +41,7 @@ use Folklore\Models\Block;
 use Folklore\Models\Media;
 use Folklore\Models\MediaFile;
 use Folklore\Models\Page;
+use Folklore\Pages\BlockRegistry;
 use Folklore\Panneau\PanneauServiceProvider;
 use Folklore\Repositories\Blocks;
 use Folklore\Repositories\Medias;
@@ -236,6 +237,8 @@ class ServiceProvider extends BaseServiceProvider
         }
 
         if ($this->moduleEnabled('pages')) {
+            $this->app->singleton(BlockRegistry::class);
+
             $this->app->bind(
                 Contracts\Repositories\Pages::class,
                 Pages::class
@@ -294,6 +297,15 @@ class ServiceProvider extends BaseServiceProvider
         // Json::media(): a reference of the key written, synced to the media of HasMedias
         $writeKey = array_key_first($keys);
         Json::macro('media', fn (): ReferenceType => Json::reference($writeKey)->relation('medias'));
+    }
+
+    /**
+     * Pages refer to pages by the `page` key, mapped to the site's page model
+     * (`site.pages.model`, docs/decisions/0023).
+     */
+    protected function bootPages(): void
+    {
+        JsonData::map(['page' => Page::pageModel()]);
     }
 
     protected function registerSite()
@@ -382,6 +394,10 @@ class ServiceProvider extends BaseServiceProvider
     {
         if ($this->moduleEnabled('medias')) {
             $this->bootMediatheque();
+        }
+
+        if ($this->moduleEnabled('pages')) {
+            $this->bootPages();
         }
 
         if ($this->moduleEnabled('http')) {

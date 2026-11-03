@@ -3,12 +3,8 @@
 namespace Folklore\Tests\Feature\Panneau;
 
 use Folklore\Contracts\Entities\Entity;
-use Folklore\Contracts\Entities\HasModel;
 use Folklore\Contracts\Repositories\Entities as EntitiesContract;
 use Folklore\Contracts\Repositories\QueryContextResolver;
-use Folklore\Entities\Block;
-use Folklore\Models\Block as BlockModel;
-use Folklore\Models\Page as PageModel;
 use Folklore\Panneau\EntitiesRepository;
 use Folklore\Panneau\SearchableEntitiesRepository;
 use Folklore\Tests\Feature\Repositories\Fixtures\Article;
@@ -16,7 +12,6 @@ use Folklore\Tests\Feature\Repositories\Fixtures\ArticleEntity;
 use Folklore\Tests\Feature\Repositories\Fixtures\Articles;
 use Folklore\Tests\Feature\Repositories\Fixtures\ArticlesContract;
 use Folklore\Tests\Feature\Repositories\Fixtures\Notes;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use InvalidArgumentException;
 use LogicException;
@@ -316,39 +311,6 @@ class EntitiesRepositoryTest extends PanneauTestCase
 
         $this->assertNotNull($version);
         $this->assertSame($version, $adapter->version($article));
-    }
-
-    public function test_the_version_of_an_entity_with_a_blocks_method_changes_with_its_blocks()
-    {
-        $entity = function (string $body): HasModel {
-            $block = new BlockModel;
-            $block->setRawAttributes(['id' => 1, 'type' => 'text', 'data' => json_encode(['body' => $body])], true);
-            $page = new PageModel;
-            $page->setRawAttributes(['id' => 1], true);
-
-            // Not HasBlocks: the Blocks field reads blocks() all the same
-            return new class($page, $block) implements HasModel
-            {
-                public function __construct(private PageModel $page, private BlockModel $block) {}
-
-                public function getModel(): Model
-                {
-                    return $this->page;
-                }
-
-                /**
-                 * @return list<Block>
-                 */
-                public function blocks(): array
-                {
-                    return [new Block($this->block)];
-                }
-            };
-        };
-        $adapter = $this->adapter();
-
-        $this->assertSame($adapter->version($entity('First')), $adapter->version($entity('First')));
-        $this->assertNotSame($adapter->version($entity('First')), $adapter->version($entity('Edited')));
     }
 
     public function test_an_item_that_is_not_an_entity_has_no_id_and_no_version()

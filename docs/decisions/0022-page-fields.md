@@ -1,6 +1,6 @@
 # 0022: The page fields: a registry of block types, and types of pages by resource
 
-- Status: accepted
+- Status: accepted, amended by [0023](0023-blocks-in-the-page.md): blocks are stored in the page's JSON
 - Date: 2026-10-29
 - Issue: [#122](https://github.com/folkloreinc/laravel-folklore/issues/122)
 

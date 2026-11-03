@@ -2,11 +2,8 @@
 
 namespace Folklore\Panneau;
 
-use Folklore\Contracts\Entities\Block;
 use Folklore\Contracts\Entities\Entity;
-use Folklore\Contracts\Entities\HasBlocks;
 use Folklore\Contracts\Entities\HasModel;
-use Folklore\Contracts\Entities\ToEntity;
 use Folklore\Contracts\Repositories\ChecksSlugs as RepositoryChecksSlugs;
 use Folklore\Contracts\Repositories\Entities;
 use Folklore\Contracts\Repositories\QueriesEntities;
@@ -135,22 +132,16 @@ class EntitiesRepository implements ChecksSlugs, ResourceRepository
 
     /**
      * A hash of the attributes of the entity's model as they were read or last saved, so
-     * that the values a cast or an accessor computes don't change it. For an entity with
-     * blocks (`HasBlocks`, or a `blocks()` method, which the `Blocks` field reads too), the
-     * attributes of its blocks, at every level, count too: a page whose blocks are rows of
-     * their own (`blocks_pivot`) doesn't change when only a block does.
+     * that the values a cast or an accessor computes don't change it. A page's blocks are
+     * in its data (docs/decisions/0023), so they count with it.
      */
     public function version(object $item): ?string
     {
         if (! $item instanceof HasModel) {
             return null;
         }
-        $version = self::attributesOf($item);
-        if ($item instanceof HasBlocks || method_exists($item, 'blocks')) {
-            $version = [$version, self::blocksOf($item->blocks())];
-        }
 
-        return hash('xxh128', serialize($version));
+        return hash('xxh128', serialize(self::attributesOf($item)));
     }
 
     /**
@@ -162,34 +153,6 @@ class EntitiesRepository implements ChecksSlugs, ResourceRepository
         ksort($attributes);
 
         return array_map(fn (mixed $value): mixed => is_scalar($value) ? (string) $value : $value, $attributes);
-    }
-
-    /**
-     * The attributes of the blocks of a list, with those of the blocks in their data.
-     *
-     * @return list<mixed>
-     */
-    private static function blocksOf(mixed $blocks): array
-    {
-        if (! is_iterable($blocks)) {
-            return [];
-        }
-        $versions = [];
-        foreach ($blocks as $block) {
-            if ($block instanceof ToEntity) {
-                $block = $block->toEntity();
-            }
-            if (! $block instanceof Block || ! $block instanceof HasModel) {
-                continue;
-            }
-            $nested = [];
-            foreach ($block->data() ?? [] as $value) {
-                $nested = [...$nested, ...self::blocksOf($value)];
-            }
-            $versions[] = [self::attributesOf($block), $nested];
-        }
-
-        return $versions;
     }
 
     public function slugExists(string $field, string $value, ?string $locale, ?string $exceptId, array $scope, array $values): bool

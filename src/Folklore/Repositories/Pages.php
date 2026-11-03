@@ -3,22 +3,22 @@
 namespace Folklore\Repositories;
 
 use Folklore\Contracts\Entities\Page as PageContract;
-use Folklore\Contracts\Repositories\Blocks as BlocksRepositoryContract;
 use Folklore\Contracts\Repositories\ChecksSlugs;
 use Folklore\Contracts\Repositories\Pages as PagesRepositoryContract;
 use Folklore\Models\Page as PageModel;
+use Folklore\Pages\BlockRegistry;
 use Folklore\Repositories\Concerns\ChecksSlugs as ChecksSlugsConcern;
+use Illuminate\Container\Container;
 use Illuminate\Support\Arr;
 
 /**
  * Checks the slugs of pages in their `slug_{locale}` columns (`ChecksSlugs`), across the
  * types of pages: a pages resource that offers some types still sees the slugs of the others.
+ * A page's blocks are in its data (docs/decisions/0023): each block without an id gets one.
  */
 class Pages extends Entities implements ChecksSlugs, PagesRepositoryContract
 {
     use ChecksSlugsConcern;
-
-    protected $blocks;
 
     protected $jsonAttributeFillable = '*';
 
@@ -31,19 +31,9 @@ class Pages extends Entities implements ChecksSlugs, PagesRepositoryContract
      */
     protected $queryColumns = ['type'];
 
-    public function __construct(BlocksRepositoryContract $blocks)
-    {
-        $this->blocks = $blocks;
-    }
-
     protected function newModel(): PageModel
     {
         return new PageModel;
-    }
-
-    protected function newQuery()
-    {
-        return parent::newQuery()->with('blocks');
     }
 
     public function findById(string $id): ?PageContract
@@ -107,44 +97,12 @@ class Pages extends Entities implements ChecksSlugs, PagesRepositoryContract
     }
 
     /**
-     * Save the page and its blocks in a single transaction.
+     * Saves the page with its blocks, each with an id.
      */
     protected function saveData($model, $data)
     {
-        $model->getConnection()->transaction(function () use ($model, $data) {
-            $this->saveBlocksAndData($model, $data);
-        });
-
-        if (isset($data['blocks'])) {
-            $model->load('blocks');
-        }
-    }
-
-    protected function saveBlocksAndData($model, $data)
-    {
-        if (isset($data['blocks'])) {
-            $data['blocks'] = collect($data['blocks'])
-                ->map(function ($item) use ($model) {
-                    $id = data_get($item, 'id');
-                    if (isset($item['handle']) && is_null($id)) {
-                        $id = $model
-                            ->blocks()
-                            ->where('handle', $item['handle'])
-                            ->value('blocks.id');
-                    }
-
-                    // The id is the block's row, not a value of its data
-                    $values = is_array($item) ? Arr::except($item, ['id']) : $item;
-
-                    return ! empty($id)
-                        ? $this->blocks->update($id, $values)
-                        : $this->blocks->create($values);
-                })
-                ->filter(function ($block) {
-                    return ! is_null($block);
-                })
-                ->values()
-                ->toArray();
+        if (is_array($data['blocks'] ?? null)) {
+            $data['blocks'] = Container::getInstance()->make(BlockRegistry::class)->withIds($data['blocks']);
         }
 
         parent::saveData($model, $data);

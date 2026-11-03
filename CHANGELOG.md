@@ -8,6 +8,26 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+Blocks in the page's JSON ([decisions/0023](docs/decisions/0023-blocks-in-the-page.md)). Requires laravel-json-data 1.0.0-alpha.6, for `Json::union()`.
+
+### Breaking changes
+
+- The pages module stores a page's blocks in its `data.blocks`, as objects with an `id`, a `type` and a `handle`, instead of rows of `blocks` linked through `blocks_pivot`. Run `folklore:upgrade`, which converts them ([docs/upgrade.md](docs/upgrade.md#pages-and-blocks)).
+- `Folklore\Entities\Block` is built from the block's object, not from a model, and no longer implements `HasModel`. A block entity of a site that read `$this->model` reads `$this->data`, `handle()` or `blocks()`.
+- `Folklore\Models\Page` declares its data with `jsonDataSchema()` and the cast of laravel-json-data; `getJsonDataRelations()` and `blocks()` are removed. Its parent is a `page://` reference, `parent://` before: `folklore:upgrade` rewrites them.
+- The pages repository no longer takes the blocks repository, and doesn't load `blocks`.
+- The Panneau adapter's version of an entity no longer adds the attributes of its blocks: they are in the page's data.
+
+### Added
+
+- `site.pages.blocks.types`, the entity class of each block type, which declares the schema of its data (`DeclaresBlockSchema`), and `site.pages.blocks.depth` (3): a page's blocks are a union of these types, closed, validated per type by `Json::rules()`, with their references at every level.
+- The `page` key of JSON references, mapped to `site.pages.model`.
+- `folklore:upgrade` converts the blocks of `blocks_pivot` into the pages' JSON, and `parent://` into `page://`; `--dry-run` counts them.
+
+### Deprecated
+
+- `Folklore\Models\Block`, `Folklore\Repositories\Blocks` and their contract, kept for the conversion until 3.0.
+
 ## [2.0.0-alpha.8] - 2026-11-02
 
 The upgrade of the 1.x JSON declarations to schemas, `folklore:upgrade --schemas`, run on two 1.1 sites ([#150](https://github.com/folkloreinc/laravel-folklore/issues/150), [#152](https://github.com/folkloreinc/laravel-folklore/issues/152)), `withJsonReferences(depth:)` ([#153](https://github.com/folkloreinc/laravel-folklore/issues/153)), and fixes to pages routes, users' passwords, the Panneau adapter and `folklore:upgrade --check`. Requires laravel-json-data 1.0.0-alpha.5.

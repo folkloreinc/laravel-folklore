@@ -3,38 +3,71 @@
 namespace Folklore\Entities;
 
 use Folklore\Contracts\Entities\Block as BlockContract;
-use Folklore\Contracts\Entities\HasModel;
-use Illuminate\Database\Eloquent\Model;
+use Folklore\Contracts\Entities\HasBlocks;
+use Folklore\Contracts\Pages\DeclaresBlockSchema;
+use Folklore\JsonData\Schema\Json;
+use Folklore\JsonData\Schema\ObjectType;
+use Folklore\Pages\BlockLevel;
+use Folklore\Pages\BlockRegistry;
+use Illuminate\Container\Container;
+use Illuminate\Support\Collection;
 
-class Block implements BlockContract, HasModel
+/**
+ * A block of a page, read from its object in the page's JSON (docs/decisions/0023): its
+ * `id`, `type` and `handle`, and its data, with its references resolved by the cast. The
+ * class of a block type extends it and declares the schema of its data.
+ */
+class Block implements BlockContract, DeclaresBlockSchema, HasBlocks
 {
-    protected $model;
+    /**
+     * @param  array<array-key, mixed>  $data  The block's object.
+     */
+    public function __construct(
+        protected array $data,
+    ) {}
 
-    protected $data;
-
-    public function __construct($model)
+    /**
+     * The properties of the type's data. A block of no registered type has none, and keeps
+     * its keys unless the map is enforced.
+     */
+    public static function blockSchema(BlockLevel $level): ObjectType
     {
-        $this->model = $model;
-        $this->data = $model->data;
+        return Json::object([]);
     }
 
     public function id(): string
     {
-        return $this->model->id;
+        $id = $this->data['id'] ?? null;
+
+        return is_string($id) || is_int($id) ? (string) $id : '';
     }
 
     public function type(): string
     {
-        return $this->model->type;
+        $type = $this->data['type'] ?? null;
+
+        return is_string($type) ? $type : '';
+    }
+
+    public function handle(): ?string
+    {
+        $handle = $this->data['handle'] ?? null;
+
+        return is_string($handle) ? $handle : null;
     }
 
     public function data(): ?array
     {
-        return $this->model->data;
+        return $this->data;
     }
 
-    public function getModel(): Model
+    /**
+     * The block's own blocks, as entities of their types.
+     *
+     * @return Collection<int, BlockContract>
+     */
+    public function blocks(): Collection
     {
-        return $this->model;
+        return once(fn () => Container::getInstance()->make(BlockRegistry::class)->toEntities($this->data['blocks'] ?? []));
     }
 }

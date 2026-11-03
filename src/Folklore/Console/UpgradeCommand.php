@@ -124,6 +124,12 @@ class UpgradeCommand extends Command
         if ($removed > 0) {
             $this->components->info("Removed {$removed} rows of `medias_pivot` without a handle, whose media are synced under the `json` handle.");
         }
+        if (! is_null($plan->blocks) && ! $plan->blocks->isEmpty()) {
+            $converted = $upgrade->convertBlocks($site, true);
+            if (! is_null($converted)) {
+                $this->components->info("Converted the data of {$converted->pages} pages: {$converted->blocks} blocks put into their page, {$converted->parents} parents as `page://`.");
+            }
+        }
         if ($this->laravel->configurationIsCached()) {
             $this->components->warn('The configuration is cached: run `php artisan config:cache` again for config/site.php to apply.');
         }
@@ -215,6 +221,27 @@ class UpgradeCommand extends Command
                 $found->model,
                 $found->morphClass,
             ));
+        }
+
+        if (! is_null($plan->blocks)) {
+            $this->newLine();
+            $this->line('<options=bold>Pages</>');
+            $blocks = $plan->blocks;
+            if ($blocks->isEmpty()) {
+                $this->line('  No blocks or parents to convert.');
+            } else {
+                $this->line(sprintf(
+                    '  %s the data of %d pages of `%s`: %d blocks of `blocks` put into their page, at every level, and %d `parent://` references as `page://`.',
+                    $dryRun ? 'Would convert' : 'Converts',
+                    $blocks->pages,
+                    $blocks->model,
+                    $blocks->blocks,
+                    $blocks->parents,
+                ));
+            }
+            if ($blocks->missing > 0) {
+                $this->line("  {$blocks->missing} `blocks://` references to blocks that don't exist are left out.");
+            }
         }
 
         if (count($plan->notes) > 0) {

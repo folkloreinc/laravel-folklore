@@ -1,6 +1,6 @@
 # 0009: Pages store their blocks in their JSON, with a type registry
 
-- Status: accepted
+- Status: accepted, implemented by [0023](0023-blocks-in-the-page.md) (blocks and their type registry)
 - Date: 2026-10-19
 
 ## Context

@@ -1453,68 +1453,8 @@ parameters:
 			path: src/Folklore/Contracts/Site/Factory.php
 
 		-
-			message: '#^Cannot access property \$data on mixed\.$#'
-			identifier: property.nonObject
-			count: 2
-			path: src/Folklore/Entities/Block.php
-
-		-
-			message: '#^Cannot access property \$id on mixed\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: src/Folklore/Entities/Block.php
-
-		-
-			message: '#^Cannot access property \$type on mixed\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: src/Folklore/Entities/Block.php
-
-		-
-			message: '#^Method Folklore\\Entities\\Block\:\:__construct\(\) has parameter \$model with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: src/Folklore/Entities/Block.php
-
-		-
 			message: '#^Method Folklore\\Entities\\Block\:\:data\(\) return type has no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
-			count: 1
-			path: src/Folklore/Entities/Block.php
-
-		-
-			message: '#^Method Folklore\\Entities\\Block\:\:data\(\) should return array\|null but returns mixed\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Folklore/Entities/Block.php
-
-		-
-			message: '#^Method Folklore\\Entities\\Block\:\:getModel\(\) should return Illuminate\\Database\\Eloquent\\Model but returns mixed\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Folklore/Entities/Block.php
-
-		-
-			message: '#^Method Folklore\\Entities\\Block\:\:id\(\) should return string but returns mixed\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Folklore/Entities/Block.php
-
-		-
-			message: '#^Method Folklore\\Entities\\Block\:\:type\(\) should return string but returns mixed\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Folklore/Entities/Block.php
-
-		-
-			message: '#^Property Folklore\\Entities\\Block\:\:\$data has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: src/Folklore/Entities/Block.php
-
-		-
-			message: '#^Property Folklore\\Entities\\Block\:\:\$model has no type specified\.$#'
-			identifier: missingType.property
 			count: 1
 			path: src/Folklore/Entities/Block.php
 
@@ -2065,12 +2005,6 @@ parameters:
 			path: src/Folklore/Entities/Page.php
 
 		-
-			message: '#^Parameter \#1 \$value of function collect expects Illuminate\\Contracts\\Support\\Arrayable\<\(int\|string\), mixed\>\|iterable\<\(int\|string\), mixed\>\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Folklore/Entities/Page.php
-
-		-
 			message: '#^Property Folklore\\Entities\\Page\:\:\$data has no type specified\.$#'
 			identifier: missingType.property
 			count: 1
@@ -2079,18 +2013,6 @@ parameters:
 		-
 			message: '#^Property Folklore\\Entities\\Page\:\:\$model has no type specified\.$#'
 			identifier: missingType.property
-			count: 1
-			path: src/Folklore/Entities/Page.php
-
-		-
-			message: '#^Unable to resolve the template type TKey in call to function collect$#'
-			identifier: argument.templateType
-			count: 1
-			path: src/Folklore/Entities/Page.php
-
-		-
-			message: '#^Unable to resolve the template type TValue in call to function collect$#'
-			identifier: argument.templateType
 			count: 1
 			path: src/Folklore/Entities/Page.php
 
@@ -2947,12 +2869,6 @@ parameters:
 			path: src/Folklore/Models/Block.php
 
 		-
-			message: '#^Method Folklore\\Models\\Block\:\:toEntity\(\) should return Folklore\\Contracts\\Entities\\Block but returns Folklore\\Contracts\\Entities\\Entity\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Folklore/Models/Block.php
-
-		-
 			message: '#^Method Folklore\\Models\\Block\:\:toTypedEntity\(\) should return Folklore\\Contracts\\Entities\\Entity\|null but returns object\|null\.$#'
 			identifier: return.type
 			count: 1
@@ -3079,38 +2995,8 @@ parameters:
 			path: src/Folklore/Models/Page.php
 
 		-
-			message: '#^Method Folklore\\Models\\Page\:\:blocks\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: src/Folklore/Models/Page.php
-
-		-
 			message: '#^Method Folklore\\Models\\Page\:\:children\(\) has no return type specified\.$#'
 			identifier: missingType.return
-			count: 1
-			path: src/Folklore/Models/Page.php
-
-		-
-			message: '#^Method Folklore\\Models\\Page\:\:getJsonDataRelations\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: src/Folklore/Models/Page.php
-
-		-
-			message: '#^Method Folklore\\Models\\Page\:\:getJsonDataRelations\(\) has parameter \$attributes with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: src/Folklore/Models/Page.php
-
-		-
-			message: '#^Method Folklore\\Models\\Page\:\:getJsonDataRelations\(\) has parameter \$key with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: src/Folklore/Models/Page.php
-
-		-
-			message: '#^Method Folklore\\Models\\Page\:\:getJsonDataRelations\(\) has parameter \$value with no type specified\.$#'
-			identifier: missingType.parameter
 			count: 1
 			path: src/Folklore/Models/Page.php
 
@@ -4827,12 +4713,6 @@ parameters:
 		-
 			message: '#^Cannot access offset ''blocks'' on mixed\.$#'
 			identifier: offsetAccess.nonOffsetAccessible
-			count: 2
-			path: src/Folklore/Repositories/Pages.php
-
-		-
-			message: '#^Cannot access offset ''handle'' on mixed\.$#'
-			identifier: offsetAccess.nonOffsetAccessible
 			count: 1
 			path: src/Folklore/Repositories/Pages.php
 
@@ -4843,63 +4723,15 @@ parameters:
 			path: src/Folklore/Repositories/Pages.php
 
 		-
-			message: '#^Cannot call method blocks\(\) on mixed\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: src/Folklore/Repositories/Pages.php
-
-		-
-			message: '#^Cannot call method create\(\) on mixed\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: src/Folklore/Repositories/Pages.php
-
-		-
 			message: '#^Cannot call method first\(\) on mixed\.$#'
 			identifier: method.nonObject
 			count: 2
 			path: src/Folklore/Repositories/Pages.php
 
 		-
-			message: '#^Cannot call method getConnection\(\) on mixed\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: src/Folklore/Repositories/Pages.php
-
-		-
-			message: '#^Cannot call method load\(\) on mixed\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: src/Folklore/Repositories/Pages.php
-
-		-
-			message: '#^Cannot call method transaction\(\) on mixed\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: src/Folklore/Repositories/Pages.php
-
-		-
-			message: '#^Cannot call method update\(\) on mixed\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: src/Folklore/Repositories/Pages.php
-
-		-
-			message: '#^Cannot call method value\(\) on mixed\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: src/Folklore/Repositories/Pages.php
-
-		-
 			message: '#^Cannot call method where\(\) on mixed\.$#'
 			identifier: method.nonObject
-			count: 4
-			path: src/Folklore/Repositories/Pages.php
-
-		-
-			message: '#^Cannot call method with\(\) on mixed\.$#'
-			identifier: method.nonObject
-			count: 1
+			count: 3
 			path: src/Folklore/Repositories/Pages.php
 
 		-
@@ -4951,30 +4783,6 @@ parameters:
 			path: src/Folklore/Repositories/Pages.php
 
 		-
-			message: '#^Method Folklore\\Repositories\\Pages\:\:newQuery\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: src/Folklore/Repositories/Pages.php
-
-		-
-			message: '#^Method Folklore\\Repositories\\Pages\:\:saveBlocksAndData\(\) has no return type specified\.$#'
-			identifier: missingType.return
-			count: 1
-			path: src/Folklore/Repositories/Pages.php
-
-		-
-			message: '#^Method Folklore\\Repositories\\Pages\:\:saveBlocksAndData\(\) has parameter \$data with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: src/Folklore/Repositories/Pages.php
-
-		-
-			message: '#^Method Folklore\\Repositories\\Pages\:\:saveBlocksAndData\(\) has parameter \$model with no type specified\.$#'
-			identifier: missingType.parameter
-			count: 1
-			path: src/Folklore/Repositories/Pages.php
-
-		-
 			message: '#^Method Folklore\\Repositories\\Pages\:\:saveData\(\) has no return type specified\.$#'
 			identifier: missingType.return
 			count: 1
@@ -5005,32 +4813,8 @@ parameters:
 			path: src/Folklore/Repositories/Pages.php
 
 		-
-			message: '#^Parameter \#1 \$value of function collect expects Illuminate\\Contracts\\Support\\Arrayable\<\(int\|string\), mixed\>\|iterable\<\(int\|string\), mixed\>\|null, mixed given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/Folklore/Repositories/Pages.php
-
-		-
-			message: '#^Property Folklore\\Repositories\\Pages\:\:\$blocks has no type specified\.$#'
-			identifier: missingType.property
-			count: 1
-			path: src/Folklore/Repositories/Pages.php
-
-		-
 			message: '#^Property Folklore\\Repositories\\Pages\:\:\$jsonAttributeFillable has no type specified\.$#'
 			identifier: missingType.property
-			count: 1
-			path: src/Folklore/Repositories/Pages.php
-
-		-
-			message: '#^Unable to resolve the template type TKey in call to function collect$#'
-			identifier: argument.templateType
-			count: 1
-			path: src/Folklore/Repositories/Pages.php
-
-		-
-			message: '#^Unable to resolve the template type TValue in call to function collect$#'
-			identifier: argument.templateType
 			count: 1
 			path: src/Folklore/Repositories/Pages.php
 

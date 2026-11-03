@@ -4,10 +4,13 @@ namespace Folklore\Upgrade;
 
 use Folklore\Eloquent\MediaUsagesSync;
 use Folklore\JsonData\JsonDataCast;
+use Folklore\Models\Block;
+use Folklore\Models\Page;
 use Folklore\ServiceProvider;
 use Folklore\Upgrade\Checks\BlocksCheck;
 use Folklore\Upgrade\Checks\RemovedModulesCheck;
 use Folklore\Upgrade\Checks\StoredReferencesCheck;
+use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
@@ -51,11 +54,19 @@ class Upgrade
         $usage = ModuleUsage::of($site);
         $config = $this->writable($site, [...$this->modules($site, $usage, $notes), ...$this->medias($site)], $notes);
         $rows = $this->mediaPivotRows($site, $usage, $notes);
-        foreach ((new BlocksCheck)->check($site) as $finding) {
-            $notes[] = $finding;
+        $blocks = $this->convertBlocks($site, false);
+        if (is_null($blocks)) {
+            foreach ((new BlocksCheck)->check($site) as $finding) {
+                $notes[] = $finding;
+            }
+        } elseif ($blocks->left > 0) {
+            $notes[] = Finding::todo(
+                "{$blocks->left} rows of `blocks_pivot` link blocks that no page's data references, or blocks of other models: they aren't converted.",
+                'Put the blocks of other models in their own JSON, then drop `blocks` and `blocks_pivot` (decisions/0023).',
+            );
         }
 
-        return new UpgradePlan($config, $rows, $notes);
+        return new UpgradePlan($config, $rows, $notes, $blocks);
     }
 
     /**
@@ -265,6 +276,130 @@ class Upgrade
         }
 
         return array_values($rows);
+    }
+
+    /**
+     * Converts the data of the pages (decisions/0023): each `blocks://` reference of their
+     * blocks, at every level, becomes the block's object, from its row of `blocks` (its id,
+     * as a string, its type, its handle and its data), and `parent://` becomes `page://`.
+     * Then the relations of each page are synced: the media of its blocks, under the `json`
+     * handle. Without `$write`, only counts. Null without the pages module or its table.
+     */
+    public function convertBlocks(Site $site, bool $write): ?BlocksConversion
+    {
+        if (! $site->config->get('site.modules.pages', false)) {
+            return null;
+        }
+        $class = Page::pageModel();
+        $model = new $class;
+        $connection = $model->getConnection();
+        $schema = $connection->getSchemaBuilder();
+        if (! $schema->hasTable($model->getTable())) {
+            return null;
+        }
+        $withBlocks = $schema->hasTable('blocks');
+
+        $counts = ['pages' => 0, 'blocks' => 0, 'parents' => 0, 'missing' => 0];
+        $referenced = [];
+        $key = $model->getKeyName();
+        $connection->table($model->getTable())->orderBy($key)->chunkById(self::CHUNK, function ($rows) use ($connection, $model, $class, $key, $write, $withBlocks, &$counts, &$referenced) {
+            foreach ($rows as $row) {
+                $data = is_string($row->data ?? null) ? json_decode($row->data, true) : null;
+                if (! is_array($data)) {
+                    continue;
+                }
+                $changed = false;
+                if ($withBlocks && is_array($data['blocks'] ?? null)) {
+                    $data['blocks'] = $this->inlineBlocks($connection, $data['blocks'], [], $counts, $referenced, $changed);
+                }
+                if (is_string($data['parent'] ?? null) && preg_match('#^parent://(.+)$#', $data['parent'], $matches) === 1) {
+                    $data['parent'] = 'page://'.$matches[1];
+                    $counts['parents']++;
+                    $changed = true;
+                }
+                if (! $changed) {
+                    continue;
+                }
+                $counts['pages']++;
+                if ($write) {
+                    $connection->table($model->getTable())->where($key, $row->{$key})->update([
+                        'data' => json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE),
+                    ]);
+                    $page = $class::query()->withoutGlobalScopes()->find($row->{$key});
+                    if ($page instanceof Model) {
+                        JsonDataCast::syncRelations($page);
+                    }
+                }
+            }
+        }, $key);
+
+        $left = 0;
+        if ($schema->hasTable('blocks_pivot')) {
+            // The rows of the converted blocks, under a page or a block
+            $owners = [$model->getMorphClass(), (new Block)->getMorphClass()];
+            $left = $connection->table('blocks_pivot')->count();
+            foreach (array_chunk(array_keys($referenced), 1000) as $ids) {
+                $left -= $connection->table('blocks_pivot')->whereIn('block_id', $ids)->whereIn('blockable_type', $owners)->count();
+            }
+        }
+
+        return new BlocksConversion($class, $counts['pages'], $counts['blocks'], $counts['parents'], $counts['missing'], max(0, $left));
+    }
+
+    /**
+     * The blocks of a list, with each `blocks://` reference replaced by the block's object.
+     * A reference to a block that doesn't exist, or to one of its own parents, is left out.
+     *
+     * @param  array<array-key, mixed>  $items
+     * @param  list<int>  $ancestors
+     * @param  array{pages: int, blocks: int, parents: int, missing: int}  $counts
+     * @param  array<int, true>  $referenced
+     * @return list<mixed>
+     */
+    protected function inlineBlocks(ConnectionInterface $connection, array $items, array $ancestors, array &$counts, array &$referenced, bool &$changed): array
+    {
+        $blocks = [];
+        foreach ($items as $item) {
+            if (is_array($item)) {
+                if (is_array($item['blocks'] ?? null)) {
+                    $item['blocks'] = $this->inlineBlocks($connection, $item['blocks'], $ancestors, $counts, $referenced, $changed);
+                }
+                $blocks[] = $item;
+
+                continue;
+            }
+            if (! is_string($item) || preg_match('#^blocks?://(\d+)$#', $item, $matches) !== 1) {
+                $blocks[] = $item;
+
+                continue;
+            }
+
+            $changed = true;
+            $id = (int) $matches[1];
+            $row = in_array($id, $ancestors, true) ? null : $connection->table('blocks')->where('id', $id)->first();
+            if (is_null($row)) {
+                $counts['missing']++;
+
+                continue;
+            }
+            $data = is_string($row->data ?? null) ? json_decode($row->data, true) : null;
+            $data = is_array($data) ? $data : [];
+            unset($data['id'], $data['type'], $data['handle']);
+            $type = $row->type ?? null;
+            $block = ['id' => (string) $id, 'type' => is_string($type) && $type !== '' ? $type : 'block'];
+            if (is_string($row->handle ?? null) && $row->handle !== '') {
+                $block['handle'] = $row->handle;
+            }
+            $block = [...$block, ...$data];
+            if (is_array($block['blocks'] ?? null)) {
+                $block['blocks'] = $this->inlineBlocks($connection, $block['blocks'], [...$ancestors, $id], $counts, $referenced, $changed);
+            }
+            $counts['blocks']++;
+            $referenced[$id] = true;
+            $blocks[] = $block;
+        }
+
+        return $blocks;
     }
 
     /**

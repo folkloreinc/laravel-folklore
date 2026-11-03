@@ -7,9 +7,15 @@ use Folklore\Contracts\Repositories\Blocks;
 use Folklore\Contracts\Repositories\Pages;
 use Folklore\Models\Block as BlockModel;
 use Folklore\Models\Page as PageModel;
+use Folklore\Tests\Feature\Pages\Fixtures\StackBlock;
+use Folklore\Tests\Feature\Pages\Fixtures\TextBlock;
 use Folklore\Tests\TestCase;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
+/**
+ * The pages repository: pages with their blocks in their data (docs/decisions/0023).
+ */
 class PagesRepositoryTest extends TestCase
 {
     protected Pages $pages;
@@ -25,6 +31,7 @@ class PagesRepositoryTest extends TestCase
 
         $app['config']->set('locale.locales', ['fr', 'en']);
         $app['config']->set('app.fallback_locale', 'fr');
+        $app['config']->set('site.pages.blocks.types', ['text' => TextBlock::class, 'stack' => StackBlock::class]);
     }
 
     protected function setUp(): void
@@ -44,25 +51,43 @@ class PagesRepositoryTest extends TestCase
         $this->pages = $this->app->make(Pages::class);
     }
 
-    public function test_it_saves_a_page_with_its_blocks()
+    public function test_it_saves_a_page_with_its_blocks_in_its_data()
     {
         $page = $this->pages->create([
             'handle' => 'about',
             'title' => ['fr' => 'À propos', 'en' => 'About'],
             'blocks' => [
                 ['type' => 'text', 'body' => 'First'],
-                ['type' => 'text', 'body' => 'Second'],
+                ['type' => 'stack', 'title' => 'Group', 'blocks' => [['type' => 'text', 'body' => 'Nested']]],
             ],
         ]);
 
         $this->assertSame('À propos', $page->title('fr'));
         $this->assertSame('a-propos', $page->slug('fr'));
-        $this->assertSame(
-            ['First', 'Second'],
-            $page->blocks()->map(fn ($block) => $block->data()['body'])->all(),
-        );
-        $this->assertSame(1, PageModel::count());
-        $this->assertSame(2, BlockModel::count());
+        $blocks = $page->blocks();
+        $this->assertInstanceOf(TextBlock::class, $blocks[0]);
+        $this->assertSame('First', $blocks[0]->body());
+        $this->assertInstanceOf(StackBlock::class, $blocks[1]);
+        $this->assertSame('Nested', $blocks[1]->blocks()[0]->body());
+
+        $stored = json_decode((string) DB::table('pages')->where('id', $page->id())->value('data'), true)['blocks'];
+        $this->assertSame(['id', 'type', 'body'], array_keys($stored[0]));
+        $this->assertMatchesRegularExpression('/^blk_[0-9a-z]{26}$/', $stored[0]['id']);
+        $this->assertSame($stored[1]['blocks'][0]['id'], $blocks[1]->blocks()[0]->id());
+        $this->assertNotSame($stored[0]['id'], $stored[1]['id']);
+        $this->assertSame(0, BlockModel::count());
+    }
+
+    public function test_a_block_keeps_its_id_and_its_handle()
+    {
+        $page = $this->pages->create(['handle' => 'about', 'blocks' => [['type' => 'text', 'handle' => 'intro', 'body' => 'First']]]);
+        $id = $page->blocks()[0]->id();
+
+        $page = $this->pages->update($page->id(), ['blocks' => [['id' => $id, 'type' => 'text', 'handle' => 'intro', 'body' => 'Changed']]]);
+
+        $this->assertSame($id, $page->blocks()[0]->id());
+        $this->assertSame('intro', $page->blocks()[0]->handle());
+        $this->assertSame('Changed', $page->blocks()[0]->body());
     }
 
     public function test_a_failure_while_saving_a_page_leaves_no_block_behind()
@@ -126,8 +151,8 @@ class PagesRepositoryTest extends TestCase
         $this->assertNull($this->pages->findBySlug('a-propos', 'fr'));
         $this->assertSame(0, $this->pages->count());
 
-        $model = PageModel::withTrashed()->with('blocks')->findOrFail($page->id());
+        $model = PageModel::withTrashed()->findOrFail($page->id());
         $this->assertTrue($model->trashed());
-        $this->assertCount(1, $model->blocks);
+        $this->assertCount(1, $model->toEntity()->blocks());
     }
 }
