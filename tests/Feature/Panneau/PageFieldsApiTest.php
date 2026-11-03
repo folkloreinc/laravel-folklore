@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * The page fields through Panneau's API, on the pages module's repository, which stores blocks
- * as rows of `blocks` linked through `blocks_pivot`.
+ * in the page's data (docs/decisions/0023).
  */
 class PageFieldsApiTest extends PanneauTestCase
 {
@@ -52,6 +52,16 @@ class PageFieldsApiTest extends PanneauTestCase
     }
 
     /**
+     * The blocks of a page as stored, without the cast.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function storedBlocks(string $id): array
+    {
+        return json_decode((string) DB::table('pages')->where('id', $id)->value('data'), true)['blocks'] ?? [];
+    }
+
+    /**
      * @param  array<string, mixed>  $data
      */
     private function page(array $data): string
@@ -78,13 +88,14 @@ class PageFieldsApiTest extends PanneauTestCase
             ->assertJsonPath('data.blocks.1.title', 'Stack')
             ->assertJsonPath('data.blocks.1.blocks.0.type', 'text')
             ->assertJsonPath('data.blocks.1.blocks.0.body', 'Nested');
-        $this->assertSame(3, BlockModel::query()->count());
-        $this->assertSame(3, DB::table('blocks_pivot')->count());
-        $this->assertIsString($created->json('data.blocks.0.id'));
-        $this->assertIsString($created->json('data.blocks.1.blocks.0.id'));
+        $this->assertSame(0, BlockModel::query()->count());
+        $stored = $this->storedBlocks($created->json('data.id'));
+        $this->assertSame($created->json('data.blocks.0.id'), $stored[0]['id']);
+        $this->assertSame($created->json('data.blocks.1.blocks.0.id'), $stored[1]['blocks'][0]['id']);
+        $this->assertSame('Nested', $stored[1]['blocks'][0]['body']);
     }
 
-    public function test_saving_blocks_again_updates_their_rows()
+    public function test_saving_blocks_again_keeps_their_ids()
     {
         $created = $this->postJson(self::PATH, [
             'title' => ['fr' => 'À propos'],
@@ -105,7 +116,7 @@ class PageFieldsApiTest extends PanneauTestCase
             ->assertJsonPath('data.blocks.0.blocks.0.body', 'Nested, edited')
             ->assertJsonPath('data.blocks.1.id', $blocks[0]['id'])
             ->assertJsonPath('data.blocks.1.body', 'First, edited');
-        $this->assertSame(3, BlockModel::query()->count());
+        $this->assertCount(2, $this->storedBlocks($created->json('data.id')));
     }
 
     public function test_a_block_keeps_an_id_only_if_it_is_one_of_the_pages_blocks_once()
@@ -126,13 +137,12 @@ class PageFieldsApiTest extends PanneauTestCase
         $updated->assertOk()->assertJsonPath('data.blocks.1.id', $mine);
         $this->assertNotSame($otherBlock, $updated->json('data.blocks.0.id'));
         $this->assertNotSame($mine, $updated->json('data.blocks.2.id'));
-        $this->assertSame('Other', BlockModel::query()->findOrFail($otherBlock)->data['body']);
-        $this->assertSame('Mine, edited', BlockModel::query()->findOrFail($mine)->data['body']);
+        $this->assertSame('Mine, edited', $this->storedBlocks($created->json('data.id'))[1]['body']);
         $this->getJson('/panneau/api/resources/pages/'.$other->json('data.id'))
             ->assertJsonPath('data.blocks.0.body', 'Other');
     }
 
-    public function test_the_id_of_a_block_is_not_saved_in_its_data()
+    public function test_a_block_is_stored_in_the_page_with_its_id()
     {
         $created = $this->postJson(self::PATH, ['title' => ['fr' => 'Page'], 'blocks' => [['type' => 'text', 'body' => 'First']]])
             ->assertCreated();
@@ -141,7 +151,7 @@ class PageFieldsApiTest extends PanneauTestCase
 
         $this->patchJson(self::PATH.'/'.$created->json('data.id'), ['blocks' => $blocks])->assertOk();
 
-        $this->assertSame(['body' => 'Edited'], BlockModel::query()->findOrFail($blocks[0]['id'])->data);
+        $this->assertSame([['id' => $blocks[0]['id'], 'type' => 'text', 'body' => 'Edited']], $this->storedBlocks($created->json('data.id')));
     }
 
     public function test_the_version_of_a_page_changes_with_its_blocks()

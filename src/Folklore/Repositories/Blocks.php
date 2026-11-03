@@ -7,6 +7,9 @@ use Folklore\Contracts\Repositories\Blocks as BlocksRepositoryContract;
 use Folklore\Models\Block as BlockModel;
 use Illuminate\Support\Arr;
 
+/**
+ * @deprecated Blocks are stored in the page's JSON (docs/decisions/0023): removed in 3.0.
+ */
 class Blocks extends Entities implements BlocksRepositoryContract
 {
     protected $jsonAttributeFillable = '*';

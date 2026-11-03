@@ -7,7 +7,9 @@ use Folklore\Contracts\Entities\Image as ImageContract;
 use Folklore\Contracts\Entities\Page as PageContract;
 use Folklore\Contracts\Entities\PageMetadata as PageMetadataContract;
 use Folklore\Models\Page as PageModel;
+use Folklore\Pages\BlockRegistry;
 use Folklore\Pages\PageRoutes;
+use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
@@ -134,13 +136,12 @@ class Page implements HasModel, PageContract
         );
     }
 
+    /**
+     * The page's blocks, from its data, as entities of their types (`site.pages.blocks`).
+     */
     public function blocks(): Collection
     {
-        return once(
-            fn () => collect(data_get($this->data, 'blocks', []))->map(function ($block) {
-                return to_entity($block);
-            })
-        );
+        return once(fn () => Container::getInstance()->make(BlockRegistry::class)->toEntities(data_get($this->data, 'blocks', [])));
     }
 
     public function getModel(): Model

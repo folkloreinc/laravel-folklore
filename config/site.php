@@ -1,5 +1,7 @@
 <?php
 
+use Folklore\Models\Page;
+
 return [
 
     /*
@@ -42,6 +44,18 @@ return [
             'home' => 'home',
             'page' => 'page',
             'page_with_parent' => 'page_with_parent',
+        ],
+
+        // The model of the pages, which the `page` key of JSON references is mapped to
+        // (`page://12`): the site's own when it extends Folklore\Models\Page.
+        'model' => Page::class,
+
+        // The blocks of pages, stored in their JSON (docs/decisions/0023): the entity
+        // class of each type, which extends Folklore\Entities\Block and declares the
+        // schema of its data (`blockSchema()`), and the deepest level of blocks.
+        'blocks' => [
+            'types' => [],
+            'depth' => 3,
         ],
     ],
 

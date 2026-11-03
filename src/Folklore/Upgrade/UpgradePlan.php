@@ -11,15 +11,19 @@ final readonly class UpgradePlan
      * @param  list<ConfigChange>  $config  The values to set in `config/site.php`.
      * @param  list<MediaPivotRows>  $mediaPivotRows  The rows of `medias_pivot` to remove.
      * @param  list<Finding>  $notes  What the command doesn't do, and why.
+     * @param  BlocksConversion|null  $blocks  What it converts in the data of the pages.
      */
     public function __construct(
         public array $config = [],
         public array $mediaPivotRows = [],
         public array $notes = [],
+        public ?BlocksConversion $blocks = null,
     ) {}
 
     public function isEmpty(): bool
     {
-        return count($this->config) === 0 && count(array_filter($this->mediaPivotRows, fn (MediaPivotRows $rows) => $rows->count > 0)) === 0;
+        return count($this->config) === 0
+            && count(array_filter($this->mediaPivotRows, fn (MediaPivotRows $rows) => $rows->count > 0)) === 0
+            && ($this->blocks?->isEmpty() ?? true);
     }
 }

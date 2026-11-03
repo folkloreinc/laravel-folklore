@@ -29,7 +29,7 @@ class JsonDataCastBugsTest extends JsonDataTestCase
         $child = $pages->create(['handle' => 'child', 'title' => ['fr' => 'Enfant'], 'parent' => $parent]);
 
         $model = PageModel::find($child->id());
-        $this->assertSame('parent://'.$parent->id(), $this->rawData($model)['parent']);
+        $this->assertSame('page://'.$parent->id(), $this->rawData($model)['parent']);
         $this->assertEquals($parent->id(), $model->parent_id);
         $this->assertTrue($model->data['parent']->is($parent->getModel()));
     }

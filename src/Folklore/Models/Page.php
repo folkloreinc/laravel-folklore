@@ -3,18 +3,23 @@
 namespace Folklore\Models;
 
 use Cviebrock\EloquentSluggable\Sluggable;
-use Folklore\Contracts\Eloquent\HasJsonDataRelations;
 use Folklore\Contracts\Entities\Page as PageContract;
 use Folklore\Contracts\Entities\ToEntity;
-use Folklore\Eloquent\JsonDataCast;
 use Folklore\Entities\Page as PageEntity;
+use Folklore\JsonData\Contracts\HasJsonDataSchema;
+use Folklore\JsonData\JsonDataCast;
+use Folklore\JsonData\Schema\Json;
+use Folklore\JsonData\Schema\ObjectType;
+use Folklore\JsonData\Schema\Type;
 use Folklore\Mediatheque\Concerns\HasMedias;
 use Folklore\Models\Concerns\SluggableWithFallback;
+use Folklore\Pages\BlockRegistry;
 use Folklore\Support\Concerns\HasTypedEntity;
+use Illuminate\Container\Container;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Page extends Model implements HasJsonDataRelations, ToEntity
+class Page extends Model implements HasJsonDataSchema, ToEntity
 {
     use HasMedias, HasTypedEntity, Sluggable, SluggableWithFallback, SoftDeletes;
 
@@ -26,28 +31,62 @@ class Page extends Model implements HasJsonDataRelations, ToEntity
 
     protected $entitiesByType = [];
 
-    public function getJsonDataRelations($key, $value, $attributes = [])
+    /**
+     * The data of a page (docs/decisions/0023): what its entity reads, its title,
+     * description, slug, image and parent, and its blocks, typed by `site.pages.blocks`.
+     * The root keeps other keys unless the map is enforced: a site's page model adds its
+     * own properties to these (`...parent::jsonDataSchema($attribute)?->getProperties()`),
+     * and closes it.
+     */
+    public function jsonDataSchema(string $attribute): ?ObjectType
     {
-        return [
-            'parent' => 'parent',
-            'image' => 'medias',
-            'blocks.*' => 'blocks',
-        ];
+        if ($attribute !== 'data') {
+            return null;
+        }
+
+        $blocks = Container::getInstance()->make(BlockRegistry::class)->union();
+
+        return Json::object([
+            'title' => Json::string()->translatable(),
+            'description' => Json::string()->translatable(),
+            'slug' => Json::string()->translatable(),
+            'image' => self::media(),
+            'parent' => Json::reference('page')->relation('parent'),
+            'blocks' => Json::list($blocks ?? Json::any()),
+        ]);
+    }
+
+    /**
+     * `Json::media()` with the medias module, or else the 1.x reference of the `medias`
+     * relation of `HasMedias`.
+     */
+    protected static function media(): Type
+    {
+        $media = Json::hasMacro('media') ? Json::__callStatic('media', []) : null;
+
+        return $media instanceof Type ? $media : Json::relation('medias');
+    }
+
+    /**
+     * The model of the pages, `site.pages.model`: the key `page` is mapped to it.
+     *
+     * @return class-string<Page>
+     */
+    public static function pageModel(): string
+    {
+        $model = config('site.pages.model');
+
+        return is_string($model) && is_a($model, self::class, true) ? $model : self::class;
     }
 
     public function parent()
     {
-        return $this->belongsTo(Page::class, 'parent_id');
+        return $this->belongsTo(static::pageModel(), 'parent_id');
     }
 
     public function children()
     {
-        return $this->hasMany(Page::class, 'parent_id');
-    }
-
-    public function blocks()
-    {
-        return $this->morphToMany(Block::class, 'blockable', 'blocks_pivot');
+        return $this->hasMany(static::pageModel(), 'parent_id');
     }
 
     /**

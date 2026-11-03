@@ -9,7 +9,7 @@ use Throwable;
 
 /**
  * The blocks of 1.1 pages, linked through `blocks_pivot`: 2.0 stores them in the page's
- * JSON (decisions/0009), and `folklore:upgrade` converts them.
+ * JSON (decisions/0009, 0023), and `folklore:upgrade` converts them.
  */
 class BlocksCheck implements Check
 {
@@ -40,7 +40,7 @@ class BlocksCheck implements Check
 
         yield Finding::todo(
             "`blocks_pivot` links {$links} blocks to pages and blocks: 2.0 stores the blocks in the page's JSON.",
-            '`folklore:upgrade` converts them, with the pages module of 2.0 (decisions/0009). Until then, keep the table.',
+            '`folklore:upgrade` converts them with the pages module on: each `blocks://` reference of a page\'s blocks becomes the block\'s object (decisions/0023). Keep the tables until it has run.',
         );
     }
 }
