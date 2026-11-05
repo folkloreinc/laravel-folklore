@@ -21,11 +21,13 @@ class Media extends BaseMedia implements ToEntity
     use HasTypedEntity;
 
     /**
-     * What repositories fill from their data. The mediatheque's model guards every column.
+     * What repositories fill from their data, as the 1.x media model did. The mediatheque's
+     * model guards every column. `type` is set by the ingest for a media with a file, and
+     * filled for one without, such as a remote media whose source is a URL (#161).
      *
      * @var list<string>
      */
-    protected $fillable = ['name', 'data'];
+    protected $fillable = ['type', 'name', 'data'];
 
     protected $entitiesByType = [
         'image' => ImageEntity::class,
