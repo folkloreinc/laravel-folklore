@@ -68,7 +68,7 @@ Modules are turned on in `config/site.php`, which 1.x already uses (`site.medias
   | `medias` | `folklore/laravel-mediatheque` 2, `folklore/laravel-image` 2 |
   | `pages` | `folklore/laravel-mediatheque` 2 (its models use `HasMedias`), `cviebrock/eloquent-sluggable`, `folklore/laravel-locale` |
   | `auth` | `laravel/fortify` |
-  | `panneau` | `folklore/laravel-panneau` 5 (5.0.0-alpha.4 or later) |
+  | `panneau` | `folklore/laravel-panneau` 5 (5.0.0-alpha.5 or later) |
   | `pubnub` | `pubnub/pubnub` |
 
   Google Places still needs `google/apiclient` when it is used, until it moves to Laravel's HTTP client.
@@ -266,9 +266,10 @@ final class SectionsResource extends PagesResource // the pages a field offers: 
 - **Block ids.** Each block has its `id`. Saved, a block keeps it only if it is one of the item's blocks, at any level, and no other block of the save kept it, so that the pages repository, which stores blocks as rows linked through `blocks_pivot`, updates them rather than creating new rows, and never updates another page's. The id isn't written into the block's data.
 - **Versions.** The adapter's version of an entity with blocks (`HasBlocks`) hashes the attributes of its blocks too, at every level: a stale form that only changed a block gets a `412`.
 - **Relations inside blocks** are turned into references (`{ "id", "label" }`), from the related items, or from the ids that blocks stored, found within the related resource's scope (one query per related resource for a list of blocks), as Panneau does for the relations at the top of an item ([folkloreinc/laravel-panneau#117](https://github.com/folkloreinc/laravel-panneau/issues/117)). The label is the related resource's `itemTitle` field, read through the field: a resource on entities gives that field a `resolveUsing()`.
+- **Media inside blocks** (`Media` and `Image` fields) are turned into media references (`{ "id", "resource", "label", "media", "transform" }`), as Panneau does for the media fields at the top of an item, so that the admin shows their preview: from the media models that a block's data resolves, or from the `{ "id", "resource", "transform" }` that blocks stored, found within their library's scope (one query per library for a list of blocks). A value keeps its `transform`, the edits of the image for this use; a media that left its library keeps its id, library and transform.
 - **`PageSlug`** is a `slug`, localized and from the `title` by default, read from the item's `slug($locale)` in Panneau's locales. Its check gives the page's URL from `Pages\PageRoutes`: `page`, or `page_with_parent` with the slug of the page of the form's `parent` field (`parentField()`, null for pages without a parent), and the prefix in front of the slug. The parent is found through the pages repository, not within the resource's scope: it only gives the URL. It is disabled for the home page (its `handle` is `home`). `url()` replaces the URL, for other routes.
 - **Unique slugs.** `PageSlug` is unique by default (`notUnique()` turns it off). The pages repository implements `ChecksSlugs` on its `slug_{locale}` columns, across the types of pages: it leaves the `type` params of the scope out of the lookup. Another resource's repository needs the `Repositories\Concerns\ChecksSlugs` trait.
-- **Not covered yet.** Media inside blocks aren't turned into media references ([folkloreinc/laravel-panneau#117](https://github.com/folkloreinc/laravel-panneau/issues/117)). A field common to every type of a field (1.x sites' `withPlacements()`) is added by a subclass:
+- **Not covered yet.** The pages and files of `Link` fields inside blocks aren't turned into references with their URL ([folkloreinc/laravel-panneau#117](https://github.com/folkloreinc/laravel-panneau/issues/117)). A field common to every type of a field (1.x sites' `withPlacements()`) is added by a subclass:
 
   ```php
   final class PlacedBlocks extends Blocks
@@ -337,7 +338,7 @@ The module namespaces are named with the contracts. 1.x classes that move into a
 | `folklore/laravel-mediatheque`, `folklore/laravel-image` | `^2.0`, suggested (medias module) | Suggested: `laravel-mediatheque ^2.0.0-alpha.10`, `laravel-image ^2.0.0-alpha.1`. `laravel-mediatheque` below 2.0.0-alpha.10 conflicts, for its canonical `MediaResource` (below alpha 7 since alpha 2) |
 | `folklore/laravel-locale ^8.1`, `cviebrock/eloquent-sluggable` | Suggested (pages module) | Same |
 | `laravel/fortify` | Suggested (auth module) | Same |
-| `folklore/laravel-panneau` | `^5.0`, suggested (panneau module) | Suggested: `^5.0.0-alpha.4`, which has `ChecksSlugs`. Its pre-releases below 5.0.0-alpha.4 conflict; 1.x doesn't, though the Panneau 1.x fields are removed |
+| `folklore/laravel-panneau` | `^5.0`, suggested (panneau module) | Suggested: `^5.0.0-alpha.5`, which has `ChecksSlugs` and the media fields with libraries. Its pre-releases below 5.0.0-alpha.5 conflict; 1.x doesn't, though the Panneau 1.x fields are removed |
 | `guzzlehttp/guzzle`, `parsecsv/php-parsecsv`, `pubnub/pubnub` | Suggested (services) | Same |
 | `google/apiclient` | Removed | Suggested, for Places until it moves to Laravel's HTTP client |
 

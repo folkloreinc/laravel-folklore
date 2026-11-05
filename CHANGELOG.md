@@ -8,6 +8,14 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+### Breaking changes
+
+- The panneau module requires `folklore/laravel-panneau` 5.0.0-alpha.5 or later, for the libraries of `media` fields: its pre-releases below 5.0.0-alpha.5 conflict.
+
+### Fixed
+
+- The `media` and `image` fields of blocks (`Folklore\Panneau\Fields\Blocks`) give media references, `{ id, resource, label, media, transform }`, as these fields do at the top of a resource, so that the admin shows the preview of their image: the media models that a block's data resolves, and the `{ id, resource, transform }` it stored, found within their library's scope with one query per library for the whole list. They gave the media model as is, or the stored value without its `media` ([#170](https://github.com/folkloreinc/laravel-folklore/issues/170)).
+
 ## [2.0.0-alpha.11] - 2026-11-05
 
 ### Fixed
