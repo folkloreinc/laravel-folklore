@@ -8,6 +8,10 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+## [2.0.0-alpha.10] - 2026-11-05
+
+Fixes for sites upgraded from 1.1: image sizes can keep their 1.x URLs until a site moves to presets (`site.medias.image_urls`, #162, [decisions/0024](docs/decisions/0024-legacy-image-size-urls.md)), and a media created without a file keeps its type (#161).
+
 ### Added
 
 - `site.medias.image_urls`: `presets` (the default) gives each image size the 2.x URL of its `laravel-image` preset, as before; `legacy` gives the sizes of `image.sizes` the 1.x URLs (`-filters(large)`) and dimensions of 1.1, which `Route::imageLegacy()` serves, so an upgraded site keeps the URLs its front ends and caches use. `folklore:upgrade --check` reports a site whose image sizes would change URL with no `Route::image()` to serve them, and `folklore:upgrade` sets `legacy` for it ([decisions/0024](docs/decisions/0024-legacy-image-size-urls.md), [#162](https://github.com/folkloreinc/laravel-folklore/issues/162)).
@@ -257,7 +261,8 @@ The core and `JsonDataCast`, and the medias module on `laravel-mediatheque` 2 an
 
 - `make:entity` generated an entity and a repository that implemented themselves instead of their contracts, so they didn't load.
 
-[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.9...v2.x
+[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.10...v2.x
+[2.0.0-alpha.10]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.10
 [2.0.0-alpha.9]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.9
 [2.0.0-alpha.8]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.8
 [2.0.0-alpha.7]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.7
