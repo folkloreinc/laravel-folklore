@@ -179,4 +179,53 @@ class ConfigFileTest extends TestCase
 
         (new ConfigFile("<?php\n\nreturn require __DIR__.'/defaults.php';\n"))->set('modules.medias', true);
     }
+
+    public function test_it_sets_a_class_name_in_place_of_a_literal_or_another_class_name()
+    {
+        $file = new ConfigFile(<<<'PHP'
+            <?php
+
+            use Folklore\Models\Page;
+
+            return [
+                'pages' => [
+                    'model' => Page::class,
+                    'other' => null,
+                    'blocks' => ['types' => []],
+                ],
+            ];
+            PHP);
+
+        $file->setClass('pages.model', 'App\\Models\\Page');
+        $file->setClass('pages.other', '\\App\\Other');
+        $file->setClass('pages.blocks.types.text', 'App\\Entities\\Blocks\\TextBlock');
+        $file->setClass('repositories.App\\Contracts\\Repositories\\Pages', 'App\\Repositories\\Pages');
+
+        $this->assertStringContainsString("'model' => \\App\\Models\\Page::class,", $file->code());
+        $this->assertStringContainsString("'other' => \\App\\Other::class,", $file->code());
+        $this->assertStringContainsString("'text' => \\App\\Entities\\Blocks\\TextBlock::class", $file->code());
+        $this->assertStringContainsString("'App\\\\Contracts\\\\Repositories\\\\Pages' => \\App\\Repositories\\Pages::class", $file->code());
+        $this->assertTrue($file->has('pages.blocks.types.text'));
+        $this->assertTrue($file->has('repositories.App\\Contracts\\Repositories\\Pages'));
+        $this->assertFalse($file->has('pages.blocks.types.image'));
+        $this->assertFalse($file->has('pages.model.nested'));
+    }
+
+    public function test_set_doesnt_replace_a_class_name()
+    {
+        $file = new ConfigFile("<?php\n\nreturn ['model' => Page::class];\n");
+
+        $this->expectException(RuntimeException::class);
+
+        $file->set('model', 'App\\Models\\Page');
+    }
+
+    public function test_set_class_doesnt_replace_an_expression()
+    {
+        $file = new ConfigFile("<?php\n\nreturn ['model' => env('MODEL')];\n");
+
+        $this->expectException(RuntimeException::class);
+
+        $file->setClass('model', 'App\\Models\\Page');
+    }
 }

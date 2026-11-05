@@ -165,6 +165,8 @@ class Medias extends \Folklore\Panneau\Resources\Medias {}
 | Block types registered with `BlockTypes::register()`, and their entities | The standard types of `Folklore\Entities\Blocks`, extended by the site's classes in `site.pages.blocks.types`, which give their fields to the admin; keep `register()` for the site's other types |
 | Policies on a `role` column | `DefaultRoles::ROLES`, `UserRoleStore` and the policies of `Folklore\Panneau\Policies`, on the roles module of `laravel-panneau` |
 
+`php artisan folklore:install --dry-run` lists what the site lacks, and the site's classes that don't extend the package's yet, which it never rewrites; without `--dry-run`, it writes the missing classes and wires them (`site.repositories`, `site.pages.blocks.types`, `Panneau::resources()`).
+
 A page's data stored by a site's block types with the same ids (`text`, `image`…) is read by the standard types when their properties match: compare their `blockSchema()` with the site's before replacing them, and keep the site's own subclass for the properties it adds.
 
 ### Medias

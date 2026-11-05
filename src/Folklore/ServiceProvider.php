@@ -10,6 +10,7 @@ use Folklore\Console\DaemonRestartCommand;
 use Folklore\Console\EntityContractMakeCommand;
 use Folklore\Console\EntityMakeCommand;
 use Folklore\Console\EntityModelMakeCommand;
+use Folklore\Console\InstallCommand;
 use Folklore\Console\PubSubHubbubSubscribe;
 use Folklore\Console\PubSubHubbubUnsubscribe;
 use Folklore\Console\RepositoryContractMakeCommand;
@@ -89,6 +90,18 @@ class ServiceProvider extends BaseServiceProvider
      *
      * @var array<string, array<string, string>>
      */
+    /**
+     * The stubs of the `make:*` commands, which a site's `stubs/` overrides.
+     */
+    public const MAKE_STUBS = [
+        'entity-contract.stub',
+        'entity-model.stub',
+        'repository-contract.stub',
+        'repository-contract.full.stub',
+        'repository.stub',
+        'repository.full.stub',
+    ];
+
     public const MODULES = [
         'medias' => [
             'Folklore\\Mediatheque\\Concerns\\HasMedias' => 'folklore/laravel-mediatheque ^2.0',
@@ -257,9 +270,13 @@ class ServiceProvider extends BaseServiceProvider
             );
         }
 
-        $repositories = $this->app['config']->get('app.repositories', []);
-        foreach ($repositories as $contract => $implementation) {
-            $this->app->bind($contract, $implementation);
+        // The site's repositories, by contract: `app.repositories` (1.x), then
+        // `site.repositories`, which `folklore:install` writes
+        foreach (['app.repositories', 'site.repositories'] as $key) {
+            $repositories = $this->app['config']->get($key, []);
+            foreach (is_array($repositories) ? $repositories : [] as $contract => $implementation) {
+                $this->app->bind($contract, $implementation);
+            }
         }
     }
 
@@ -420,8 +437,19 @@ class ServiceProvider extends BaseServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 DaemonRestartCommand::class,
+                InstallCommand::class,
                 UpgradeCommand::class,
             ]);
+
+            // The stubs of `folklore:install` and of the `make:*` commands, where they look
+            // for the site's
+            $this->publishes([
+                __DIR__.'/../stubs/install' => $this->app->basePath('stubs/folklore/install'),
+                ...array_combine(
+                    array_map(fn (string $stub): string => __DIR__.'/../stubs/'.$stub, self::MAKE_STUBS),
+                    array_map(fn (string $stub): string => $this->app->basePath('stubs/'.$stub), self::MAKE_STUBS),
+                ),
+            ], 'folklore-stubs');
 
             if ($this->moduleEnabled('assets')) {
                 $this->commands([

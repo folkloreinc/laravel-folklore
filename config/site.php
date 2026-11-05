@@ -21,6 +21,10 @@ return [
     // is set, else laravel-json-data's `json-data.locales`.
     'locales' => null,
 
+    // The site's repositories, by contract: each contract, the package's ones included, is
+    // bound to its class (`folklore:install` writes those of the standard resources).
+    'repositories' => [],
+
     'medias' => [
         // The key written for media references in JSON data: `media` (`media://med_…`,
         // by uid) for new projects, `medias` (`medias://12`, by id) for sites upgraded

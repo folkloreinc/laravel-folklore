@@ -1,0 +1,22 @@
+<?php
+
+namespace {{ namespace }};
+
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\ServiceProvider;
+use Panneau\Support\Facade as Panneau;
+
+class PanneauServiceProvider extends ServiceProvider
+{
+    public function boot(): void
+    {
+        Panneau::resources([
+{{ resources }}        ]);
+
+        // The policies of the standard resources, with the roles module of laravel-panneau:
+        // `roles` in config/panneau.php, with Folklore\Panneau\Roles\DefaultRoles::ROLES and
+        // Folklore\Panneau\Roles\UserRoleStore. Without it, write the site's own policies.
+        if (config('panneau.roles.enabled') === true) {
+{{ policies }}        }
+    }
+}

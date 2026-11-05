@@ -1,0 +1,11 @@
+<?php
+
+namespace {{ namespace }};
+
+class {{ class }} extends \{{ base }}
+{
+    public function toEntity(): \{{ contract }}
+    {
+        return {{ typed }}new \{{ entity }}($this);
+    }
+}

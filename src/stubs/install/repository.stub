@@ -1,0 +1,11 @@
+<?php
+
+namespace {{ namespace }};
+
+class {{ class }} extends \{{ base }} implements \{{ contract }}
+{
+    protected function newModel(): \{{ modelBase }}
+    {
+        return new \{{ model }};
+    }
+}
