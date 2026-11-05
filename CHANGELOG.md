@@ -8,6 +8,10 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+### Added
+
+- `site.medias.image_urls`: `presets` (the default) gives each image size the 2.x URL of its `laravel-image` preset, as before; `legacy` gives the sizes of `image.sizes` the 1.x URLs (`-filters(large)`) and dimensions of 1.1, which `Route::imageLegacy()` serves, so an upgraded site keeps the URLs its front ends and caches use. `folklore:upgrade --check` reports a site whose image sizes would change URL with no `Route::image()` to serve them, and `folklore:upgrade` sets `legacy` for it ([decisions/0024](docs/decisions/0024-legacy-image-size-urls.md), [#162](https://github.com/folkloreinc/laravel-folklore/issues/162)).
+
 ## [2.0.0-alpha.9] - 2026-11-03
 
 Blocks in the page's JSON ([decisions/0023](docs/decisions/0023-blocks-in-the-page.md)). Requires laravel-json-data 1.0.0-alpha.6, for `Json::union()`.

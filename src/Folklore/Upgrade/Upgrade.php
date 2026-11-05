@@ -8,6 +8,7 @@ use Folklore\Models\Block;
 use Folklore\Models\Page;
 use Folklore\ServiceProvider;
 use Folklore\Upgrade\Checks\BlocksCheck;
+use Folklore\Upgrade\Checks\MediasCheck;
 use Folklore\Upgrade\Checks\RemovedModulesCheck;
 use Folklore\Upgrade\Checks\StoredReferencesCheck;
 use Illuminate\Database\ConnectionInterface;
@@ -52,7 +53,7 @@ class Upgrade
     {
         $notes = [];
         $usage = ModuleUsage::of($site);
-        $config = $this->writable($site, [...$this->modules($site, $usage, $notes), ...$this->medias($site)], $notes);
+        $config = $this->writable($site, [...$this->modules($site, $usage, $notes), ...$this->medias($site, $usage)], $notes);
         $rows = $this->mediaPivotRows($site, $usage, $notes);
         $blocks = $this->convertBlocks($site, false);
         if (is_null($blocks)) {
@@ -192,11 +193,13 @@ class Upgrade
     }
 
     /**
-     * The media reference key that the site stores, which its front ends read.
+     * The media reference key that the site stores, which its front ends read, and the 1.x
+     * URLs of image sizes for a site that serves its images at 1.x URLs only.
      *
+     * @param  array<string, list<string>>  $usage  `ModuleUsage::of()`
      * @return list<ConfigChange>
      */
-    protected function medias(Site $site): array
+    protected function medias(Site $site, array $usage = []): array
     {
         $changes = [];
 
@@ -207,6 +210,16 @@ class Upgrade
                 'medias',
                 'The site stores `medias://` references (by id), which its front ends read: it keeps writing them.',
                 $stored,
+            );
+        }
+
+        $legacyUrls = isset($usage['medias']) || $site->moduleEnabled('medias') ? (new MediasCheck)->legacyImageUrls($site) : [];
+        if (count($legacyUrls) > 0) {
+            $changes[] = new ConfigChange(
+                'medias.image_urls',
+                'legacy',
+                'The site serves its images at 1.x URLs, with no 2.x image route: its image sizes keep their 1.x URLs and dimensions.',
+                $legacyUrls,
             );
         }
 

@@ -2,6 +2,7 @@
 
 namespace Folklore\Upgrade\Checks;
 
+use Folklore\Entities\ImageSize;
 use Folklore\Upgrade\Finding;
 use Folklore\Upgrade\Occurrence;
 use Folklore\Upgrade\Site;
@@ -11,7 +12,7 @@ use ReflectionMethod;
 
 /**
  * What changes with `laravel-mediatheque` 2 and `laravel-image` 2: the `HasMedias` trait,
- * image sizes as presets, and the 1.x API of the media entities.
+ * image sizes as presets and their URLs, and the 1.x API of the media entities.
  */
 class MediasCheck implements Check
 {
@@ -55,14 +56,20 @@ class MediasCheck implements Check
             );
         }
 
-        $sizes = $this->locations([
-            ...$site->matches('/[\'"]image\.sizes[\'"]/'),
-            ...$site->matches('/^\s*[\'"]sizes[\'"]\s*=>/', ['config/image.php']),
-        ]);
+        $legacyUrls = $this->legacyImageUrls($site);
+        if (count($legacyUrls) > 0) {
+            yield Finding::todo(
+                'Image sizes give the 2.x URLs of `laravel-image` presets in 2.0, which only `Route::image()` serves, and the site has no 2.x image route: every image size would change URL, to one that isn\'t served, and front ends and caches keyed on the 1.x URLs break.',
+                'Set `site.medias.image_urls` to `legacy` (`folklore:upgrade` does), which keeps the 1.x URLs of the sizes of `image.sizes` and their dimensions, until the site moves to presets and `Route::image()`.',
+                $legacyUrls,
+            );
+        }
+
+        $sizes = $this->locations($this->imageSizes($site));
         if (count($sizes) > 0) {
             yield Finding::todo(
-                'Image sizes as `laravel-image` 1.x filters (`image.sizes`): 2.0 gives one size per `laravel-image` 2 preset.',
-                'Move each size to a preset of `config(\'image.presets\')`, with `width`, `height`, `fit`, `format` or `quality`.',
+                'Image sizes as `laravel-image` 1.x filters (`image.sizes`): 2.0 gives one size per `laravel-image` 2 preset, unless `site.medias.image_urls` is `legacy`, which keeps reading `image.sizes`.',
+                'Keep `image.sizes` while `site.medias.image_urls` is `legacy`. To move to presets, move each size to a preset of `config(\'image.presets\')`, with `width`, `height`, `fit`, `format` or `quality`.',
                 $sizes,
             );
         }
@@ -114,6 +121,40 @@ class MediasCheck implements Check
                 $medias,
             );
         }
+    }
+
+    /**
+     * Where the site serves its images at 1.x URLs only: its 1.x sizes (`image.sizes`) and
+     * its legacy image routes, when image sizes give the URLs of presets
+     * (`site.medias.image_urls` isn't `legacy`) and no 2.x image route (`Route::image()`)
+     * serves them. Empty otherwise.
+     *
+     * @return list<string>
+     */
+    public function legacyImageUrls(Site $site): array
+    {
+        if ($site->config('site.medias.image_urls', ImageSize::PRESETS) === ImageSize::LEGACY
+            || count($site->matches('/\bRoute::image\s*\(/')) > 0) {
+            return [];
+        }
+
+        return $this->locations([
+            ...$this->imageSizes($site),
+            ...$site->matches('/\bimageLegacy\s*\(|\$router->image\s*\(|\bImage::routes\s*\(/'),
+        ]);
+    }
+
+    /**
+     * The lines that read or set the 1.x `image.sizes`.
+     *
+     * @return list<Occurrence>
+     */
+    protected function imageSizes(Site $site): array
+    {
+        return [
+            ...$site->matches('/[\'"]image\.sizes[\'"]/'),
+            ...$site->matches('/^\s*[\'"]sizes[\'"]\s*=>/', ['config/image.php']),
+        ];
     }
 
     /**
