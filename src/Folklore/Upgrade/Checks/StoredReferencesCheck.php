@@ -7,6 +7,7 @@ use Folklore\JsonData\JsonData;
 use Folklore\JsonData\JsonDataCast;
 use Folklore\Upgrade\Finding;
 use Folklore\Upgrade\Site;
+use Folklore\Upgrade\Upgrade;
 use Illuminate\Database\Eloquent\Casts\AsArrayObject;
 use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Model;
@@ -354,22 +355,41 @@ class StoredReferencesCheck implements Check
      */
     protected function references(Model $model, string $attribute, int $limit): array
     {
-        $query = $model->newQueryWithoutScopes()->toBase()->select([$attribute])->whereNotNull($attribute)->orderBy($model->getKeyName());
-        if ($limit > 0) {
-            $query->limit($limit);
-        }
-
         $references = [];
-        foreach ($query->cursor() as $row) {
-            $raw = ((array) $row)[$attribute] ?? null;
-            $value = is_string($raw) ? json_decode($raw, true) : null;
-            if (is_array($value)) {
-                $this->collect($value, '', $references);
-            }
+        foreach (self::storedValues($model, $attribute, $limit) as $value) {
+            $this->collect($value, '', $references);
         }
         ksort($references);
 
         return $references;
+    }
+
+    /**
+     * The decoded values of a JSON attribute in the model's rows that are not null, in key
+     * order: every row with a limit of 0, else the first `$limit` rows. Read by key, in
+     * chunks of `Upgrade::CHUNK` rows, so that a large table never lands in memory at once
+     * (MySQL buffers a whole cursor's result set). A value that doesn't decode to an
+     * array is skipped.
+     *
+     * @return iterable<int, array<mixed>>
+     */
+    public static function storedValues(Model $model, string $attribute, int $limit): iterable
+    {
+        $key = $model->getKeyName();
+        $query = $model->newQueryWithoutScopes()->toBase()->select([$key, $attribute])->whereNotNull($attribute);
+        $chunk = $limit > 0 ? min($limit, Upgrade::CHUNK) : Upgrade::CHUNK;
+
+        $read = 0;
+        foreach ($query->lazyById($chunk, $key) as $row) {
+            $raw = ((array) $row)[$attribute] ?? null;
+            $value = is_string($raw) ? json_decode($raw, true) : null;
+            if (is_array($value)) {
+                yield $value;
+            }
+            if ($limit > 0 && ++$read >= $limit) {
+                return;
+            }
+        }
     }
 
     /**

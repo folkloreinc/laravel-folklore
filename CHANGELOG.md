@@ -8,6 +8,10 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+### Fixed
+
+- `folklore:upgrade` reads the stored JSON of each model (its references, and the shape that `--schemas` converts) by key, in chunks of 500 rows, instead of with a cursor that MySQL buffers whole: `--limit=0` no longer runs out of memory on a large table. `--limit` still stops after that many rows in key order ([#167](https://github.com/folkloreinc/laravel-folklore/issues/167)).
+
 ## [2.0.0-alpha.10] - 2026-11-05
 
 Fixes for sites upgraded from 1.1: image sizes can keep their 1.x URLs until a site moves to presets (`site.medias.image_urls`, #162, [decisions/0024](docs/decisions/0024-legacy-image-size-urls.md)), and a media created without a file keeps its type (#161).

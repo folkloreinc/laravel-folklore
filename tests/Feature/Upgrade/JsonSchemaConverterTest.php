@@ -21,6 +21,7 @@ use Folklore\Upgrade\JsonSchemaConverter;
 use Folklore\Upgrade\ModelFile;
 use Folklore\Upgrade\Severity;
 use Folklore\Upgrade\Site;
+use Folklore\Upgrade\Upgrade;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\DB;
@@ -330,6 +331,33 @@ class JsonSchemaConverterTest extends JsonDataTestCase
         $conversion = $this->conversion(LegacyGame::class);
 
         $this->assertStringContainsString("'gallery' => Json::any()->paths([\n                    '*' => Json::media(),\n                ]),", $conversion->code);
+    }
+
+    public function test_the_stored_data_is_read_past_one_chunk_up_to_the_limit()
+    {
+        JsonData::map(['prizes' => Prize::class]);
+        // Lists in the rows of a whole chunk, then objects in the next one
+        DB::table('games')->insert(array_fill(0, Upgrade::CHUNK, ['data' => json_encode(['gallery' => ['medias://1']])]));
+        DB::table('games')->insert(['data' => json_encode(['gallery' => ['a' => 'medias://1']])]);
+        $conversion = fn (int $limit) => (new JsonSchemaConverter)->convert(
+            new Site((string) realpath(__DIR__.'/../../..'), $this->app['config'], $this->app['db'], [], [LegacyGame::class], $limit),
+            LegacyGame::class,
+        )?->code;
+
+        // A limit of 0 reads the objects of the last row, a chunk at a time
+        DB::enableQueryLog();
+        $this->assertStringContainsString("'gallery' => Json::any()->paths([", (string) $conversion(0));
+        $selects = array_values(array_filter(
+            array_column(DB::getQueryLog(), 'query'),
+            fn (string $query) => str_contains($query, 'games'),
+        ));
+        DB::disableQueryLog();
+        $this->assertCount(2, $selects);
+        foreach ($selects as $select) {
+            $this->assertStringContainsString('limit '.Upgrade::CHUNK, $select);
+        }
+        // A limit of one chunk stops before it
+        $this->assertStringContainsString("'gallery' => Json::list(Json::media()),", (string) $conversion(Upgrade::CHUNK));
     }
 
     public function test_the_check_reports_what_converts_and_what_doesnt()
