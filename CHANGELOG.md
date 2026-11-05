@@ -8,6 +8,8 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+## [2.0.0-alpha.11] - 2026-11-05
+
 ### Fixed
 
 - `folklore:upgrade` reads the stored JSON of each model (its references, and the shape that `--schemas` converts) by key, in chunks of 500 rows, instead of with a cursor that MySQL buffers whole: `--limit=0` no longer runs out of memory on a large table. `--limit` still stops after that many rows in key order ([#167](https://github.com/folkloreinc/laravel-folklore/issues/167)).
@@ -265,7 +267,8 @@ The core and `JsonDataCast`, and the medias module on `laravel-mediatheque` 2 an
 
 - `make:entity` generated an entity and a repository that implemented themselves instead of their contracts, so they didn't load.
 
-[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.10...v2.x
+[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.11...v2.x
+[2.0.0-alpha.11]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.11
 [2.0.0-alpha.10]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.10
 [2.0.0-alpha.9]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.9
 [2.0.0-alpha.8]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.8
