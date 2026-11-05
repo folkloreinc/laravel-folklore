@@ -8,6 +8,10 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+### Fixed
+
+- The medias module's `Models\Media` fills `type` again, as 1.x did: a media created without a file through the medias repository (`create(['type' => 'audio', ...])`), such as a remote media whose source is a URL, keeps its type instead of failing on the `NOT NULL` column. `createFromFile()` and `updateFromFile()` keep the type the mediatheque detects, and ignore a `type` in their data ([#161](https://github.com/folkloreinc/laravel-folklore/issues/161)).
+
 ## [2.0.0-alpha.9] - 2026-11-03
 
 Blocks in the page's JSON ([decisions/0023](docs/decisions/0023-blocks-in-the-page.md)). Requires laravel-json-data 1.0.0-alpha.6, for `Json::union()`.
