@@ -2,6 +2,7 @@
 
 namespace Folklore\Tests\Feature\Repositories;
 
+use Folklore\Contracts\Entities\Audio;
 use Folklore\Contracts\Entities\Image;
 use Folklore\Contracts\Repositories\Medias;
 use Folklore\Mediatheque\Jobs\ProbeMedia;
@@ -73,5 +74,37 @@ class MediasRepositoryTest extends TestCase
         $this->assertSame([$second->id(), $first->id()], $this->medias->get(['type' => 'image'])->map->id()->all());
         $this->assertSame([], $this->medias->get(['type' => 'video'])->all());
         $this->assertSame([$first->id()], $this->medias->get(['search' => 'first'])->map->id()->all());
+    }
+
+    /**
+     * A remote media, whose source is a URL, has no file to ingest: the repository fills
+     * its type, as 1.x did (#161).
+     */
+    public function test_it_creates_a_media_without_a_file_with_its_type()
+    {
+        $media = $this->medias->create([
+            'type' => 'audio',
+            'name' => 'Episode 12',
+            'data' => ['sources' => ['https://example.com/episode-12.mp3']],
+        ]);
+
+        $this->assertInstanceOf(Audio::class, $media);
+        $this->assertSame('audio', $media->type());
+        $this->assertSame('Episode 12', $media->name());
+        $this->assertNull($media->getModel()->original());
+        $this->assertSame('audio', Media::query()->findOrFail($media->id())->type);
+        $this->assertSame('audio', $this->medias->findById($media->id())?->type());
+    }
+
+    public function test_an_ingested_file_keeps_the_type_the_mediatheque_detects()
+    {
+        $media = $this->medias->createFromFile(new File(public_path('folklore.png')), ['name' => 'Logo', 'type' => 'audio']);
+
+        $this->assertSame('image', $media->type());
+
+        $replaced = $this->medias->updateFromFile($media->id(), new File(__DIR__.'/../../fixture/folklore.png'), ['type' => 'video']);
+
+        $this->assertSame('image', $replaced->type());
+        $this->assertSame('image', Media::query()->findOrFail($media->id())->type);
     }
 }

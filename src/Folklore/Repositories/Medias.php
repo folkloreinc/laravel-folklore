@@ -84,13 +84,15 @@ class Medias extends Entities implements MediasRepositoryContract
     /**
      * Ingests the file with the mediatheque (`Mediatheque::ingest()`), which validates it,
      * stores it, probes it and runs its type's pipeline, then fills the model with the data.
+     * The type is the one the mediatheque detects from the file: a `type` in the data is
+     * ignored.
      */
     public function createFromFile(File $file, $data = []): MediaContract
     {
         $data = (array) $data;
         $name = $data['name'] ?? null;
         $model = Mediatheque::ingest($file->getRealPath(), name: is_string($name) ? $name : null);
-        $data = Arr::except($data, ['name']);
+        $data = Arr::except($data, ['name', 'type']);
         if (count($data) > 0) {
             $this->saveData($model, $data);
         }
@@ -103,7 +105,8 @@ class Medias extends Entities implements MediasRepositoryContract
 
     /**
      * Replaces the original of a media (`Mediatheque::replaceOriginal()`): it keeps its id,
-     * uid and usages, and its renditions are produced again.
+     * uid, type and usages, and its renditions are produced again. A `type` in the data is
+     * ignored.
      */
     public function updateFromFile(string $id, File $file, $data = []): MediaContract
     {
@@ -112,7 +115,7 @@ class Medias extends Entities implements MediasRepositoryContract
             throw (new ModelNotFoundException)->setModel(Models::media(), [$id]);
         }
         $model = Mediatheque::replaceOriginal($model, $file->getRealPath());
-        $data = (array) $data;
+        $data = Arr::except((array) $data, ['type']);
         if (count($data) > 0) {
             $this->saveData($model, $data);
         }
