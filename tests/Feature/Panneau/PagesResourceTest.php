@@ -62,6 +62,25 @@ class PagesResourceTest extends StandardResourcesTestCase
         );
     }
 
+    public function test_the_title_is_required_the_slug_editable_and_the_description_optional()
+    {
+        $fields = array_column($this->resourceDefinition('pages')['fields'], null, 'name');
+
+        $this->assertContains(['rule' => 'required'], $fields['title']['rules'] ?? []);
+        $this->assertArrayNotHasKey('readOnly', $fields['slug']);
+        $this->assertNotContains(['rule' => 'required'], $fields['description']['rules'] ?? []);
+
+        $this->postJson(self::PATH, ['description' => ['fr' => 'Sans titre']])->assertUnprocessable();
+        // In each locale of the admin, as Panneau requires a localized field
+        $this->postJson(self::PATH, ['title' => ['fr' => 'Titre']])->assertUnprocessable()->assertJsonValidationErrors('title.en');
+        $created = $this->postJson(self::PATH, ['title' => ['fr' => 'Titre', 'en' => 'Title'], 'slug' => ['fr' => 'mon-adresse']])->assertCreated();
+        $created->assertJsonPath('data.slug.fr', 'mon-adresse')->assertJsonPath('data.description.fr', null);
+
+        $this->patchJson(self::PATH.'/'.$created->json('data.id'), ['slug' => ['fr' => 'autre-adresse']])
+            ->assertOk()
+            ->assertJsonPath('data.slug.fr', 'autre-adresse');
+    }
+
     public function test_its_blocks_are_the_standard_types_of_the_site()
     {
         $blocks = array_column($this->resourceDefinition('pages')['fields'], null, 'name')['blocks'];
@@ -136,7 +155,7 @@ class PagesResourceTest extends StandardResourcesTestCase
     {
         $parent = $this->page(['title' => ['fr' => 'Parent']]);
 
-        $created = $this->postJson(self::PATH, ['title' => ['fr' => 'Enfant'], 'parent' => $parent])->assertCreated();
+        $created = $this->postJson(self::PATH, ['title' => ['fr' => 'Enfant', 'en' => 'Child'], 'parent' => $parent])->assertCreated();
 
         $created->assertJsonPath('data.parent.id', $parent)->assertJsonPath('data.parent.label.fr', 'Parent');
         $this->assertSame($parent, $this->app->make(Pages::class)->findById($created->json('data.id'))?->parent()?->id());

@@ -128,19 +128,30 @@ class Pages extends Resource
         return $list->columns(['title', 'published'])->sorts(['title', 'published'])->search(['title']);
     }
 
+    /**
+     * Required, in each locale of the admin (`panneau.locales`), as Panneau requires a
+     * localized field.
+     */
     protected function titleField(): Field
     {
         return Text::make('title')
             ->localized()
+            ->required()
             ->label(static::trans('fields.title'))
             ->resolveUsing(static::localized(fn (object $page, string $locale): ?string => $page instanceof PageContract ? $page->title($locale) : null));
     }
 
+    /**
+     * Editable, from the title until it is changed.
+     */
     protected function slugField(): Field
     {
         return PageSlug::make('slug')->label(static::trans('fields.slug'));
     }
 
+    /**
+     * Optional: a site that requires it overrides this method.
+     */
     protected function descriptionField(): Field
     {
         return Textarea::make('description')

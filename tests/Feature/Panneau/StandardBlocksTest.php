@@ -87,7 +87,7 @@ class StandardBlocksTest extends StandardResourcesTestCase
         $image = $this->image('Portrait');
 
         $created = $this->postJson(self::PATH, [
-            'title' => ['fr' => 'Page'],
+            'title' => ['fr' => 'Page', 'en' => 'Page'],
             'blocks' => [
                 ['type' => 'image', 'image' => ['id' => $image->uid], 'caption' => ['fr' => 'Légende']],
                 ['type' => 'gallery', 'images' => [['id' => $image->uid]]],
@@ -105,7 +105,7 @@ class StandardBlocksTest extends StandardResourcesTestCase
     public function test_the_admin_saves_only_the_fields_of_a_type()
     {
         $created = $this->postJson(self::PATH, [
-            'title' => ['fr' => 'Page'],
+            'title' => ['fr' => 'Page', 'en' => 'Page'],
             'blocks' => [['type' => 'quote', 'body' => ['fr' => 'Citation'], 'author' => 'Auteur', 'unknown' => 'value']],
         ])->assertCreated();
 

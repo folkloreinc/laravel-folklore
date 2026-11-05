@@ -90,7 +90,7 @@ class StandardRolesTest extends StandardResourcesTestCase
         $this->actingAs($editor, 'conformance');
 
         $this->getJson('/panneau/api/resources/pages')->assertOk();
-        $this->postJson('/panneau/api/resources/pages', ['title' => ['fr' => 'Page']])->assertCreated();
+        $this->postJson('/panneau/api/resources/pages', ['title' => ['fr' => 'Page', 'en' => 'Page']])->assertCreated();
         $this->getJson('/panneau/api/resources/medias')->assertOk();
         $this->getJson('/panneau/api/resources/users')->assertForbidden();
         $this->assertFalse($this->resourceDefinition('users')['abilities']['viewAny']);
