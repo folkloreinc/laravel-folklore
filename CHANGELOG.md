@@ -8,6 +8,10 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+## [2.0.0-alpha.13] - 2026-11-05
+
+The standard resources of a site's admin ([decisions/0025](docs/decisions/0025-standard-resources.md)): pages with blocks, users and medias, which a site extends, standard block types, default roles, and `folklore:install`, which writes them in a site. They need `folklore/laravel-panneau` 5.0.0-alpha.14 or later.
+
 ### Added
 
 - The standard resources of the panneau module, which a site extends, even with an empty class, and registers: `Folklore\Panneau\Resources\Pages` (title, required, editable slug, optional description, parent and blocks, localized, with the publication at the bottom of the form, a list sorted by title and publication with search, and saves that keep the locales the admin doesn't edit), `Users` (name, unique email, password hashed by the repository, role; a list sorted by name and email) and `Medias` (a media library of images, videos and documents, in a gallery and a table). Each field has its own method, and `Resources\Concerns\EditsFields` adds, inserts, replaces and removes fields without copying `fields()`. They need `folklore/laravel-panneau` 5.0.0-alpha.14 or later ([#173](https://github.com/folkloreinc/laravel-folklore/issues/173), [decisions/0025](docs/decisions/0025-standard-resources.md)).
@@ -287,7 +291,8 @@ The core and `JsonDataCast`, and the medias module on `laravel-mediatheque` 2 an
 
 - `make:entity` generated an entity and a repository that implemented themselves instead of their contracts, so they didn't load.
 
-[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.12...v2.x
+[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.13...v2.x
+[2.0.0-alpha.13]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.13
 [2.0.0-alpha.12]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.12
 [2.0.0-alpha.11]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.11
 [2.0.0-alpha.10]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.10
