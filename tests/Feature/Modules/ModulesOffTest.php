@@ -35,6 +35,11 @@ class ModulesOffTest extends TestCase
      */
     private array $repositories = [];
 
+    /**
+     * @var array<class-string, class-string>
+     */
+    private array $siteRepositories = [];
+
     protected function setUp(): void
     {
         // Macros and Fortify's callbacks are static: forget what the tests that
@@ -54,6 +59,7 @@ class ModulesOffTest extends TestCase
         // The local environment, where 1.x pushed a global middleware
         $app->detectEnvironment(fn () => 'local');
         $app['config']->set('app.repositories', $this->repositories);
+        $app['config']->set('site.repositories', $this->siteRepositories);
     }
 
     protected function modules(): array
@@ -81,6 +87,15 @@ class ModulesOffTest extends TestCase
         $this->refreshApplication();
 
         $this->assertTrue($this->app->bound(Pages::class));
+        $this->assertFalse($this->app->bound(Blocks::class));
+    }
+
+    public function test_the_repositories_of_the_site_config_are_bound()
+    {
+        $this->siteRepositories = [Pages::class => PagesRepository::class];
+        $this->refreshApplication();
+
+        $this->assertInstanceOf(PagesRepository::class, $this->app->make(Pages::class));
         $this->assertFalse($this->app->bound(Blocks::class));
     }
 

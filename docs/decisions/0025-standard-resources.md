@@ -77,7 +77,7 @@ The labels of the resources, fields, block types and roles are translated by the
 
 ## Consequences
 
-- A new site has its admin with three empty classes; an existing site makes its resources extend the package's and removes what the package does. The install command that writes these classes comes next (#173).
+- A new site has its admin with three empty classes, which `folklore:install` writes with the site's contracts, entities, models, repositories and block types, and wires: an install command rather than another `make:*`, since it writes and wires a set of classes, and runs again to add a resource. An existing site makes its resources extend the package's and removes what the package does: the command reports the classes that don't extend them yet, without rewriting them.
 - A fix of these resources reaches every site with an upgrade of the package.
 - The standard resources need `laravel-panneau` 5.0.0-alpha.14 or later (`Publication`, the roles module, media in use); the rest of the panneau module still runs on 5.0.0-alpha.5.
 - The crop of an image of a block (its `transform`) isn't kept: `Json::media()` stores the reference to the media only. Until a reference can keep it, a site that needs crops in blocks gives its image block another schema.

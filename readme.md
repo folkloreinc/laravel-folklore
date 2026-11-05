@@ -29,6 +29,16 @@ namespace App\Panneau\Resources;
 class Pages extends \Folklore\Panneau\Resources\Pages {}
 ```
 
+`folklore:install` writes these classes, with the site's contracts, entities, models, repositories and block types, and wires them in `config/site.php` and `App\Providers\PanneauServiceProvider`. It skips the files that exist, so it can run again to add a resource:
+
+```bash
+php artisan folklore:install                 # pages, users and medias
+php artisan folklore:install --only=medias   # one resource
+php artisan folklore:install --dry-run       # what it would write
+```
+
+`--force` overwrites the classes that exist. `php artisan vendor:publish --tag=folklore-stubs` publishes its stubs, and those of the `make:*` commands, to change them.
+
 1.x:
 
 ```bash

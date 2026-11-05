@@ -26,6 +26,48 @@ class ConfigFile
      */
     public function set(string $key, bool|int|string|null $value): void
     {
+        $this->write($key, $this->literal($value), false);
+    }
+
+    /**
+     * Sets a key, by its dotted path from the returned array, to a class name:
+     * `\App\Models\Page::class`. It replaces a literal, or another class name.
+     */
+    public function setClass(string $key, string $class): void
+    {
+        $this->write($key, '\\'.ltrim($class, '\\').'::class', true);
+    }
+
+    /**
+     * Whether the returned array has a key, by its dotted path.
+     */
+    public function has(string $key): bool
+    {
+        $tokens = $this->tokens();
+        $array = $this->returnedArray($tokens);
+        $segments = explode('.', $key);
+        foreach ($segments as $index => $segment) {
+            $entry = $this->entries($tokens, $array)['entries'][$segment] ?? null;
+            if (is_null($entry)) {
+                return false;
+            }
+            if ($index === count($segments) - 1) {
+                return true;
+            }
+            $array = $this->arrayAt($tokens, $entry['value']);
+            if (is_null($array)) {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Writes the code of a value at a key: replaces a literal, or a class name too.
+     */
+    protected function write(string $key, string $code, bool $replacesClass): void
+    {
         $tokens = $this->tokens();
         $array = $this->returnedArray($tokens);
         $segments = explode('.', $key);
@@ -35,16 +77,17 @@ class ConfigFile
             $entry = $entries['entries'][$segment] ?? null;
 
             if (is_null($entry)) {
-                $this->insert($tokens, $array, $entries['last'], $segment, array_slice($segments, $index + 1), $this->literal($value));
+                $this->insert($tokens, $array, $entries['last'], $segment, array_slice($segments, $index + 1), $code);
 
                 return;
             }
 
             if ($index === count($segments) - 1) {
-                if ($entry['value'] !== $entry['end'] || ! $this->isLiteral($tokens[$entry['value']])) {
+                $literal = $entry['value'] === $entry['end'] && $this->isLiteral($tokens[$entry['value']]);
+                if (! $literal && ! ($replacesClass && $this->isClassName($tokens, $entry['value'], $entry['end']))) {
                     throw new RuntimeException(sprintf('`%s` is not a literal value: set it yourself.', $key));
                 }
-                $this->replace($tokens, $entry['value'], $entry['end'], $this->literal($value));
+                $this->replace($tokens, $entry['value'], $entry['end'], $code);
 
                 return;
             }
@@ -357,6 +400,27 @@ class ConfigFile
     {
         return $token->is([T_CONSTANT_ENCAPSED_STRING, T_LNUMBER, T_DNUMBER])
             || ($token->is(T_STRING) && in_array(strtolower($token->text), ['true', 'false', 'null'], true));
+    }
+
+    /**
+     * Whether the tokens from `$from` to `$to` are a class name: `Page::class`.
+     *
+     * @param  list<PhpToken>  $tokens
+     */
+    protected function isClassName(array $tokens, int $from, int $to): bool
+    {
+        $code = [];
+        for ($i = $from; $i <= $to; $i++) {
+            if (! $tokens[$i]->isIgnorable()) {
+                $code[] = $tokens[$i];
+            }
+        }
+
+        return count($code) === 3
+            && $code[0]->is([T_STRING, T_NAME_QUALIFIED, T_NAME_FULLY_QUALIFIED])
+            && $code[1]->is(T_DOUBLE_COLON)
+            // `class` after `::` is a T_STRING when the code is tokenized to be parsed
+            && strtolower($code[2]->text) === 'class';
     }
 
     protected function opens(PhpToken $token): bool
