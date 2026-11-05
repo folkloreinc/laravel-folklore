@@ -8,6 +8,8 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+## [2.0.0-alpha.12] - 2026-11-05
+
 ### Breaking changes
 
 - The panneau module requires `folklore/laravel-panneau` 5.0.0-alpha.5 or later, for the libraries of `media` fields: its pre-releases below 5.0.0-alpha.5 conflict.
@@ -275,7 +277,8 @@ The core and `JsonDataCast`, and the medias module on `laravel-mediatheque` 2 an
 
 - `make:entity` generated an entity and a repository that implemented themselves instead of their contracts, so they didn't load.
 
-[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.11...v2.x
+[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.12...v2.x
+[2.0.0-alpha.12]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.12
 [2.0.0-alpha.11]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.11
 [2.0.0-alpha.10]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.10
 [2.0.0-alpha.9]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.9
