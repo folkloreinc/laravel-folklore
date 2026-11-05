@@ -490,17 +490,9 @@ class JsonSchemaConverter
      */
     protected function observe(Model $model, string $attribute, SchemaNode $root, int $limit): void
     {
-        $query = $model->newQueryWithoutScopes()->toBase()->select([$attribute])->whereNotNull($attribute)->orderBy($model->getKeyName());
-        if ($limit > 0) {
-            $query->limit($limit);
-        }
         try {
-            foreach ($query->cursor() as $row) {
-                $raw = ((array) $row)[$attribute] ?? null;
-                $value = is_string($raw) ? json_decode($raw, true) : null;
-                if (is_array($value)) {
-                    $this->walk($root, $value);
-                }
+            foreach (StoredReferencesCheck::storedValues($model, $attribute, $limit) as $value) {
+                $this->walk($root, $value);
             }
         } catch (Throwable) {
             // A table that can't be read decides nothing: every `*` gets its TODO

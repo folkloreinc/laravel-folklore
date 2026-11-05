@@ -23,6 +23,7 @@ use Folklore\Upgrade\Checks\StoredReferencesCheck;
 use Folklore\Upgrade\Finding;
 use Folklore\Upgrade\Severity;
 use Folklore\Upgrade\Site;
+use Folklore\Upgrade\Upgrade;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Filesystem\Filesystem;
@@ -434,6 +435,51 @@ class UpgradeCheckTest extends TestCase
         $key = $this->finding($this->check(new StoredReferencesCheck, [LegacyArticle::class]), 'stores `medias://` references');
 
         $this->assertSame(Severity::Todo, $key->severity);
+    }
+
+    public function test_stored_references_are_read_by_key_in_chunks_up_to_the_limit()
+    {
+        $this->legacyArticles([]);
+        $rows = Upgrade::CHUNK * 2 + 10;
+        DB::table('upgrade_legacy_articles')->insert(array_map(
+            fn (int $index) => ['data' => json_encode(['cover' => 'thing://'.$index])],
+            range(1, $rows),
+        ));
+        // Rows without data are not counted against the limit
+        DB::table('upgrade_legacy_articles')->insert(['data' => null]);
+        JsonData::map(['thing' => [CastArticle::class, 'uid']]);
+        $check = new StoredReferencesCheck;
+        $read = function (int $limit) use ($check): array {
+            $site = new Site(self::SITE, $this->app['config'], $this->app['db'], Site::PATHS, [LegacyArticle::class], $limit);
+            DB::flushQueryLog();
+            DB::enableQueryLog();
+            $finding = $this->finding(array_values([...$check->check($site)]), LegacyArticle::class.'::data` holds references');
+            $selects = array_values(array_filter(
+                array_column(DB::getQueryLog(), 'query'),
+                fn (string $query) => str_contains($query, 'upgrade_legacy_articles'),
+            ));
+            DB::disableQueryLog();
+
+            return [$finding->locations, $selects];
+        };
+
+        // A limit of 0 reads every row, a chunk at a time
+        [$locations, $selects] = $read(0);
+        $this->assertSame(["data.cover → thing:// ({$rows})"], $locations);
+        $this->assertCount(3, $selects);
+        foreach ($selects as $select) {
+            $this->assertStringContainsString('limit '.Upgrade::CHUNK, $select);
+        }
+
+        // A limit stops after that many rows in key order, across chunks
+        [$locations] = $read(Upgrade::CHUNK + 1);
+        $this->assertSame(['data.cover → thing:// ('.(Upgrade::CHUNK + 1).')'], $locations);
+
+        // A limit under a chunk reads one chunk of that size
+        [$locations, $selects] = $read(3);
+        $this->assertSame(['data.cover → thing:// (3)'], $locations);
+        $this->assertCount(1, $selects);
+        $this->assertStringContainsString('limit 3', $selects[0]);
     }
 
     public function test_it_reports_the_blocks_to_convert()
