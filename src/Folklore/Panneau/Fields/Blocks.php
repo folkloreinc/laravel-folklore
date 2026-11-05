@@ -12,6 +12,7 @@ use Illuminate\Support\Collection;
 use LogicException;
 use Panneau\Fields\BlockType;
 use Panneau\Fields\Field;
+use Panneau\Fields\Media;
 use Panneau\Fields\Relation;
 use Panneau\Fields\Repeater;
 use Panneau\Forms\RuleSet;
@@ -19,6 +20,7 @@ use Panneau\Forms\SaveContext;
 use Panneau\Forms\ValidationContext;
 use Panneau\Query\ResourceQuery;
 use Panneau\Resources\ItemSerializer;
+use Panneau\Resources\MediaResource;
 use Panneau\Resources\ResourceRegistry;
 
 /**
@@ -245,7 +247,7 @@ class Blocks extends Repeater
         if (! is_array($serialized)) {
             return $serialized;
         }
-        $serialized = $this->withReferences($serialized);
+        $serialized = $this->withMediaReferences($this->withReferences($serialized));
         foreach ($blocks as $index => $block) {
             if (! is_array($serialized[$index] ?? null)) {
                 continue;
@@ -491,6 +493,190 @@ class Blocks extends Repeater
         }
 
         return $blocks;
+    }
+
+    /**
+     * Turns the values of the media fields of the blocks (`Media`, `Image`) into media
+     * references (`{ "id", "resource", "label", "media", "transform" }`), as Panneau does for the
+     * media fields of an item: the media items, and the `{ "id", "resource", "transform" }` that
+     * blocks stored, found within their library's scope, with one query per library for the
+     * whole list. A value keeps its `transform`, the edits of the image for this use. A media
+     * that isn't in its library anymore keeps its id, library and transform.
+     *
+     * @param  array<array-key, mixed>  $blocks
+     * @return array<array-key, mixed>
+     */
+    private function withMediaReferences(array $blocks): array
+    {
+        $resources = app(ResourceRegistry::class);
+
+        // The media fields of each block, with their libraries, and the ids to find per library
+        $fields = [];
+        $ids = [];
+        foreach ($blocks as $index => $block) {
+            if (! is_array($block)) {
+                continue;
+            }
+            foreach ($this->typeOf($block)?->getFields() ?? [] as $field) {
+                if (! $field instanceof Media || ! isset($block[$field->name()])) {
+                    continue;
+                }
+                $libraries = [];
+                foreach ($resources->mediaLibraries($field->libraries()) as $library) {
+                    $libraries[$library->id()] = $library;
+                }
+                $fields[$index][$field->name()] = [$field, $libraries];
+                foreach (self::mediaEntries($field, $block[$field->name()]) as $entry) {
+                    $id = is_array($entry) ? Media::idOf($entry) : null;
+                    $library = is_array($entry) ? self::libraryOf($libraries, $entry) : null;
+                    if ($id !== null && $library !== null) {
+                        $ids[$library->id()][$id] = true;
+                    }
+                }
+            }
+        }
+
+        $found = [];
+        foreach ($ids as $libraryId => $libraryIds) {
+            $library = $resources->find($libraryId);
+            if (! $library instanceof MediaResource) {
+                continue;
+            }
+            $repository = $resources->repository($library);
+            $items = $repository->query(new ResourceQuery(
+                perPage: count($libraryIds),
+                scope: $library->repositoryScope(request()),
+                ids: array_map(strval(...), array_keys($libraryIds)),
+            ));
+            foreach ($items->items() as $item) {
+                $found[$libraryId][$repository->id($item)] = $item;
+            }
+        }
+
+        foreach ($fields as $index => $blockFields) {
+            $block = $blocks[$index];
+            if (! is_array($block)) {
+                continue;
+            }
+            foreach ($blockFields as $name => [$field, $libraries]) {
+                $reference = function (mixed $entry) use ($libraries, $found, $resources): mixed {
+                    if (is_object($entry)) {
+                        $library = self::libraryOfItem($libraries, $entry);
+                        if ($library !== null) {
+                            return self::mediaReference($resources, $library, $entry);
+                        }
+                        // Not a media of the field's libraries: its id only, never the object
+                        $id = Media::idOf(data_get($entry, 'id'));
+
+                        return $id !== null ? ['id' => $id] : null;
+                    }
+                    $id = is_array($entry) ? Media::idOf($entry) : null;
+                    $library = is_array($entry) ? self::libraryOf($libraries, $entry) : null;
+                    $item = $id !== null && $library !== null ? ($found[$library->id()][$id] ?? null) : null;
+                    if (! is_array($entry) || $library === null || $item === null) {
+                        return $entry;
+                    }
+                    $media = self::mediaReference($resources, $library, $item);
+                    if (isset($entry['transform'])) {
+                        $media['transform'] = $entry['transform'];
+                    }
+
+                    return $media;
+                };
+                $convert = fn (mixed $value): mixed => $field->isMultiple()
+                    ? (is_array($value) ? array_values(array_map($reference, $value)) : [])
+                    : $reference($value);
+                $value = $block[$name];
+                $block[$name] = self::isLocalizedMedia($field, $value) && is_array($value)
+                    ? array_map($convert, $value)
+                    : $convert($value);
+            }
+            $blocks[$index] = $block;
+        }
+
+        return $blocks;
+    }
+
+    /**
+     * A reference to a media item of a library, as Panneau gives it for the media fields of an
+     * item: its id, its library, its label and its `MediaInfo`.
+     *
+     * @return array{id: string, resource: string, label?: string, media: array<string, mixed>}
+     */
+    private static function mediaReference(ResourceRegistry $resources, MediaResource $library, object $item): array
+    {
+        $reference = ['id' => $resources->repository($library)->id($item), 'resource' => $library->id()];
+        $label = $library->mediaLabel($item);
+        if ($label !== null) {
+            $reference['label'] = $label;
+        }
+        $reference['media'] = $library->media($item);
+
+        return $reference;
+    }
+
+    /**
+     * The entries of the serialized value of a media field: one, a list, or those of every
+     * locale.
+     *
+     * @return list<mixed>
+     */
+    private static function mediaEntries(Media $field, mixed $value): array
+    {
+        $values = self::isLocalizedMedia($field, $value) && is_array($value) ? array_values($value) : [$value];
+        $entries = [];
+        foreach ($values as $localized) {
+            if ($field->isMultiple()) {
+                array_push($entries, ...(is_array($localized) ? array_values($localized) : []));
+            } else {
+                $entries[] = $localized;
+            }
+        }
+
+        return $entries;
+    }
+
+    /**
+     * Whether the value of a media field is keyed by locale.
+     */
+    private static function isLocalizedMedia(Media $field, mixed $value): bool
+    {
+        return $field->isLocalized() && is_array($value) && ! array_is_list($value) && ! array_key_exists('id', $value);
+    }
+
+    /**
+     * The library of a stored value: the `resource` it keeps, among the libraries, or the only
+     * one.
+     *
+     * @param  array<string, MediaResource>  $libraries
+     * @param  array<array-key, mixed>  $entry
+     */
+    private static function libraryOf(array $libraries, array $entry): ?MediaResource
+    {
+        $named = $entry['resource'] ?? null;
+        if (is_string($named)) {
+            return $libraries[$named] ?? null;
+        }
+
+        return count($libraries) === 1 ? reset($libraries) : null;
+    }
+
+    /**
+     * The library of a media item, such as a model that a block's data resolved: the first of
+     * the libraries whose items are of its class, or the only one.
+     *
+     * @param  array<string, MediaResource>  $libraries
+     */
+    private static function libraryOfItem(array $libraries, object $item): ?MediaResource
+    {
+        foreach ($libraries as $library) {
+            $class = $library->itemClass();
+            if ($class !== null && $item instanceof $class) {
+                return $library;
+            }
+        }
+
+        return count($libraries) === 1 ? reset($libraries) : null;
     }
 
     private static function idOf(mixed $value): ?string

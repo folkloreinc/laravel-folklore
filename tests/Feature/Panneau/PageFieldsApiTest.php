@@ -5,10 +5,15 @@ namespace Folklore\Tests\Feature\Panneau;
 use Cviebrock\EloquentSluggable\ServiceProvider as SluggableServiceProvider;
 use Folklore\Contracts\Repositories\Pages;
 use Folklore\Locale\LocaleServiceProvider;
+use Folklore\Mediatheque\Contracts\Mediatheque;
+use Folklore\Mediatheque\Contracts\Models\Media;
 use Folklore\Models\Block as BlockModel;
+use Folklore\Panneau\Fields\Blocks;
 use Folklore\Tests\Feature\Panneau\Fixtures\ConformanceServiceProvider;
 use Folklore\Tests\Feature\Panneau\Fixtures\PagesServiceProvider;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * The page fields through Panneau's API, on the pages module's repository, which stores blocks
@@ -34,6 +39,8 @@ class PageFieldsApiTest extends PanneauTestCase
 
         $app['config']->set('locale.locales', ['fr', 'en']);
         $app['config']->set('app.fallback_locale', 'fr');
+        $app['config']->set('filesystems.disks.media', ['driver' => 'local', 'root' => storage_path('app/media'), 'url' => 'https://media.test']);
+        $app['config']->set('mediatheque.source', 'media');
     }
 
     protected function setUp(): void
@@ -41,6 +48,7 @@ class PageFieldsApiTest extends PanneauTestCase
         parent::setUp();
 
         $this->migrateMediatheque();
+        Storage::fake('media');
         foreach (['000000_create_pages_table', '000001_create_blocks_table', '000002_create_blocks_pivot'] as $migration) {
             $this->artisan('migrate', [
                 '--database' => 'testbench',
@@ -59,6 +67,31 @@ class PageFieldsApiTest extends PanneauTestCase
     private function storedBlocks(string $id): array
     {
         return json_decode((string) DB::table('pages')->where('id', $id)->value('data'), true)['blocks'] ?? [];
+    }
+
+    /**
+     * An image of the mediatheque, ingested on a fake disk, without its jobs.
+     */
+    private function image(string $name = 'Portrait'): Media
+    {
+        Bus::fake();
+        $path = tempnam(sys_get_temp_dir(), 'image');
+        // A PNG of one pixel
+        file_put_contents($path, (string) base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='));
+
+        try {
+            return $this->app->make(Mediatheque::class)->ingest($path, name: $name);
+        } finally {
+            unlink($path);
+        }
+    }
+
+    /**
+     * The URL of the original of a media.
+     */
+    private function urlOf(Media $media): string
+    {
+        return Storage::disk('media')->url((string) $media->original()?->path());
     }
 
     /**
@@ -214,6 +247,77 @@ class PageFieldsApiTest extends PanneauTestCase
 
         $this->assertSame($queries($one), $queries($three));
         $this->getJson(self::PATH.'/'.$three)->assertJsonPath('data.blocks.2.section.label.fr', 'Rubrique 3');
+    }
+
+    public function test_the_images_of_blocks_are_media_references_with_their_transform()
+    {
+        $image = $this->image();
+        $transform = ['crop' => ['x' => 0, 'y' => 0, 'width' => 1, 'height' => 1], 'rotate' => 90];
+
+        $created = $this->postJson(self::PATH, [
+            'title' => ['fr' => 'Page'],
+            'blocks' => [
+                ['type' => 'image', 'image' => ['id' => $image->uid, 'transform' => $transform]],
+                ['type' => 'gallery', 'images' => [['id' => $image->uid]]],
+            ],
+        ])->assertCreated();
+
+        foreach ([$created, $this->getJson(self::PATH.'/'.$created->json('data.id'))->assertOk()] as $response) {
+            $response
+                ->assertJsonPath('data.blocks.0.image.id', $image->uid)
+                ->assertJsonPath('data.blocks.0.image.resource', 'images')
+                ->assertJsonPath('data.blocks.0.image.label', 'Portrait')
+                ->assertJsonPath('data.blocks.0.image.media.type', 'image')
+                ->assertJsonPath('data.blocks.0.image.media.url', $this->urlOf($image))
+                ->assertJsonPath('data.blocks.0.image.transform', $transform)
+                ->assertJsonPath('data.blocks.1.images.0.id', $image->uid)
+                ->assertJsonPath('data.blocks.1.images.0.media.url', $this->urlOf($image));
+            $this->assertIsString($response->json('data.blocks.0.image.media.thumbnailUrl'));
+            $this->assertNotSame('', $response->json('data.blocks.0.image.media.thumbnailUrl'));
+            $this->assertArrayNotHasKey('transform', $response->json('data.blocks.1.images.0'));
+        }
+        // The block keeps what the repository received
+        $this->assertSame(['id' => $image->uid, 'transform' => $transform], $this->storedBlocks($created->json('data.id'))[0]['image']);
+    }
+
+    public function test_a_media_model_in_a_block_is_a_media_reference()
+    {
+        $image = $this->image();
+        $field = Blocks::make('blocks');
+
+        $serialized = $field->serialize([['type' => 'image', 'image' => $image], ['type' => 'gallery', 'images' => [$image]]]);
+
+        $this->assertIsArray($serialized);
+        $reference = $serialized[0]['image'];
+        $this->assertSame(['id', 'resource', 'label', 'media'], array_keys($reference));
+        $this->assertSame($image->uid, $reference['id']);
+        $this->assertSame('images', $reference['resource']);
+        $this->assertSame($this->urlOf($image), $reference['media']['url']);
+        $this->assertIsString($reference['media']['thumbnailUrl']);
+        $this->assertSame($reference, $serialized[1]['images'][0]);
+    }
+
+    public function test_the_images_of_blocks_are_found_together()
+    {
+        $images = array_map(fn (int $index): Media => $this->image('Image '.$index), range(1, 3));
+        $one = $this->postJson(self::PATH, ['title' => ['fr' => 'Une'], 'blocks' => [['type' => 'image', 'image' => ['id' => $images[0]->uid]]]])
+            ->assertCreated()->json('data.id');
+        $three = $this->postJson(self::PATH, ['title' => ['fr' => 'Trois'], 'blocks' => array_map(
+            fn (Media $image): array => ['type' => 'image', 'image' => ['id' => $image->uid]],
+            $images,
+        )])->assertCreated()->json('data.id');
+
+        $queries = function (string $id): int {
+            DB::flushQueryLog();
+            DB::enableQueryLog();
+            $this->getJson(self::PATH.'/'.$id)->assertOk();
+            DB::disableQueryLog();
+
+            return count(DB::getQueryLog());
+        };
+
+        $this->assertSame($queries($one), $queries($three));
+        $this->getJson(self::PATH.'/'.$three)->assertJsonPath('data.blocks.2.image.label', 'Image 3');
     }
 
     public function test_a_block_type_is_offered_only_if_the_field_allows_it()
