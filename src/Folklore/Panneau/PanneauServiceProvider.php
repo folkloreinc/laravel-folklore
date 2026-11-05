@@ -25,4 +25,10 @@ class PanneauServiceProvider extends ServiceProvider
             $adapters->register(SearchesEntities::class, SearchableEntitiesRepository::class);
         });
     }
+
+    public function boot(): void
+    {
+        // The labels of the standard resources, block types and roles: `folklore::panneau.*`
+        $this->loadTranslationsFrom(__DIR__.'/../../lang', 'folklore');
+    }
 }

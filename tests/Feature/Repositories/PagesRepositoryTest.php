@@ -155,4 +155,28 @@ class PagesRepositoryTest extends TestCase
         $this->assertTrue($model->trashed());
         $this->assertCount(1, $model->toEntity()->blocks());
     }
+
+    public function test_it_searches_the_titles_in_every_locale_without_case()
+    {
+        $this->pages->create(['title' => ['fr' => 'À propos', 'en' => 'About us']]);
+        $this->pages->create(['title' => ['fr' => 'Contact', 'en' => 'Contact']]);
+
+        $this->assertSame(['À propos'], $this->pages->get(['search' => 'PROPOS'])->map->title('fr')->all());
+        $this->assertSame(['À propos'], $this->pages->get(['search' => 'about'])->map->title('fr')->all());
+        $this->assertCount(2, $this->pages->get(['search' => '']));
+        $this->assertCount(0, $this->pages->get(['search' => 'nothing']));
+    }
+
+    public function test_it_sorts_by_the_title_in_the_current_locale()
+    {
+        foreach ([['Banane', 'Zebra'], ['Ananas', 'Yak'], ['Cerise', 'Xylophone']] as [$fr, $en]) {
+            $this->pages->create(['title' => ['fr' => $fr, 'en' => $en]]);
+        }
+
+        $this->app->setLocale('fr');
+        $this->assertSame(['Ananas', 'Banane', 'Cerise'], $this->pages->get(['order' => 'title'])->map->title('fr')->all());
+        $this->assertSame(['Cerise', 'Banane', 'Ananas'], $this->pages->get(['order' => ['title', 'desc']])->map->title('fr')->all());
+        $this->app->setLocale('en');
+        $this->assertSame(['Xylophone', 'Yak', 'Zebra'], $this->pages->get(['order' => 'title'])->map->title('en')->all());
+    }
 }
