@@ -31,6 +31,13 @@ return [
         // front ends written for 1.x read, until 3.0; `canonical`, laravel-mediatheque's, for
         // new projects and front ends that moved to it.
         'resource' => 'legacy',
+
+        // The URLs and dimensions of image sizes (docs/decisions/0024): `presets`, the URL of
+        // each laravel-image 2 preset, which `Route::image()` serves, for new projects;
+        // `legacy`, the 1.x URL of each size of `image.sizes` (`-filters(large)`), which
+        // `Route::imageLegacy()` serves, with 1.1's dimensions, for sites upgraded from 1.x
+        // until they move to presets and `Route::image()`.
+        'image_urls' => 'presets',
     ],
 
     'pages' => [

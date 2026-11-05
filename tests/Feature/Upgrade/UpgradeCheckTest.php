@@ -25,6 +25,7 @@ use Folklore\Upgrade\Severity;
 use Folklore\Upgrade\Site;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -207,6 +208,38 @@ class UpgradeCheckTest extends TestCase
         $this->assertSame(['app/Entities/Image.php:13'], $this->finding($findings, 'new ImageSize')->locations);
         $this->assertSame(['app/Entities/Image.php:23'], $this->finding($findings, 'getMetadatas')->locations);
         $this->assertSame(Severity::Deprecated, $this->finding($findings, 'setFilters')->severity);
+    }
+
+    public function test_it_reports_that_image_sizes_change_url_without_a_2x_image_route()
+    {
+        $finding = $this->finding($this->check(new MediasCheck), '`Route::image()`');
+
+        $this->assertSame(Severity::Todo, $finding->severity);
+        $this->assertSame(['app/Entities/Image.php:13', 'config/image.php:4', 'routes/images.php:5'], $finding->locations);
+        $this->assertStringContainsString('`site.medias.image_urls` to `legacy`', (string) $finding->fix);
+    }
+
+    public function test_image_sizes_keep_their_url_in_the_legacy_mode()
+    {
+        config()->set('site.medias.image_urls', 'legacy');
+
+        $this->assertNull($this->finding($this->check(new MediasCheck), '`Route::image()`', required: false));
+    }
+
+    public function test_image_sizes_can_change_url_with_a_2x_image_route()
+    {
+        $site = sys_get_temp_dir().'/folklore-upgrade-site-'.bin2hex(random_bytes(4));
+        (new Filesystem)->copyDirectory(self::SITE, $site);
+        file_put_contents($site.'/routes/images.php', "<?php\n\nRoute::imageLegacy('{pattern}');\nRoute::image();\n");
+
+        try {
+            $findings = array_values([...(new MediasCheck)->check(new Site($site, $this->app['config'], $this->app['db']))]);
+        } finally {
+            (new Filesystem)->deleteDirectory($site);
+        }
+
+        $this->assertNull($this->finding($findings, '`Route::image()`', required: false));
+        $this->assertNotNull($this->finding($findings, '`image.sizes`'));
     }
 
     public function test_the_1x_has_medias_is_deprecated_where_the_mediatheque_keeps_its_alias()

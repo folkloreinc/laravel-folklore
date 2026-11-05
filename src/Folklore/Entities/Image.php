@@ -34,12 +34,15 @@ class Image extends Media implements ImageContract
     }
 
     /**
-     * One size per preset of laravel-image (`config('image.presets')`).
+     * One size per preset of laravel-image (`config('image.presets')`), or, with
+     * `site.medias.image_urls` set to `legacy`, one per size of `image.sizes` when it is set,
+     * as in 1.1.
      */
     public function sizes(): Collection
     {
         if (! isset($this->sizes)) {
-            $this->sizes = collect(array_keys(ImageFacade::presets()->all()))
+            $legacy = ImageSize::usesLegacyUrls() ? ImageSize::legacySizeIds() : [];
+            $this->sizes = collect(count($legacy) > 0 ? $legacy : array_keys(ImageFacade::presets()->all()))
                 ->map(fn (string $preset) => new ImageSize($this, $preset, null, $this->filters))
                 ->values();
         }

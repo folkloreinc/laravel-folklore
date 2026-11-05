@@ -8,6 +8,10 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+### Added
+
+- `site.medias.image_urls`: `presets` (the default) gives each image size the 2.x URL of its `laravel-image` preset, as before; `legacy` gives the sizes of `image.sizes` the 1.x URLs (`-filters(large)`) and dimensions of 1.1, which `Route::imageLegacy()` serves, so an upgraded site keeps the URLs its front ends and caches use. `folklore:upgrade --check` reports a site whose image sizes would change URL with no `Route::image()` to serve them, and `folklore:upgrade` sets `legacy` for it ([decisions/0024](docs/decisions/0024-legacy-image-size-urls.md), [#162](https://github.com/folkloreinc/laravel-folklore/issues/162)).
+
 ### Fixed
 
 - The medias module's `Models\Media` fills `type` again, as 1.x did: a media created without a file through the medias repository (`create(['type' => 'audio', ...])`), such as a remote media whose source is a URL, keeps its type instead of failing on the `NOT NULL` column. `createFromFile()` and `updateFromFile()` keep the type the mediatheque detects, and ignore a `type` in their data ([#161](https://github.com/folkloreinc/laravel-folklore/issues/161)).

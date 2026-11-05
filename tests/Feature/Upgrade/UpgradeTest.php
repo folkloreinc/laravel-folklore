@@ -83,6 +83,27 @@ class UpgradeTest extends TestCase
         $this->assertSame([LegacyArticle::class.'::data'], $change->locations);
     }
 
+    public function test_it_keeps_the_1x_urls_of_image_sizes_without_a_2x_image_route()
+    {
+        $change = $this->change((new Upgrade)->plan($this->siteOf()), 'medias.image_urls');
+
+        $this->assertSame('legacy', $change->value);
+        $this->assertSame(['app/Entities/Image.php:13', 'config/image.php:4', 'routes/images.php:5'], $change->locations);
+
+        file_put_contents($this->site.'/routes/images.php', "<?php\n\nRoute::imageLegacy('{pattern}');\nRoute::image();\n");
+        $this->assertNotContains('medias.image_urls', $this->keys((new Upgrade)->plan($this->siteOf())));
+    }
+
+    public function test_it_leaves_the_urls_of_image_sizes_of_a_site_without_medias()
+    {
+        (new Filesystem)->deleteDirectory($this->site.'/app');
+        (new Filesystem)->deleteDirectory($this->site.'/resources');
+        $plan = (new Upgrade)->plan($this->siteOf());
+
+        $this->assertNotContains('modules.medias', $this->keys($plan));
+        $this->assertNotContains('medias.image_urls', $this->keys($plan));
+    }
+
     public function test_it_writes_the_values_in_the_site_config_file()
     {
         $site = $this->siteOf();
@@ -209,6 +230,7 @@ class UpgradeTest extends TestCase
         $this->assertTrue($config['modules']['medias']);
         $this->assertSame('medias', $config['medias']['reference_key']);
         $this->assertSame('legacy', $config['medias']['resource'], 'The package\'s default stays.');
+        $this->assertSame('legacy', $config['medias']['image_urls']);
         $this->assertEqualsCanonicalizing([[$media[0]->getKey(), 'json'], [$media[1]->getKey(), 'json']], $this->pivot($article->medias()->getTable(), $article));
 
         $this->artisan('folklore:upgrade', ['--model' => [MediaArticle::class, LegacyArticle::class]])

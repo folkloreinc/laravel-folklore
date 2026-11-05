@@ -2,7 +2,7 @@
 
 One file per decision. A decision is not edited once accepted: a later one replaces it and links to it. A proposed decision can still change before it is accepted.
 
-Decisions 0002 to 0004 and 0009 to 0012 come from the plan of 2.0 ([#56](https://github.com/folkloreinc/laravel-folklore/issues/56#issuecomment-6271513875), 2026-10-19). Decisions 0005 to 0008 come from the `JsonDataCast` design of 2026-10-22 ([#56](https://github.com/folkloreinc/laravel-folklore/issues/56#issuecomment-6344885526)), which updated decision 4 of the plan. Decisions 0013 to 0015 settle open points of phase 0, 0016 to 0019 ones of alpha 1, 0020 and 0021 come from the schema of JSON columns ([#105](https://github.com/folkloreinc/laravel-folklore/issues/105), now [laravel-json-data#6](https://github.com/folkloreinc/laravel-json-data/issues/6)), 0022 from the page fields of the Panneau plugin ([#122](https://github.com/folkloreinc/laravel-folklore/issues/122)), and 0023 from moving the blocks into the page's JSON.
+Decisions 0002 to 0004 and 0009 to 0012 come from the plan of 2.0 ([#56](https://github.com/folkloreinc/laravel-folklore/issues/56#issuecomment-6271513875), 2026-10-19). Decisions 0005 to 0008 come from the `JsonDataCast` design of 2026-10-22 ([#56](https://github.com/folkloreinc/laravel-folklore/issues/56#issuecomment-6344885526)), which updated decision 4 of the plan. Decisions 0013 to 0015 settle open points of phase 0, 0016 to 0019 ones of alpha 1, 0020 and 0021 come from the schema of JSON columns ([#105](https://github.com/folkloreinc/laravel-folklore/issues/105), now [laravel-json-data#6](https://github.com/folkloreinc/laravel-json-data/issues/6)), 0022 from the page fields of the Panneau plugin ([#122](https://github.com/folkloreinc/laravel-folklore/issues/122)), 0023 from moving the blocks into the page's JSON, and 0024 from the URLs of image sizes of upgraded sites ([#162](https://github.com/folkloreinc/laravel-folklore/issues/162)).
 
 | # | Decision | Status |
 |---|---|---|
@@ -13,7 +13,7 @@ Decisions 0002 to 0004 and 0009 to 0012 come from the plan of 2.0 ([#56](https:/
 | [0005](0005-json-reference-keys.md) | JSON reference keys in a global registry | Accepted |
 | [0006](0006-reference-handlers.md) | Reference handlers per key | Accepted |
 | [0007](0007-batch-resolution-and-listing.md) | Batch resolution, memoization and reference listing | Accepted |
-| [0008](0008-media-references.md) | Media references in the medias module | Accepted |
+| [0008](0008-media-references.md) | Media references in the medias module | Accepted, amended by 0024 (the URLs of image sizes) |
 | [0009](0009-pages-and-blocks.md) | Pages store their blocks in their JSON, with a type registry | Accepted |
 | [0010](0010-users-and-auth.md) | Users and auth are an explicit opt-in module | Accepted |
 | [0011](0011-panneau-plugin.md) | A Panneau 5 plugin, as an opt-in module | Replaced by 0018 |
@@ -29,6 +29,7 @@ Decisions 0002 to 0004 and 0009 to 0012 come from the plan of 2.0 ([#56](https:/
 | [0021](0021-json-data-package.md) | JSON data moves to its own package | Accepted; open points settled with the extraction ("Since then") |
 | [0022](0022-page-fields.md) | The page fields: a registry of block types, and types of pages by resource | Accepted, amended by 0023 (blocks in the page's JSON) |
 | [0023](0023-blocks-in-the-page.md) | Blocks in the page's JSON, typed by a schema | Accepted |
+| [0024](0024-legacy-image-size-urls.md) | Upgraded sites keep the 1.x URLs of their image sizes | Accepted |
 
 Template:
 
