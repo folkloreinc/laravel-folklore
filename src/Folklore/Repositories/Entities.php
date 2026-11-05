@@ -95,6 +95,16 @@ abstract class Entities implements EntitiesContract, QueriesEntities
      */
     protected $orderableColumns = null;
 
+    /**
+     * The column of each name of the `order` param whose column has another name, such as a
+     * value of the JSON data: `['title' => 'data->title->{locale}']`, where `{locale}` is the
+     * current locale (see getOrderColumns()). These columns come from code: the `order` param
+     * accepts them whatever `$orderableColumns` says.
+     *
+     * @var array<string, string>
+     */
+    protected $orderColumns = [];
+
     protected $identifierHandleColumn = 'handle';
 
     /**
@@ -648,7 +658,10 @@ abstract class Entities implements EntitiesContract, QueriesEntities
         if (is_string($column)) {
             $column = trim($column);
         }
-        if (
+        $orderColumns = $this->getOrderColumns();
+        if (is_string($column) && isset($orderColumns[$column])) {
+            $column = $orderColumns[$column];
+        } elseif (
             ! ($column instanceof Expression || (is_string($column) && $column !== '')) ||
             ! $this->isOrderableColumn($column)
         ) {
@@ -683,6 +696,26 @@ abstract class Entities implements EntitiesContract, QueriesEntities
         $name = trim(Str::afterLast(Str::before($column, '->'), '.'), ' `"[]');
 
         return ! in_array($name, array_map('strtolower', $this->getUnorderableColumns()), true);
+    }
+
+    /**
+     * The column of each name of the `order` param whose column has another name
+     * (`$orderColumns`), with `{locale}` replaced by the current locale. A repository can
+     * return expressions too.
+     *
+     * @return array<string, string|Expression>
+     */
+    protected function getOrderColumns(): array
+    {
+        // As the application's getLocale(), which setLocale() keeps in the config
+        $locale = Container::getInstance()->make('config')->get('app.locale');
+        $locale = is_string($locale) ? $locale : '';
+        $columns = [];
+        foreach ($this->orderColumns as $name => $column) {
+            $columns[(string) $name] = str_replace('{locale}', $locale, $column);
+        }
+
+        return $columns;
     }
 
     /**

@@ -21,6 +21,14 @@ composer require folklore/laravel-folklore:^2.0@alpha folklore/laravel-json-data
 
 The modules are off by default and are turned on in `config/site.php`; each one suggests the packages it needs. See [the architecture](docs/architecture.md#configuration-and-modules).
 
+With the `panneau` module, a site's admin starts from the standard resources: pages with their blocks, users and the media library, which the site's own classes extend ([the architecture](docs/architecture.md#standard-resources)):
+
+```php
+namespace App\Panneau\Resources;
+
+class Pages extends \Folklore\Panneau\Resources\Pages {}
+```
+
 1.x:
 
 ```bash

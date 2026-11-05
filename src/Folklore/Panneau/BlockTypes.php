@@ -3,14 +3,20 @@
 namespace Folklore\Panneau;
 
 use Closure;
+use Folklore\Contracts\Pages\DeclaresBlockFields;
+use Folklore\Pages\BlockRegistry;
+use Illuminate\Container\Container;
 use Panneau\Fields\BlockType;
 
 /**
  * The types of blocks of the site, which the `Blocks` fields offer when they aren't given
  * types of their own (docs/decisions/0022). A singleton of the panneau module.
  *
- * Types are registered as Panneau `BlockType`s, or as closures that return some, called when
- * a field first needs them: in a request, so that their labels are translated in its locale.
+ * The types of the pages module (`site.pages.blocks.types`) whose entity class declares its
+ * fields (`DeclaresBlockFields`, as the standard block types do) come first, in their order
+ * (docs/decisions/0025). Other types are registered as Panneau `BlockType`s, or as closures
+ * that return some, called when a field first needs them: in a request, so that their labels
+ * are translated in its locale. A registered type replaces a declared type of the same id.
  *
  * ```php
  * $this->app->make(BlockTypes::class)->register(fn () => [
@@ -47,13 +53,17 @@ class BlockTypes
     }
 
     /**
-     * The registered types, in the order they were registered.
+     * The types: those the entity classes of the pages module declare, then the registered
+     * ones, in the order they were registered.
      *
      * @return list<BlockType>
      */
     public function all(): array
     {
         $types = [];
+        foreach ($this->declared() as $type) {
+            $types[$type->id()] = $type;
+        }
         foreach ($this->registered as $registered) {
             $resolved = $registered instanceof Closure ? $registered() : $registered;
             foreach ($resolved instanceof BlockType ? [$resolved] : $resolved as $type) {
@@ -65,7 +75,32 @@ class BlockTypes
     }
 
     /**
-     * The ids of the registered types.
+     * The types of `site.pages.blocks.types` whose entity class declares its fields.
+     *
+     * @return list<BlockType>
+     */
+    protected function declared(): array
+    {
+        $container = Container::getInstance();
+        if (! $container->bound(BlockRegistry::class)) {
+            return [];
+        }
+
+        $types = [];
+        foreach ($container->make(BlockRegistry::class)->types() as $id => $class) {
+            if (! is_subclass_of($class, DeclaresBlockFields::class)) {
+                continue;
+            }
+            $type = BlockType::make($id, $class::blockLabel(), $class::blockFields());
+            $icon = $class::blockIcon();
+            $types[] = $icon !== null ? $type->icon($icon) : $type;
+        }
+
+        return $types;
+    }
+
+    /**
+     * The ids of the types.
      *
      * @return list<string>
      */
@@ -75,7 +110,7 @@ class BlockTypes
     }
 
     /**
-     * Forgets the registered types.
+     * Forgets the registered types. The declared types stay: they are the pages module's.
      */
     public function flush(): void
     {

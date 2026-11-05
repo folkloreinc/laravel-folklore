@@ -102,6 +102,28 @@ class EntitiesOrderTest extends TestCase
         $this->assertInstanceOf(Expression::class, $orders[0]['column']);
     }
 
+    public function test_order_columns_give_the_column_of_a_name()
+    {
+        $users = $this->makeRepository(orderable: ['name']);
+        $users->setOrderColumns(['title' => 'data->title->{locale}', 'mail' => 'email']);
+        $this->app->setLocale('fr');
+
+        $this->assertSame([['data->title->fr', 'desc']], $users->orders(['order' => 'title', 'order_direction' => 'desc']));
+        // From code: the orderable columns don't restrict them
+        $this->assertSame([['email', 'asc']], $users->orders(['order' => 'mail']));
+        $this->assertSame([], $users->orders(['order' => 'email']));
+    }
+
+    public function test_order_columns_follow_the_current_locale()
+    {
+        $users = $this->makeRepository();
+        $users->setOrderColumns(['title' => 'data->title->{locale}']);
+
+        $this->app->setLocale('en');
+
+        $this->assertSame([['data->title->en', 'asc']], $users->orders(['order' => 'title']));
+    }
+
     public function test_an_empty_order_is_ignored()
     {
         $this->assertSame([], $this->makeRepository()->orders(['order' => '']));
@@ -128,6 +150,11 @@ class EntitiesOrderTest extends TestCase
             public function setOrderableColumns(?array $columns): void
             {
                 $this->orderableColumns = $columns;
+            }
+
+            public function setOrderColumns(array $columns): void
+            {
+                $this->orderColumns = $columns;
             }
 
             protected function getUnorderableColumns(): array

@@ -140,6 +140,33 @@ The page fields of 1.x have Panneau 5 equivalents in `Folklore\Panneau\Fields` (
 
 Blocks are stored in the page's JSON ([Pages and blocks](#pages-and-blocks)): the field gives each block its id, and the pages repository gives one to a new block. The pages repository now implements `ChecksSlugs`: a site's subclass of it with its own `slugExists()` must match that contract. Media inside blocks aren't media references yet ([folkloreinc/laravel-panneau#117](https://github.com/folkloreinc/laravel-panneau/issues/117)).
 
+#### The standard resources
+
+The panneau module gives the resources that almost every site has ([decisions/0025](decisions/0025-standard-resources.md)): `Folklore\Panneau\Resources\Pages`, `Users` and `Medias`, with `laravel-panneau` 5.0.0-alpha.14 or later. Make the site's resources extend them, and remove what they already do:
+
+```php
+namespace App\Panneau\Resources;
+
+class Pages extends \Folklore\Panneau\Resources\Pages {}
+class Users extends \Folklore\Panneau\Resources\Users {}
+class Medias extends \Folklore\Panneau\Resources\Medias {}
+```
+
+| The site's own code | The standard resources |
+|---|---|
+| The fields of pages, read with `resolveUsing()`, and the order of the form in `layout()` | `fields()` and the field methods (`titleField()`…); a field of the site goes in with `insertAfter()`, and lands there in the form |
+| `Layout\Publication` and the `published` switch | `publishedField()`, at the bottom of the form (`publicationFields()`) |
+| A repository concern that keeps the other locales on save | `Pages::updating()` |
+| A repository concern that sorts `title` by `data->title->fr` | The pages repository sorts `title` in the current locale; `$orderColumns` maps the site's own names |
+| `search` in the pages repository's `buildQueryFromParams()` | The pages repository searches the titles in every locale (`SearchesEntities`) |
+| The users' fields, a unique email, a password field | `Users`, whose password the users repository hashes |
+| A `MediathequeResource` with the largest `maxSize()` of its types | `Medias`; override `mediaTypes()` |
+| The labels in the site's translations | `folklore::panneau.*`, in French and English |
+| Block types registered with `BlockTypes::register()`, and their entities | The standard types of `Folklore\Entities\Blocks`, extended by the site's classes in `site.pages.blocks.types`, which give their fields to the admin; keep `register()` for the site's other types |
+| Policies on a `role` column | `DefaultRoles::ROLES`, `UserRoleStore` and the policies of `Folklore\Panneau\Policies`, on the roles module of `laravel-panneau` |
+
+A page's data stored by a site's block types with the same ids (`text`, `image`…) is read by the standard types when their properties match: compare their `blockSchema()` with the site's before replacing them, and keep the site's own subclass for the properties it adds.
+
 ### Medias
 
 | 1.1 | 2.0 |

@@ -170,6 +170,7 @@ On `laravel-mediatheque` 2 and `laravel-image` 2 ([decisions/0008](decisions/000
 
 - **The repository adapter**, below, in the slice "Panneau 5 adapter and media entities" ([#121](https://github.com/folkloreinc/laravel-folklore/issues/121)).
 - **The page fields**, below, in the slice "Pages" ([#122](https://github.com/folkloreinc/laravel-folklore/issues/122), [decisions/0022](decisions/0022-page-fields.md)).
+- **The standard resources**, below: pages, users and the media library, which sites extend, with the standard block types and the default roles ([#173](https://github.com/folkloreinc/laravel-folklore/issues/173), [decisions/0025](decisions/0025-standard-resources.md)).
 - **PHP only.** The fields extend Panneau 5's built-in types: `Page` and `Pages` are relations to the pages resource, `Blocks` a repeater whose types come from the block type registry, and `PageSlug` Panneau's slug, with the URL that the pages module gives.
 - **Slug features in Panneau.** A source per locale, a URL computed by the backend and checking that a slug is free are proposed to Panneau's generic `slug` field.
 
@@ -284,6 +285,41 @@ final class SectionsResource extends PagesResource // the pages a field offers: 
   }
   ```
 
+
+### Standard resources
+
+([decisions/0025](decisions/0025-standard-resources.md)) `Folklore\Panneau\Resources\Pages`, `Users` and `Medias` are the resources that almost every site has. A site always has its own classes, which extend them, even empty, and registers them with `Panneau::resources()`: nothing is activated by config.
+
+```php
+namespace App\Panneau\Resources;
+
+use Folklore\Panneau\Fields\Blocks;
+use Panneau\Fields\Field;
+use Panneau\Fields\RichText;
+
+class Pages extends \Folklore\Panneau\Resources\Pages
+{
+    public function fields(): array
+    {
+        // A field after the description, in the form too
+        return static::insertAfter(parent::fields(), 'description', RichText::make('body')->localized()
+            ->resolveUsing(static::localized(fn (object $page, string $locale) => $page->body($locale))));
+    }
+
+    protected function blocksField(): Field
+    {
+        return Blocks::make('blocks')->label(__('Blocks'))->exceptTypes('gallery');
+    }
+}
+```
+
+- **Pages**: `title` (required), `slug` (`PageSlug`, editable), `description` (optional), `parent` (`Page`), `blocks` (`Blocks`) and `published`, a switch in the publication at the bottom of the form (`Layout\Publication`, the fields of `publicationFields()`). The form follows `fields()`. The list sorts by `title` and `published` and searches the titles: the pages repository is `SearchesEntities`, and sorts `title` in the current locale through `$orderColumns`. `updating()` keeps the locales that the admin doesn't edit, in the page's data and in its blocks matched by id (`Support\OtherLocales`, on the schema of the page's data).
+- **Users**: `name`, `email` (unique in the users' table), `password` (`Password`, hashed by the users repository: `hashed(false)`) and `role` (`Fields\Role`). The list sorts by name and email.
+- **Medias**: a `MediathequeResource` of `image`, `video` and `document` (`mediaTypes()`), with its `name`, in a gallery and a table.
+- **Overrides.** Each field has its method (`titleField()`, `slugField()`, `descriptionField()`, `parentField()`, `blocksField()`, `publishedField()`; `nameField()`, `emailField()`, `passwordField()`, `roleField()`), and `fields()` lists them. `Resources\Concerns\EditsFields` gives `insertAfter()`, `insertBefore()`, `replaceField()`, `withoutFields()` and `localized()`.
+- **Block types.** `Folklore\Entities\Blocks`: `TextBlock`, `HeadingBlock`, `ImageBlock`, `GalleryBlock`, `QuoteBlock`, `ButtonBlock` and `EmbedBlock`, each with its closed schema and its admin fields (`Contracts\Pages\DeclaresBlockFields`). The `BlockTypes` registry offers the types of `site.pages.blocks.types` whose class declares its fields, first, in their order; a type registered under the same id replaces one.
+- **Roles.** `Roles\DefaultRoles::ROLES` (`admin`: `*`; `editor`: `pages.*` and `medias.*`) and `Roles\UserRoleStore`, on the users' `role` column, for the roles module of `laravel-panneau`; `Policies\PagePolicy`, `UserPolicy` and `MediaPolicy` are their `ResourcePolicy`s.
+- **Labels** in French and English, `folklore::panneau.*`, loaded by the panneau module.
 
 ## Other modules
 
