@@ -8,6 +8,10 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+### Fixed
+
+- The `url` field of the pages resource, there for the subtitle of its items, no longer shows at the bottom of the form: Panneau appends the fields that `layout()` doesn't place, and a condition that is never true now keeps it out.
+
 ## [2.0.0-alpha.14] - 2026-11-06
 
 The card of a page, such as its parent, shows the page's URL under its title, with `folklore/laravel-panneau` 5.0.0-alpha.15 or later.

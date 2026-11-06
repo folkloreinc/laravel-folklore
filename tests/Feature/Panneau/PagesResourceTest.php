@@ -168,6 +168,11 @@ class PagesResourceTest extends StandardResourcesTestCase
         // In the locale of the request
         $this->getJson(self::PATH.'/'.$page)->assertOk()->assertJsonPath('data.url', '/en/holidays');
         $this->assertSame('url', $this->app->make(Fixtures\Site\Pages::class)->itemSubtitle());
+
+        // Never shown in the form, which Panneau would otherwise append it to
+        $url = collect($this->app->make(Fixtures\Site\Pages::class)->allFields())
+            ->first(fn ($field) => $field->name() === 'url');
+        $this->assertSame(['field' => 'url', 'in' => []], $url->toDefinition()['visibleWhen'] ?? null);
     }
 
     public function test_the_list_sorts_by_the_title_in_the_current_locale()
