@@ -40,7 +40,7 @@ class PagesResourceTest extends StandardResourcesTestCase
         $this->assertSame('file-text', $definition['icon']);
         $this->assertSame('edit', $definition['open']);
         $this->assertSame(
-            ['title' => 'text', 'slug' => 'slug', 'description' => 'textarea', 'parent' => 'relation', 'blocks' => 'repeater', 'published' => 'boolean'],
+            ['title' => 'text', 'slug' => 'slug', 'description' => 'textarea', 'parent' => 'relation', 'blocks' => 'repeater', 'published' => 'boolean', 'url' => 'text'],
             array_column($definition['fields'], 'type', 'name'),
         );
         $fields = array_column($definition['fields'], null, 'name');
@@ -159,6 +159,15 @@ class PagesResourceTest extends StandardResourcesTestCase
 
         $created->assertJsonPath('data.parent.id', $parent)->assertJsonPath('data.parent.label.fr', 'Parent');
         $this->assertSame($parent, $this->app->make(Pages::class)->findById($created->json('data.id'))?->parent()?->id());
+    }
+
+    public function test_the_url_of_a_page_is_the_subtitle_of_its_items()
+    {
+        $page = $this->page(['title' => ['fr' => 'Vacances', 'en' => 'Holidays']]);
+
+        // In the locale of the request
+        $this->getJson(self::PATH.'/'.$page)->assertOk()->assertJsonPath('data.url', '/en/holidays');
+        $this->assertSame('url', $this->app->make(Fixtures\Site\Pages::class)->itemSubtitle());
     }
 
     public function test_the_list_sorts_by_the_title_in_the_current_locale()
