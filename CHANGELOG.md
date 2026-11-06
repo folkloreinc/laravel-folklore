@@ -8,6 +8,10 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+### Added
+
+- The pages resource gives the URL of each page (`url`, read-only, not in the form) as the subtitle of its items (`itemSubtitle()`): the card of a selected page, such as the `parent`, shows it under the title. References carry it with `folklore/laravel-panneau` once it gives `itemSubtitle` (folkloreinc/laravel-panneau#194).
+
 ## [2.0.0-alpha.13] - 2026-11-05
 
 The standard resources of a site's admin ([decisions/0025](docs/decisions/0025-standard-resources.md)): pages with blocks, users and medias, which a site extends, standard block types, default roles, and `folklore:install`, which writes them in a site. They need `folklore/laravel-panneau` 5.0.0-alpha.14 or later.

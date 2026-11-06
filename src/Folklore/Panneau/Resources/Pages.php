@@ -22,6 +22,7 @@ use Panneau\Layout\Node;
 use Panneau\Layout\Publication;
 use Panneau\Lists\ResourceList;
 use Panneau\Resources\Resource;
+use Throwable;
 
 /**
  * The pages of the site, on the pages module (docs/decisions/0025): their title, address,
@@ -39,6 +40,8 @@ use Panneau\Resources\Resource;
  * - The blocks are the types of `site.pages.blocks.types` and of the `BlockTypes` registry:
  *   `blocksField()` narrows them.
  * - The list sorts by title and publication, and searches the titles.
+ * - The URL of a page is the subtitle of its items (`itemSubtitle()`): the card of a selected
+ *   page, such as a parent, shows it under the title.
  * - Saving keeps the locales of the page and of its blocks that the admin doesn't edit
  *   (`updating()`).
  */
@@ -121,6 +124,43 @@ class Pages extends Resource
     protected function publicationFields(): array
     {
         return ['published'];
+    }
+
+    /**
+     * The fields of the form, and the URL of the page, which items give but the form doesn't
+     * show.
+     */
+    public function allFields(): array
+    {
+        return [...parent::allFields(), $this->urlField()];
+    }
+
+    public function itemSubtitle(): ?string
+    {
+        return 'url';
+    }
+
+    /**
+     * The URL of the page in the locale of the request, read-only: the subtitle of its items.
+     * `null` when the site has no route for it.
+     */
+    protected function urlField(): Field
+    {
+        return Text::make('url')
+            ->readOnly()
+            ->label(static::trans('fields.url'))
+            ->resolveUsing(function (object $page): ?string {
+                if (! method_exists($page, 'url')) {
+                    return null;
+                }
+                try {
+                    $url = $page->url(app()->getLocale());
+                } catch (Throwable) {
+                    return null;
+                }
+
+                return is_string($url) && $url !== '' ? $url : null;
+            });
     }
 
     public function list(ResourceList $list): ResourceList
