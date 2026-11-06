@@ -8,6 +8,10 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+## [2.0.0-alpha.14] - 2026-11-06
+
+The card of a page, such as its parent, shows the page's URL under its title, with `folklore/laravel-panneau` 5.0.0-alpha.15 or later.
+
 ### Added
 
 - The pages resource gives the URL of each page (`url`, read-only, not in the form) as the subtitle of its items (`itemSubtitle()`): the card of a selected page, such as the `parent`, shows it under the title. References carry it with `folklore/laravel-panneau` once it gives `itemSubtitle` (folkloreinc/laravel-panneau#194).
@@ -295,7 +299,8 @@ The core and `JsonDataCast`, and the medias module on `laravel-mediatheque` 2 an
 
 - `make:entity` generated an entity and a repository that implemented themselves instead of their contracts, so they didn't load.
 
-[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.13...v2.x
+[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.14...v2.x
+[2.0.0-alpha.14]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.14
 [2.0.0-alpha.13]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.13
 [2.0.0-alpha.12]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.12
 [2.0.0-alpha.11]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.11
