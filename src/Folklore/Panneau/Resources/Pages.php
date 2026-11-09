@@ -17,7 +17,6 @@ use Panneau\Fields\Boolean;
 use Panneau\Fields\Field;
 use Panneau\Fields\Text;
 use Panneau\Fields\Textarea;
-use Panneau\Forms\Condition;
 use Panneau\Layout\Field as FieldNode;
 use Panneau\Layout\Node;
 use Panneau\Layout\Publication;
@@ -147,11 +146,10 @@ class Pages extends Resource
      */
     protected function urlField(): Field
     {
-        // Panneau appends to the form the fields that layout() doesn't place: a condition that
-        // is never true keeps this one out of it
+        // Out of the form, which would otherwise append it after the fields of layout()
         return Text::make('url')
             ->readOnly()
-            ->visibleWhen(Condition::field('url')->in([]))
+            ->notInForm()
             ->label(static::trans('fields.url'))
             ->resolveUsing(function (object $page): ?string {
                 if (! method_exists($page, 'url')) {
