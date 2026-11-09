@@ -18,6 +18,7 @@ use Panneau\Fields\Repeater;
 use Panneau\Forms\RuleSet;
 use Panneau\Forms\SaveContext;
 use Panneau\Forms\ValidationContext;
+use Panneau\Media\MediaTransform;
 use Panneau\Query\ResourceQuery;
 use Panneau\Resources\ItemSerializer;
 use Panneau\Resources\MediaResource;
@@ -243,7 +244,7 @@ class Blocks extends Repeater
         }
 
         $this->blockTypes();
-        $serialized = parent::serialize($blocks);
+        $serialized = parent::serialize($this->withMediaIds($blocks));
         if (! is_array($serialized)) {
             return $serialized;
         }
@@ -499,9 +500,10 @@ class Blocks extends Repeater
      * Turns the values of the media fields of the blocks (`Media`, `Image`) into media
      * references (`{ "id", "resource", "label", "media", "transform" }`), as Panneau does for the
      * media fields of an item: the media items, and the `{ "id", "resource", "transform" }` that
-     * blocks stored, found within their library's scope, with one query per library for the
-     * whole list. A value keeps its `transform`, the edits of the image for this use. A media
-     * that isn't in its library anymore keeps its id, library and transform.
+     * blocks stored, or that the page's cast resolved with their edits (`withMediaIds()`), found
+     * within their library's scope, with one query per library for the whole list. A value keeps
+     * its `transform`, the edits of the image for this use. A media that isn't in its library
+     * anymore keeps its id, library and transform.
      *
      * @param  array<array-key, mixed>  $blocks
      * @return array<array-key, mixed>
@@ -521,10 +523,7 @@ class Blocks extends Repeater
                 if (! $field instanceof Media || ! isset($block[$field->name()])) {
                     continue;
                 }
-                $libraries = [];
-                foreach ($resources->mediaLibraries($field->libraries()) as $library) {
-                    $libraries[$library->id()] = $library;
-                }
+                $libraries = self::librariesOf($resources, $field);
                 $fields[$index][$field->name()] = [$field, $libraries];
                 foreach (self::mediaEntries($field, $block[$field->name()]) as $entry) {
                     $id = is_array($entry) ? Media::idOf($entry) : null;
@@ -595,6 +594,71 @@ class Blocks extends Repeater
         }
 
         return $blocks;
+    }
+
+    /**
+     * Turns the media that the page's cast resolved with the edits they keep
+     * (`{ "id": <media>, "transform" }`, `Json::media(transform: true)`) into the values Panneau
+     * reads (`{ "id", "resource", "transform" }`), so that they keep their transform: Panneau
+     * serializes a media item without one. A media that is gone (`{ "id": null }`) is null.
+     *
+     * @param  list<array<array-key, mixed>>  $blocks
+     * @return list<array<array-key, mixed>>
+     */
+    private function withMediaIds(array $blocks): array
+    {
+        $resources = app(ResourceRegistry::class);
+        foreach ($blocks as $index => $block) {
+            foreach ($this->typeOf($block)?->getFields() ?? [] as $field) {
+                if (! $field instanceof Media || ! isset($block[$field->name()])) {
+                    continue;
+                }
+                $libraries = null;
+                $entry = function (mixed $entry) use ($field, $resources, &$libraries): mixed {
+                    if (! is_array($entry) || ! array_key_exists('id', $entry) || ! (is_object($entry['id']) || $entry['id'] === null)) {
+                        return $entry;
+                    }
+                    if ($entry['id'] === null) {
+                        return null;
+                    }
+                    $libraries ??= self::librariesOf($resources, $field);
+                    $library = self::libraryOfItem($libraries, $entry['id']);
+                    $value = $library !== null
+                        ? ['id' => $resources->repository($library)->id($entry['id']), 'resource' => $library->id()]
+                        : ['id' => Media::idOf(data_get($entry['id'], 'id'))];
+                    $transform = MediaTransform::normalize($entry['transform'] ?? null);
+                    if ($transform !== null) {
+                        $value['transform'] = $transform;
+                    }
+
+                    return $value;
+                };
+                $convert = fn (mixed $value): mixed => $field->isMultiple() && is_array($value) && array_is_list($value)
+                    ? array_map($entry, $value)
+                    : $entry($value);
+                $value = $block[$field->name()];
+                $blocks[$index][$field->name()] = self::isLocalizedMedia($field, $value) && is_array($value)
+                    ? array_map($convert, $value)
+                    : $convert($value);
+            }
+        }
+
+        return $blocks;
+    }
+
+    /**
+     * The libraries of a media field, by id.
+     *
+     * @return array<string, MediaResource>
+     */
+    private static function librariesOf(ResourceRegistry $resources, Media $field): array
+    {
+        $libraries = [];
+        foreach ($resources->mediaLibraries($field->libraries()) as $library) {
+            $libraries[$library->id()] = $library;
+        }
+
+        return $libraries;
     }
 
     /**

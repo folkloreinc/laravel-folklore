@@ -6,11 +6,12 @@ use Folklore\Contracts\Entities\Image as ImageContract;
 use Folklore\Contracts\Pages\DeclaresBlockFields;
 use Folklore\Entities\Block;
 use Folklore\Entities\Blocks\Concerns\ReadsBlockData;
+use Folklore\Entities\Image;
 use Folklore\JsonData\Schema\Json;
 use Folklore\JsonData\Schema\ObjectType;
 use Folklore\Pages\BlockLevel;
 use Illuminate\Support\Collection;
-use Panneau\Fields\Image;
+use Panneau\Fields\Image as ImageField;
 
 /**
  * Images of the media library. A standard block type (docs/decisions/0025).
@@ -39,12 +40,13 @@ class GalleryBlock extends Block implements DeclaresBlockFields
     public static function blockFields(): array
     {
         return [
-            Image::make('images')->multiple()->label(self::adminLabel('fields.images')),
+            ImageField::make('images')->multiple()->label(self::adminLabel('fields.images')),
         ];
     }
 
     /**
-     * The images, which the page's cast resolved from their references.
+     * The images, which the page's cast resolved from their references, with the edits chosen
+     * for this block (their crop…), which their URLs and sizes render.
      *
      * @return Collection<int, ImageContract>
      */
@@ -52,8 +54,8 @@ class GalleryBlock extends Block implements DeclaresBlockFields
     {
         $images = [];
         foreach ((array) data_get($this->data, 'images', []) as $image) {
-            $image = to_entity($image);
-            if ($image instanceof ImageContract) {
+            $image = Image::fromValue($image);
+            if ($image !== null) {
                 $images[] = $image;
             }
         }

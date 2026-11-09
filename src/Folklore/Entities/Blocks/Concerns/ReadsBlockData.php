@@ -2,6 +2,8 @@
 
 namespace Folklore\Entities\Blocks\Concerns;
 
+use Folklore\Contracts\Entities\Image as ImageContract;
+use Folklore\Entities\Image;
 use Folklore\JsonData\Schema\Json;
 use Folklore\JsonData\Schema\Type;
 use Illuminate\Container\Container;
@@ -37,12 +39,22 @@ trait ReadsBlockData
     }
 
     /**
-     * The node of a media in the schema: `Json::media()` with the medias module, or else the
-     * 1.x reference of the `medias` relation, as the pages' own image.
+     * An image of the data, which the page's cast resolved from its reference, with the edits
+     * of the image for this use that it keeps (`Image::fromValue()`).
+     */
+    protected function imageAt(string $key): ?ImageContract
+    {
+        return Image::fromValue(data_get($this->data, $key));
+    }
+
+    /**
+     * The node of a media in the schema: `Json::media(transform: true)` with the medias module,
+     * which keeps the edits of the image for this use, or else the 1.x reference of the
+     * `medias` relation, as the pages' own image.
      */
     protected static function mediaNode(): Type
     {
-        $media = Json::hasMacro('media') ? Json::__callStatic('media', []) : null;
+        $media = Json::hasMacro('media') ? Json::__callStatic('media', [true]) : null;
 
         return $media instanceof Type ? $media : Json::relation('medias');
     }
