@@ -371,7 +371,7 @@ The module namespaces are named with the contracts. 1.x classes that move into a
 | Package | 2.0.0 | Alphas (latest: 2.0.0-alpha.4) |
 |---|---|---|
 | `illuminate/console`, `contracts`, `database`, `pagination`, `support` `^12.69\|^13.30` | Required | Required |
-| `folklore/laravel-json-data` ([decisions/0021](decisions/0021-json-data-package.md)) | `^1.0`, required | `^1.0.0-alpha.5`, required since 2.0.0-alpha.4. A site requires it too (`^1.0@alpha`) until it has a stable release |
+| `folklore/laravel-json-data` ([decisions/0021](decisions/0021-json-data-package.md)) | `^1.0`, required | `^1.0.0-alpha.10` (for the edits of the images of blocks), required since 2.0.0-alpha.4. A site requires it too (`^1.0@alpha`) until it has a stable release |
 | `folklore/laravel-mediatheque`, `folklore/laravel-image` | `^2.0`, suggested (medias module) | Suggested: `laravel-mediatheque ^2.0.0-alpha.10`, `laravel-image ^2.0.0-alpha.1`. `laravel-mediatheque` below 2.0.0-alpha.10 conflicts, for its canonical `MediaResource` (below alpha 7 since alpha 2) |
 | `folklore/laravel-locale ^8.1`, `cviebrock/eloquent-sluggable` | Suggested (pages module) | Same |
 | `laravel/fortify` | Suggested (auth module) | Same |
