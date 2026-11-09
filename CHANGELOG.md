@@ -8,9 +8,13 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+### Breaking changes
+
+- The panneau module needs `folklore/laravel-panneau` 5.0.0-alpha.16 or later, for `notInForm()`: Composer refuses older 5.0 alphas.
+
 ### Fixed
 
-- The `url` field of the pages resource, there for the subtitle of its items, no longer shows at the bottom of the form: Panneau appends the fields that `layout()` doesn't place, and a condition that is never true now keeps it out.
+- The `url` field of the pages resource, there for the subtitle of its items, no longer shows at the bottom of the form: Panneau appends the fields that `layout()` doesn't place, and the field is now declared `notInForm()` (panneau-js decision 0071) instead of a condition that is never true. The admin needs the `@panneau/*` release that reads `notInForm`: earlier ones show the field at the bottom of the form again.
 
 ## [2.0.0-alpha.14] - 2026-11-06
 
