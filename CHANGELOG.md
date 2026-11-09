@@ -8,7 +8,9 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
-The crop chosen in the admin for the image of a block is kept, and rendered. It needs `folklore/laravel-json-data` 1.0.0-alpha.10 or later.
+## [2.0.0-alpha.15] - 2026-11-09
+
+The crop chosen in the admin for the image of a block is kept and rendered, and the URL of pages is declared `notInForm()`. Needs `folklore/laravel-json-data` 1.0.0-alpha.10, `folklore/laravel-panneau` 5.0.0-alpha.16 and `@panneau/*` 5.0.0-alpha.28 or later.
 
 ### Breaking changes
 
@@ -315,7 +317,8 @@ The core and `JsonDataCast`, and the medias module on `laravel-mediatheque` 2 an
 
 - `make:entity` generated an entity and a repository that implemented themselves instead of their contracts, so they didn't load.
 
-[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.14...v2.x
+[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.15...v2.x
+[2.0.0-alpha.15]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.15
 [2.0.0-alpha.14]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.14
 [2.0.0-alpha.13]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.13
 [2.0.0-alpha.12]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.12
