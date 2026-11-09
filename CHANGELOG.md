@@ -8,12 +8,20 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+The crop chosen in the admin for the image of a block is kept, and rendered. It needs `folklore/laravel-json-data` 1.0.0-alpha.10 or later.
+
 ### Breaking changes
 
 - The panneau module needs `folklore/laravel-panneau` 5.0.0-alpha.16 or later, for `notInForm()`: Composer refuses older 5.0 alphas.
 
+### Added
+
+- `Json::media(transform: true)`: a media reference that keeps the edits of the image for this use (the `transform` of the admin's media value: crop, rotation, flips, focal point), stored as `{ "id": "media://…", "transform": {…} }` when there are some, and as the `media://` reference otherwise. It is a reference with properties of `folklore/laravel-json-data` ([#181](https://github.com/folkloreinc/laravel-folklore/issues/181), [docs](docs/json-data.md#media-references-with-their-edits)).
+- `Folklore\Entities\Image::fromValue()`: the image of a value of JSON data, a media or a reference with its edits, and `withTransform()` and `transform()`: an image with edits gives the URL and the sizes of the edited image, as laravel-image renders it, signed without expiry, since strict mode serves a transform only signed. With `site.medias.image_urls` set to `legacy`, the 1.x URLs can't crop, and keep the original ([#181](https://github.com/folkloreinc/laravel-folklore/issues/181)).
+
 ### Fixed
 
+- The image and gallery blocks keep the crop chosen in the admin (its `transform`), which was lost on save: their schema declares `Json::media(transform: true)`, the admin reads it back, and `ImageBlock::image()` and `GalleryBlock::images()` render it. Stored `media://` references keep working, without conversion. A site's own image blocks keep the crop once they declare `Json::media(transform: true)` and read the image with `Image::fromValue()`; a front end that reads the stored JSON gets `{ "id", "transform" }` for an edited image ([#181](https://github.com/folkloreinc/laravel-folklore/issues/181), [upgrade](docs/upgrade.md)).
 - The `url` field of the pages resource, there for the subtitle of its items, no longer shows at the bottom of the form: Panneau appends the fields that `layout()` doesn't place, and the field is now declared `notInForm()` (panneau-js decision 0071) instead of a condition that is never true. The admin needs the `@panneau/*` release that reads `notInForm`: earlier ones show the field at the bottom of the form again.
 
 ## [2.0.0-alpha.14] - 2026-11-06

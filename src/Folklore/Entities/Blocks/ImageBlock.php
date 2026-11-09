@@ -50,13 +50,12 @@ class ImageBlock extends Block implements DeclaresBlockFields
     }
 
     /**
-     * The image, which the page's cast resolved from its reference.
+     * The image, which the page's cast resolved from its reference, with the edits chosen for
+     * this block (its crop…), which its URL and sizes render.
      */
     public function image(): ?ImageContract
     {
-        $image = to_entity(data_get($this->data, 'image'));
-
-        return $image instanceof ImageContract ? $image : null;
+        return $this->imageAt('image');
     }
 
     public function caption(?string $locale = null): ?string

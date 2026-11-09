@@ -283,7 +283,9 @@ class ServiceProvider extends BaseServiceProvider
     /**
      * Sets the models of the medias module in `config('mediatheque.models')`, unless the
      * site sets its own there, maps the media reference keys, and adds `Json::media()` to
-     * the nodes of JSON data schemas.
+     * the nodes of JSON data schemas: `Json::media(transform: true)` keeps the edits of the
+     * image for this use (the `transform` of an admin's media value), stored as
+     * `{ "id": "media://…", "transform": {…} }` when there are some (docs/json-data.md).
      */
     protected function bootMediatheque(): void
     {
@@ -311,9 +313,14 @@ class ServiceProvider extends BaseServiceProvider
         }
         JsonData::map($keys);
 
-        // Json::media(): a reference of the key written, synced to the media of HasMedias
+        // Json::media(): a reference of the key written, synced to the media of HasMedias.
+        // Json::media(transform: true) keeps the edits of the image for this use beside it.
         $writeKey = array_key_first($keys);
-        Json::macro('media', fn (): ReferenceType => Json::reference($writeKey)->relation('medias'));
+        Json::macro('media', function (bool $transform = false) use ($writeKey): ReferenceType {
+            $media = Json::reference($writeKey)->relation('medias');
+
+            return $transform ? $media->properties(['transform' => Json::object()->additional()->nullable()]) : $media;
+        });
     }
 
     /**

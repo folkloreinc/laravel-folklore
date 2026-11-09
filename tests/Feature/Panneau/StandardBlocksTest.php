@@ -11,6 +11,8 @@ use Folklore\Entities\Blocks\HeadingBlock;
 use Folklore\Entities\Blocks\ImageBlock;
 use Folklore\Entities\Blocks\QuoteBlock;
 use Folklore\Entities\Blocks\TextBlock;
+use Folklore\Entities\Image as ImageEntity;
+use Folklore\Image\Facades\Image as ImageFacade;
 use Folklore\Pages\BlockRegistry;
 use Illuminate\Support\Facades\DB;
 
@@ -100,6 +102,98 @@ class StandardBlocksTest extends StandardResourcesTestCase
             ->assertJsonPath('data.blocks.0.image.label', 'Portrait')
             ->assertJsonPath('data.blocks.0.caption.fr', 'Légende')
             ->assertJsonPath('data.blocks.1.images.0.id', $image->uid);
+    }
+
+    public function test_the_admin_keeps_the_edits_of_the_images_of_blocks()
+    {
+        $image = $this->image('Portrait');
+        $other = $this->image('Landscape');
+        $transform = ['crop' => ['x' => 0, 'y' => 0, 'width' => 1, 'height' => 1], 'rotate' => 90, 'flipX' => true, 'focalPoint' => ['x' => 0.5, 'y' => 0.25]];
+        $galleryTransform = ['crop' => ['x' => 0, 'y' => 0, 'width' => 1, 'height' => 1], 'base' => 'media'];
+
+        $created = $this->postJson(self::PATH, [
+            'title' => ['fr' => 'Page', 'en' => 'Page'],
+            'blocks' => [
+                ['type' => 'image', 'image' => ['id' => $image->uid, 'resource' => 'medias', 'transform' => $transform], 'caption' => ['fr' => 'Légende']],
+                ['type' => 'gallery', 'images' => [['id' => $other->uid, 'transform' => $galleryTransform], ['id' => $image->uid]]],
+            ],
+        ]);
+
+        // The admin gets the edits back
+        $created->assertCreated()
+            ->assertJsonPath('data.blocks.0.image.id', $image->uid)
+            ->assertJsonPath('data.blocks.0.image.label', 'Portrait')
+            ->assertJsonPath('data.blocks.0.image.transform', $transform)
+            ->assertJsonPath('data.blocks.1.images.0.id', $other->uid)
+            ->assertJsonPath('data.blocks.1.images.0.transform', $galleryTransform)
+            ->assertJsonPath('data.blocks.1.images.1.id', $image->uid)
+            ->assertJsonMissingPath('data.blocks.1.images.1.transform');
+        $id = $created->json('data.id');
+
+        // The page's data keeps them beside the reference; an image without any stays a reference
+        // (`medias://`, the key the tests write)
+        $stored = json_decode((string) DB::table('pages')->where('id', $id)->value('data'), true)['blocks'];
+        $this->assertEquals(['id' => 'medias://'.$image->id, 'transform' => $transform], $stored[0]['image']);
+        $this->assertEquals([['id' => 'medias://'.$other->id, 'transform' => $galleryTransform], 'medias://'.$image->id], $stored[1]['images']);
+
+        $this->getJson(self::PATH.'/'.$id)->assertOk()
+            ->assertJsonPath('data.blocks.0.image.id', $image->uid)
+            ->assertJsonPath('data.blocks.0.image.resource', 'medias')
+            ->assertJsonPath('data.blocks.0.image.transform', $transform)
+            ->assertJsonPath('data.blocks.1.images.0.transform', $galleryTransform);
+
+        // Saving again without the edits removes them
+        $this->patchJson(self::PATH.'/'.$id, [
+            'blocks' => [['type' => 'image', 'id' => $stored[0]['id'], 'image' => ['id' => $image->uid], 'caption' => ['fr' => 'Légende']]],
+        ])->assertOk()->assertJsonMissingPath('data.blocks.0.image.transform');
+        $this->assertSame('medias://'.$image->id, json_decode((string) DB::table('pages')->where('id', $id)->value('data'), true)['blocks'][0]['image']);
+    }
+
+    public function test_the_blocks_render_the_edits_of_their_images()
+    {
+        $image = $this->image('Portrait');
+        $transform = ['crop' => ['x' => 0, 'y' => 0, 'width' => 1, 'height' => 1], 'rotate' => 90];
+        $id = $this->postJson(self::PATH, [
+            'title' => ['fr' => 'Page', 'en' => 'Page'],
+            'blocks' => [
+                ['type' => 'image', 'image' => ['id' => $image->uid, 'transform' => $transform]],
+                ['type' => 'gallery', 'images' => [['id' => $image->uid, 'transform' => $transform], ['id' => $image->uid]]],
+            ],
+        ])->assertCreated()->json('data.id');
+
+        $blocks = $this->app->make(Pages::class)->findById($id)?->blocks();
+        $this->assertInstanceOf(ImageBlock::class, $blocks[0]);
+        $this->assertInstanceOf(GalleryBlock::class, $blocks[1]);
+        $blockImage = $blocks[0]->image();
+        $this->assertInstanceOf(ImageEntity::class, $blockImage);
+        $this->assertSame((string) $image->id, $blockImage->id());
+        $this->assertSame($transform, $blockImage->transform());
+
+        $transformed = ImageFacade::for($image)->transform($transform)->signed(false)->url();
+        $this->assertSame($transformed, $blockImage->url());
+        $this->assertNotSame($image->toEntity()->url(), $transformed);
+        foreach ($blockImage->sizes() as $size) {
+            $this->assertSame(ImageFacade::for($image)->transform($transform)->preset($size->id())->signed(false)->url(), $size->url());
+        }
+        $this->assertSame($transformed, $blocks[1]->images()->first()?->url());
+        $this->assertSame($image->toEntity()->url(), $blocks[1]->images()->last()?->url());
+    }
+
+    public function test_the_blocks_read_images_stored_as_references()
+    {
+        $image = $this->image('Portrait');
+        $id = $this->pageWithBlocks([['type' => 'image', 'image' => ['id' => $image->uid]]]);
+        $data = json_decode((string) DB::table('pages')->where('id', $id)->value('data'), true);
+        $data['blocks'][0]['image'] = 'medias://'.$image->id;
+        DB::table('pages')->where('id', $id)->update(['data' => json_encode($data)]);
+
+        $blockImage = $this->app->make(Pages::class)->findById($id)?->blocks()[0]?->image();
+
+        $this->assertSame((string) $image->id, $blockImage?->id());
+        $this->assertNull($blockImage instanceof ImageEntity ? $blockImage->transform() : null);
+        $this->getJson(self::PATH.'/'.$id)->assertOk()
+            ->assertJsonPath('data.blocks.0.image.id', $image->uid)
+            ->assertJsonMissingPath('data.blocks.0.image.transform');
     }
 
     public function test_the_admin_saves_only_the_fields_of_a_type()

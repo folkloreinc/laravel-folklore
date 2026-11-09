@@ -107,6 +107,55 @@ class ImageUrlTest extends TestCase
         $this->assertSame(2000, $size->width());
     }
 
+    public function test_an_image_with_a_transform_renders_it_in_its_url_and_sizes()
+    {
+        $transform = ['crop' => ['x' => 100, 'y' => 0, 'width' => 1000, 'height' => 1000], 'rotate' => 90, 'focalPoint' => ['x' => 0.5, 'y' => 0.25]];
+        $original = $this->makeImage();
+        $image = $original->withTransform($transform);
+        $card = $image->sizes()->firstWhere(fn (ImageSize $size) => $size->id() === 'card');
+
+        $this->assertSame($transform, $image->transform());
+        $this->assertSame(ImageFacade::for($image->getModel())->transform($transform)->signed(false)->url(), $image->url());
+        $this->assertNotSame($original->url(), $image->url());
+        $this->assertStringEndsWith('/photo.jpg', $image->urlWithoutFilters());
+        $this->assertSame(ImageFacade::for($image->getModel())->transform($transform)->preset('card')->signed(false)->url(), $card?->url());
+        $this->assertSame(800, $card->width());
+        $this->assertSame(800, $card->height());
+        $this->assertSame(
+            ImageFacade::for($image->getModel())->transform($transform)->preset('thumbnail')->signed(false)->url(),
+            $image->setFilters('thumbnail')->url(),
+        );
+        // The image it was made from keeps no transform
+        $this->assertNull($original->transform());
+        $this->assertSame(ImageFacade::for($image->getModel())->preset('card')->url(), $original->sizes()->firstWhere(fn (ImageSize $size) => $size->id() === 'card')?->url());
+        $this->assertNull($image->withTransform(null)->transform());
+    }
+
+    public function test_an_invalid_transform_keeps_the_original_url()
+    {
+        $image = $this->makeImage()->withTransform(['rotate' => 45]);
+
+        $this->assertSame($image->urlWithoutFilters(), $image->url());
+        $this->assertSame($image->urlWithoutFilters(), (new ImageSize($image, 'card'))->url());
+    }
+
+    public function test_an_image_is_read_from_a_value_of_json_data()
+    {
+        $transform = ['crop' => ['x' => 0, 'y' => 0, 'width' => 500, 'height' => 500]];
+        $image = $this->makeImage();
+        $model = $image->getModel();
+
+        $this->assertNull(Image::fromValue(['id' => $model])?->transform());
+        $this->assertSame((string) $model->id, Image::fromValue($model)?->id());
+        $this->assertNull(Image::fromValue($model)?->transform());
+        $this->assertSame($transform, Image::fromValue(['id' => $model, 'transform' => $transform])?->transform());
+        $this->assertSame($transform, Image::fromValue(['id' => $image, 'transform' => $transform])?->transform());
+        $this->assertNull(Image::fromValue(['id' => $model, 'transform' => []])?->transform());
+        $this->assertNull(Image::fromValue(['id' => null, 'transform' => $transform]));
+        $this->assertNull(Image::fromValue('media://med_unknown'));
+        $this->assertNull(Image::fromValue(null));
+    }
+
     private function makeImage(?int $width = 2000, ?int $height = 1000): Image
     {
         $media = new Media;

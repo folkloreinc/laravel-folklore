@@ -169,6 +169,8 @@ class Medias extends \Folklore\Panneau\Resources\Medias {}
 
 A page's data stored by a site's block types with the same ids (`text`, `image`…) is read by the standard types when their properties match: compare their `blockSchema()` with the site's before replacing them, and keep the site's own subclass for the properties it adds.
 
+The crop chosen in the admin for an image of a block is kept by the standard image and gallery blocks. A site's own image block keeps it once its schema declares `Json::media(transform: true)` and it reads the image with `Folklore\Entities\Image::fromValue()`, which renders the crop in the image's URL and sizes ([json-data.md](json-data.md#media-references-with-their-edits)). Its stored `media://` references need no conversion.
+
 ### Medias
 
 | 1.1 | 2.0 |

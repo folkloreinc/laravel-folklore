@@ -9,6 +9,12 @@ use Folklore\Image\Facades\Image as ImageFacade;
 use Folklore\Image\PendingImage;
 use Illuminate\Support\Collection;
 
+/**
+ * An image of the media library. With a transform (`withTransform()`), the edits of the image
+ * for one use, such as the crop chosen in the admin for the image of a block, its URL and its
+ * sizes are of the edited image, as laravel-image renders a transform
+ * (`Image::for($media)->transform(...)`).
+ */
 class Image extends Media implements ImageContract
 {
     protected $sizes;
@@ -16,12 +22,66 @@ class Image extends Media implements ImageContract
     protected $filters;
 
     /**
-     * The original's URL, or, with filters, the URL of that rendition from laravel-image.
+     * The edits of the image for this use: Panneau's `MediaTransform`, as JSON data keeps it.
+     *
+     * @var array<array-key, mixed>|null
+     */
+    protected ?array $transform = null;
+
+    /**
+     * The image of a value of JSON data, as the cast resolved it: a media model or entity, or a
+     * media reference with properties (`Json::media(transform: true)`), whose `id` is the media
+     * and whose `transform` the edits of the image for this use. Null for anything else.
+     */
+    public static function fromValue(mixed $value): ?ImageContract
+    {
+        $transform = null;
+        if (is_array($value) && array_key_exists('id', $value)) {
+            $transform = is_array($value['transform'] ?? null) && count($value['transform']) > 0 ? $value['transform'] : null;
+            $value = $value['id'];
+        }
+        $image = to_entity($value);
+        if (! $image instanceof ImageContract) {
+            return null;
+        }
+
+        return $transform !== null && $image instanceof self ? $image->withTransform($transform) : $image;
+    }
+
+    /**
+     * A copy of the image with the edits of the image for this use (Panneau's
+     * `MediaTransform`: crop, rotate, flips, focal point, and its `base`), or without any.
+     *
+     * @param  array<array-key, mixed>|null  $transform
+     */
+    public function withTransform(?array $transform): static
+    {
+        $image = clone $this;
+        $image->transform = $transform !== null && count($transform) > 0 ? $transform : null;
+        $image->sizes = null;
+
+        return $image;
+    }
+
+    /**
+     * The edits of the image for this use, or null.
+     *
+     * @return array<array-key, mixed>|null
+     */
+    public function transform(): ?array
+    {
+        return $this->transform;
+    }
+
+    /**
+     * The original's URL, or, with filters or a transform, the URL of that rendition from
+     * laravel-image. With `site.medias.image_urls` set to `legacy`, a transform alone keeps
+     * the original's URL: 1.x URLs can't crop.
      */
     public function url(): string
     {
         $url = parent::url();
-        if (isset($this->filters) && $url !== '') {
+        if ($url !== '' && (isset($this->filters) || ($this->transform !== null && ! ImageSize::usesLegacyUrls()))) {
             return $this->pendingImage($this->filters)?->url() ?? $url;
         }
 
@@ -34,9 +94,9 @@ class Image extends Media implements ImageContract
     }
 
     /**
-     * One size per preset of laravel-image (`config('image.presets')`), or, with
-     * `site.medias.image_urls` set to `legacy`, one per size of `image.sizes` when it is set,
-     * as in 1.1.
+     * One size per preset of laravel-image (`config('image.presets')`), of the image with its
+     * transform, or, with `site.medias.image_urls` set to `legacy`, one per size of
+     * `image.sizes` when it is set, as in 1.1, whose URLs can't crop.
      */
     public function sizes(): Collection
     {
@@ -75,13 +135,18 @@ class Image extends Media implements ImageContract
     }
 
     /**
-     * The laravel-image builder for this image with filters, or null when laravel-image
-     * can't render it.
+     * The laravel-image builder for this image with its transform and filters, or null when
+     * laravel-image can't render it, or its transform is invalid.
      */
     public function pendingImage(mixed $filters = null): ?PendingImage
     {
         try {
             $image = ImageFacade::for($this->model);
+            if ($this->transform !== null) {
+                // A transform is a free spec, which strict mode serves signed: without
+                // expiry, so that the URL stays the same
+                $image = $image->transform($this->transform)->signed(false);
+            }
             if (is_string($filters)) {
                 return $image->preset($filters);
             }

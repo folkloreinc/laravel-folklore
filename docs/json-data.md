@@ -31,7 +31,7 @@ laravel-json-data's `json-data:rewrite-references` looks at the models of `app/M
 
 A model declares a JSON column with a schema, `jsonDataSchema()` ([decisions/0020](decisions/0020-json-schema.md)), from laravel-json-data's alpha 2. The schema, its nodes and `JsonData::fill()` are specified in [laravel-json-data's json-data.md](https://github.com/folkloreinc/laravel-json-data/blob/v1.x/docs/json-data.md#schema). This package adds:
 
-- **`Json::media()`**, with the medias module: `Json::reference()` with the key that the module writes (`site.medias.reference_key`, [below](#media-references)), synced to the `medias` relation of `HasMedias`, under the `json` handle ([Syncing](#syncing-media-references)). `Json::media()->translatable()` stores one media per locale (`image.*`), as 1.x sites declare them.
+- **`Json::media()`**, with the medias module: `Json::reference()` with the key that the module writes (`site.medias.reference_key`, [below](#media-references)), synced to the `medias` relation of `HasMedias`, under the `json` handle ([Syncing](#syncing-media-references)). `Json::media()->translatable()` stores one media per locale (`image.*`), as 1.x sites declare them. `Json::media(transform: true)` keeps the edits of the image for this use ([below](#media-references-with-their-edits)).
 - **The site's locales** for translatable nodes: `Folklore\Eloquent\SiteLocaleResolver`, bound as laravel-json-data's `LocaleResolver`, reads `site.locales` when it is set, then laravel-locale's `locale.locales`, then laravel-json-data's `json-data.locales`. The default locale is laravel-json-data's: `json-data.default_locale`, else `app.locale` when it is one of the locales.
 - **The base repository fills with `JsonData::fill()`** ([Repositories](#repositories)).
 
@@ -118,6 +118,21 @@ A value that reaches a media path, from a form for example, is downloaded by the
 `Mediatheque::fake()` replaces ingestion, probing and renditions, in memory. `MediaReferences` resolves references from the database, not through the facade, so a media created in the database (with a factory, for example) reads and writes as usual under the fake ([#98](https://github.com/folkloreinc/laravel-folklore/issues/98)). Its `resolve()` and `resolveMany()` know only the media it ingested itself.
 
 A file or a URL written to a media path is ingested by the fake, which returns a `FakeMedia`: it isn't a model, so the value is written `null`. A test that writes files to JSON data creates its media in the database first, or doesn't fake the mediatheque.
+
+### Media references with their edits
+
+The admin's image field sends a media with the edits chosen for this use: a `transform` (crop, rotation, flips, focal point, Panneau's `MediaTransform`). `Json::media()` stores the reference only, so a node that should keep them is `Json::media(transform: true)`, a reference with properties ([laravel-json-data](https://github.com/folkloreinc/laravel-json-data/blob/v1.x/docs/json-data.md#references)). The image and gallery blocks declare it ([#181](https://github.com/folkloreinc/laravel-folklore/issues/181)).
+
+```php
+'image' => Json::media(transform: true),
+// with edits:    {"id": "media://med_…", "transform": {"crop": {"x": 0, "y": 120, "width": 1600, "height": 900}}}
+// without edits: "media://med_…", as Json::media() stores it
+```
+
+- **Stored data keeps working:** a `media://` string reads as before, and a value is stored as an object only when it has edits. Nothing to convert.
+- **Reading:** the cast resolves the object's `id`: `$data['image']` is `['id' => <media>, 'transform' => [...]]`. `Folklore\Entities\Image::fromValue($value)` gives the image entity of either form, with its edits (`withTransform()`, `transform()`): its `url()` and its `sizes()` are those of the edited image, which laravel-image renders (`Image::for($media)->transform(...)->signed(false)`: a transform is a free spec, which strict mode serves signed). With `site.medias.image_urls` set to `legacy`, the 1.x URLs can't crop: the image keeps its URLs without the edits.
+- **The admin** reads the edits back: the `Blocks` field gives them in the media references of the blocks.
+- **A site's own block** that reads `to_entity(data_get($this->data, 'image'))` gets an array once the admin saves edits: declare `Json::media(transform: true)` and read the image with `Image::fromValue(data_get($this->data, 'image'))`, both together. A front end that reads the stored JSON gets the object `{ "id", "transform" }` for an edited image.
 
 ## Repositories
 

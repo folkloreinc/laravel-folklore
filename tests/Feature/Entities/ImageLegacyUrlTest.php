@@ -93,6 +93,16 @@ class ImageLegacyUrlTest extends TestCase
         $this->assertNotNull($url->spec);
     }
 
+    public function test_a_transform_is_not_in_the_1x_urls()
+    {
+        $original = $this->makeImage();
+        $image = $original->withTransform(['crop' => ['x' => 0, 'y' => 0, 'width' => 500, 'height' => 500]]);
+
+        // 1.x URLs can't crop: the image keeps the URLs it has without the transform
+        $this->assertSame($original->url(), $image->url());
+        $this->assertSame($this->legacyUrl($image, '-filters(thumbnail).jpg'), $this->sizeOf($image, 'thumbnail')->url());
+    }
+
     public function test_the_original_size_keeps_the_original_url()
     {
         $image = $this->makeImage();
