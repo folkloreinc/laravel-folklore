@@ -8,6 +8,10 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+### Fixed
+
+- `CustomerIo\Client` authenticates the Track API (`/api/v2/entity`, `/api/v1/events`) with the App API key as a bearer token when it is one of Customer.io's newer secret keys (`sk_…`): the Track API refuses these keys, and their public `pk_…` counterparts, in the site id pair. Classic keys keep the site id and tracking key.
+
 ## [2.0.0-alpha.15] - 2026-11-09
 
 The crop chosen in the admin for the image of a block is kept and rendered, and the URL of pages is declared `notInForm()`. Needs `folklore/laravel-json-data` 1.0.0-alpha.10, `folklore/laravel-panneau` 5.0.0-alpha.16 and `@panneau/*` 5.0.0-alpha.28 or later.

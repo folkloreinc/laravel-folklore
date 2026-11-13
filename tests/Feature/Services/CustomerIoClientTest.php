@@ -35,6 +35,18 @@ class CustomerIoClientTest extends TestCase
             && $request->header('Authorization') === ['Basic '.base64_encode('site-id:tracking-key')]);
     }
 
+    public function test_track_requests_use_a_secret_key_as_a_bearer_token()
+    {
+        $client = new Client('sk_secret', 'site-id', 'pk_public');
+
+        $client->updateCustomer('jane@example.com', ['name' => 'Jane']);
+        $client->trackAnonymousEvent('anonymous-id', 'signup', []);
+
+        Http::assertSentCount(2);
+        Http::assertNotSent(fn (Request $request) => $request->header('Authorization') !== ['Bearer sk_secret']);
+        Http::assertSent(fn (Request $request) => $request->url() === 'https://track.customer.io/api/v1/events');
+    }
+
     public function test_customer_io_webhooks_use_the_app_api_key()
     {
         $this->makeClient()->triggerWebhook('https://api.customer.io/v1/webhook/123', ['id' => 1]);
