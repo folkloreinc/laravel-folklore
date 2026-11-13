@@ -681,6 +681,12 @@ class Client implements CustomerIo
         }
 
         if (in_array($url, ['/api/v2/entity', '/api/v1/events'])) {
+            // The secret keys of Customer.io's newer API keys (`sk_…`) authenticate the Track API
+            // as a bearer token: it refuses them, and their public `pk_…` keys, in a site id pair
+            if (str_starts_with($this->key, 'sk_')) {
+                return sprintf('Bearer %s', $this->key);
+            }
+
             return sprintf('Basic %s', base64_encode($this->siteId.':'.$this->trackingKey));
         }
 
