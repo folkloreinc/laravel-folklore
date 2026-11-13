@@ -8,6 +8,10 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+## [2.0.0-alpha.16] - 2026-11-13
+
+The Customer.io client takes the newer secret keys (`sk_…`) for the Track API. No breaking change since alpha.15.
+
 ### Fixed
 
 - `CustomerIo\Client` authenticates the Track API (`/api/v2/entity`, `/api/v1/events`) with the App API key as a bearer token when it is one of Customer.io's newer secret keys (`sk_…`): the Track API refuses these keys, and their public `pk_…` counterparts, in the site id pair. Classic keys keep the site id and tracking key.
@@ -321,7 +325,8 @@ The core and `JsonDataCast`, and the medias module on `laravel-mediatheque` 2 an
 
 - `make:entity` generated an entity and a repository that implemented themselves instead of their contracts, so they didn't load.
 
-[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.15...v2.x
+[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.16...v2.x
+[2.0.0-alpha.16]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.16
 [2.0.0-alpha.15]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.15
 [2.0.0-alpha.14]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.14
 [2.0.0-alpha.13]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.13
