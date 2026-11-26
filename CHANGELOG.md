@@ -8,6 +8,8 @@ All notable changes to `folklore/laravel-folklore` 2.x are documented in this fi
 
 ## [Unreleased]
 
+## [2.0.0-alpha.17] - 2026-11-26
+
 ### Fixed
 
 - The `Blocks` field of the `panneau` module gives media references (`{ id, resource, label, media, transform }`) for the media and image fields of the repeaters and groups within a block too, at any depth (the fields of a repeater, or of each type of a typed repeater), so the app shows their thumbnails: they kept their stored `{ id }`. Their media are found in the same query per library as those of the blocks' own fields ([#191](https://github.com/folkloreinc/laravel-folklore/issues/191)).
@@ -329,7 +331,8 @@ The core and `JsonDataCast`, and the medias module on `laravel-mediatheque` 2 an
 
 - `make:entity` generated an entity and a repository that implemented themselves instead of their contracts, so they didn't load.
 
-[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.16...v2.x
+[Unreleased]: https://github.com/folkloreinc/laravel-folklore/compare/v2.0.0-alpha.17...v2.x
+[2.0.0-alpha.17]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.17
 [2.0.0-alpha.16]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.16
 [2.0.0-alpha.15]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.15
 [2.0.0-alpha.14]: https://github.com/folkloreinc/laravel-folklore/releases/tag/v2.0.0-alpha.14
