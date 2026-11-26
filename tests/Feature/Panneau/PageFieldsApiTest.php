@@ -320,6 +320,96 @@ class PageFieldsApiTest extends PanneauTestCase
         $this->getJson(self::PATH.'/'.$three)->assertJsonPath('data.blocks.2.image.label', 'Image 3');
     }
 
+    public function test_the_images_of_repeaters_and_groups_of_blocks_are_media_references()
+    {
+        $image = $this->image();
+        $transform = ['crop' => ['x' => 0, 'y' => 0, 'width' => 1, 'height' => 1], 'rotate' => 90];
+        $blocks = [
+            ['type' => 'partners', 'partners' => [
+                ['name' => 'Un', 'logo' => ['id' => $image->uid, 'transform' => $transform]],
+                ['name' => 'Deux', 'logo' => null],
+            ]],
+            ['type' => 'cards', 'cards' => [
+                ['type' => 'quote', 'body' => 'Citation'],
+                ['type' => 'card', 'images' => [['id' => $image->uid]]],
+            ]],
+            ['type' => 'hero', 'hero' => ['title' => 'Titre', 'background' => ['id' => $image->uid]]],
+        ];
+
+        $created = $this->postJson(self::PATH, ['title' => ['fr' => 'Page'], 'blocks' => $blocks])->assertCreated();
+
+        foreach ([$created, $this->getJson(self::PATH.'/'.$created->json('data.id'))->assertOk()] as $response) {
+            foreach (['data.blocks.0.partners.0.logo', 'data.blocks.1.cards.1.images.0', 'data.blocks.2.hero.background'] as $path) {
+                $response
+                    ->assertJsonPath($path.'.id', $image->uid)
+                    ->assertJsonPath($path.'.resource', 'images')
+                    ->assertJsonPath($path.'.label', 'Portrait')
+                    ->assertJsonPath($path.'.media.url', $this->urlOf($image));
+            }
+            $response
+                ->assertJsonPath('data.blocks.0.partners.0.logo.transform', $transform)
+                ->assertJsonPath('data.blocks.0.partners.0.name', 'Un')
+                ->assertJsonPath('data.blocks.0.partners.1.logo', null)
+                ->assertJsonPath('data.blocks.1.cards.0.body', 'Citation')
+                ->assertJsonPath('data.blocks.2.hero.title', 'Titre');
+        }
+
+        // The references are saved back as the values that the repository received
+        $id = $created->json('data.id');
+        $stored = $this->storedBlocks($id);
+        $this->patchJson(self::PATH.'/'.$id, ['blocks' => $created->json('data.blocks')])->assertOk();
+        $this->assertSame(
+            array_map(fn (array $block): array => array_diff_key($block, ['id' => true]), $stored),
+            array_map(fn (array $block): array => array_diff_key($block, ['id' => true]), $this->storedBlocks($id)),
+        );
+        $this->assertSame(['id' => $image->uid, 'transform' => $transform], $stored[0]['partners'][0]['logo']);
+    }
+
+    public function test_a_media_model_in_a_repeater_of_a_block_is_a_media_reference()
+    {
+        $image = $this->image();
+        $transform = ['rotate' => 90];
+
+        $serialized = Blocks::make('blocks')->serialize([
+            ['type' => 'partners', 'partners' => [['logo' => $image], ['logo' => ['id' => $image, 'transform' => $transform]], ['logo' => ['id' => null]]]],
+            ['type' => 'hero', 'hero' => ['background' => $image]],
+        ]);
+
+        $this->assertIsArray($serialized);
+        $reference = $serialized[0]['partners'][0]['logo'];
+        $this->assertSame(['id', 'resource', 'label', 'media'], array_keys($reference));
+        $this->assertSame($image->uid, $reference['id']);
+        $this->assertSame([...$reference, 'transform' => $transform], $serialized[0]['partners'][1]['logo']);
+        $this->assertNull($serialized[0]['partners'][2]['logo']);
+        $this->assertSame($reference, $serialized[1]['hero']['background']);
+    }
+
+    public function test_the_images_of_repeaters_and_groups_of_blocks_are_found_together()
+    {
+        $images = array_map(fn (int $index): Media => $this->image('Image '.$index), range(1, 3));
+        $one = $this->postJson(self::PATH, ['title' => ['fr' => 'Une'], 'blocks' => [
+            ['type' => 'image', 'image' => ['id' => $images[0]->uid]],
+        ]])->assertCreated()->json('data.id');
+        $three = $this->postJson(self::PATH, ['title' => ['fr' => 'Trois'], 'blocks' => [
+            ['type' => 'image', 'image' => ['id' => $images[0]->uid]],
+            ['type' => 'partners', 'partners' => [['logo' => ['id' => $images[1]->uid]], ['logo' => ['id' => $images[2]->uid]]]],
+            ['type' => 'cards', 'cards' => [['type' => 'quote', 'body' => 'Citation'], ['type' => 'card', 'images' => [['id' => $images[1]->uid], ['id' => $images[2]->uid]]]]],
+            ['type' => 'hero', 'hero' => ['background' => ['id' => $images[2]->uid]]],
+        ]])->assertCreated()->json('data.id');
+
+        $queries = function (string $id): int {
+            DB::flushQueryLog();
+            DB::enableQueryLog();
+            $this->getJson(self::PATH.'/'.$id)->assertOk();
+            DB::disableQueryLog();
+
+            return count(DB::getQueryLog());
+        };
+
+        $this->assertSame($queries($one), $queries($three));
+        $this->getJson(self::PATH.'/'.$three)->assertJsonPath('data.blocks.3.hero.background.label', 'Image 3');
+    }
+
     public function test_a_block_type_is_offered_only_if_the_field_allows_it()
     {
         $this->postJson(self::PATH, ['title' => ['fr' => 'Page'], 'blocks' => [['type' => 'unknown']]])

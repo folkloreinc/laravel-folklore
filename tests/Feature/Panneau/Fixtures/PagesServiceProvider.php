@@ -8,7 +8,9 @@ use Folklore\Panneau\Fields\Page;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Panneau\Fields\BlockType;
+use Panneau\Fields\Group;
 use Panneau\Fields\Image;
+use Panneau\Fields\Repeater;
 use Panneau\Fields\Text;
 use Panneau\Support\Facade as Panneau;
 
@@ -26,6 +28,18 @@ class PagesServiceProvider extends ServiceProvider
             BlockType::make('stack', 'Stack', [Text::make('title'), Blocks::make('blocks')]),
             BlockType::make('image', 'Image', [Image::make('image')->resource(ImagesResource::class)]),
             BlockType::make('gallery', 'Gallery', [Image::make('images')->multiple()->resource(ImagesResource::class)]),
+            BlockType::make('partners', 'Partners', [Repeater::make('partners')->fields([
+                Text::make('name'),
+                Image::make('logo')->resource(ImagesResource::class),
+            ])]),
+            BlockType::make('cards', 'Cards', [Repeater::make('cards')->types([
+                BlockType::make('card', 'Card', [Image::make('images')->multiple()->resource(ImagesResource::class)]),
+                BlockType::make('quote', 'Quote', [Text::make('body')]),
+            ])]),
+            BlockType::make('hero', 'Hero', [Group::make('hero')->fields([
+                Text::make('title'),
+                Image::make('background')->resource(ImagesResource::class),
+            ])]),
         ]);
 
         Panneau::resources([PagesResource::class, SectionsResource::class, ImagesResource::class]);

@@ -2,6 +2,7 @@
 
 namespace Folklore\Panneau\Fields;
 
+use Closure;
 use Folklore\Contracts\Entities\Block as BlockContract;
 use Folklore\Contracts\Entities\HasBlocks;
 use Folklore\Contracts\Entities\ToEntity;
@@ -12,6 +13,7 @@ use Illuminate\Support\Collection;
 use LogicException;
 use Panneau\Fields\BlockType;
 use Panneau\Fields\Field;
+use Panneau\Fields\Group;
 use Panneau\Fields\Media;
 use Panneau\Fields\Relation;
 use Panneau\Fields\Repeater;
@@ -497,9 +499,10 @@ class Blocks extends Repeater
     }
 
     /**
-     * Turns the values of the media fields of the blocks (`Media`, `Image`) into media
-     * references (`{ "id", "resource", "label", "media", "transform" }`), as Panneau does for the
-     * media fields of an item: the media items, and the `{ "id", "resource", "transform" }` that
+     * Turns the values of the media fields of the blocks (`Media`, `Image`), and of the
+     * repeaters and groups within them, into media references
+     * (`{ "id", "resource", "label", "media", "transform" }`), as Panneau does for the media
+     * fields of an item: the media items, and the `{ "id", "resource", "transform" }` that
      * blocks stored, or that the page's cast resolved with their edits (`withMediaIds()`), found
      * within their library's scope, with one query per library for the whole list. A value keeps
      * its `transform`, the edits of the image for this use. A media that isn't in its library
@@ -511,28 +514,28 @@ class Blocks extends Repeater
     private function withMediaReferences(array $blocks): array
     {
         $resources = app(ResourceRegistry::class);
+        $libraries = [];
+        $librariesOf = function (Media $field) use ($resources, &$libraries): array {
+            return $libraries[spl_object_id($field)] ??= self::librariesOf($resources, $field);
+        };
 
-        // The media fields of each block, with their libraries, and the ids to find per library
-        $fields = [];
+        // The ids to find per library
         $ids = [];
-        foreach ($blocks as $index => $block) {
+        foreach ($blocks as $block) {
             if (! is_array($block)) {
                 continue;
             }
-            foreach ($this->typeOf($block)?->getFields() ?? [] as $field) {
-                if (! $field instanceof Media || ! isset($block[$field->name()])) {
-                    continue;
-                }
-                $libraries = self::librariesOf($resources, $field);
-                $fields[$index][$field->name()] = [$field, $libraries];
-                foreach (self::mediaEntries($field, $block[$field->name()]) as $entry) {
+            self::mapMedia($this->typeOf($block)?->getFields() ?? [], $block, function (Media $field, mixed $value) use ($librariesOf, &$ids): mixed {
+                foreach (self::mediaEntries($field, $value) as $entry) {
                     $id = is_array($entry) ? Media::idOf($entry) : null;
-                    $library = is_array($entry) ? self::libraryOf($libraries, $entry) : null;
+                    $library = is_array($entry) ? self::libraryOf($librariesOf($field), $entry) : null;
                     if ($id !== null && $library !== null) {
                         $ids[$library->id()][$id] = true;
                     }
                 }
-            }
+
+                return $value;
+            });
         }
 
         $found = [];
@@ -552,45 +555,44 @@ class Blocks extends Repeater
             }
         }
 
-        foreach ($fields as $index => $blockFields) {
-            $block = $blocks[$index];
-            if (! is_array($block)) {
-                continue;
-            }
-            foreach ($blockFields as $name => [$field, $libraries]) {
-                $reference = function (mixed $entry) use ($libraries, $found, $resources): mixed {
-                    if (is_object($entry)) {
-                        $library = self::libraryOfItem($libraries, $entry);
-                        if ($library !== null) {
-                            return self::mediaReference($resources, $library, $entry);
-                        }
-                        // Not a media of the field's libraries: its id only, never the object
-                        $id = Media::idOf(data_get($entry, 'id'));
+        $references = function (Media $field, mixed $value) use ($librariesOf, $found, $resources): mixed {
+            $libraries = $librariesOf($field);
+            $reference = function (mixed $entry) use ($libraries, $found, $resources): mixed {
+                if (is_object($entry)) {
+                    $library = self::libraryOfItem($libraries, $entry);
+                    if ($library !== null) {
+                        return self::mediaReference($resources, $library, $entry);
+                    }
+                    // Not a media of the field's libraries: its id only, never the object
+                    $id = Media::idOf(data_get($entry, 'id'));
 
-                        return $id !== null ? ['id' => $id] : null;
-                    }
-                    $id = is_array($entry) ? Media::idOf($entry) : null;
-                    $library = is_array($entry) ? self::libraryOf($libraries, $entry) : null;
-                    $item = $id !== null && $library !== null ? ($found[$library->id()][$id] ?? null) : null;
-                    if (! is_array($entry) || $library === null || $item === null) {
-                        return $entry;
-                    }
-                    $media = self::mediaReference($resources, $library, $item);
-                    if (isset($entry['transform'])) {
-                        $media['transform'] = $entry['transform'];
-                    }
+                    return $id !== null ? ['id' => $id] : null;
+                }
+                $id = is_array($entry) ? Media::idOf($entry) : null;
+                $library = is_array($entry) ? self::libraryOf($libraries, $entry) : null;
+                $item = $id !== null && $library !== null ? ($found[$library->id()][$id] ?? null) : null;
+                if (! is_array($entry) || $library === null || $item === null) {
+                    return $entry;
+                }
+                $media = self::mediaReference($resources, $library, $item);
+                if (isset($entry['transform'])) {
+                    $media['transform'] = $entry['transform'];
+                }
 
-                    return $media;
-                };
-                $convert = fn (mixed $value): mixed => $field->isMultiple()
-                    ? (is_array($value) ? array_values(array_map($reference, $value)) : [])
-                    : $reference($value);
-                $value = $block[$name];
-                $block[$name] = self::isLocalizedMedia($field, $value) && is_array($value)
-                    ? array_map($convert, $value)
-                    : $convert($value);
+                return $media;
+            };
+            $convert = fn (mixed $value): mixed => $field->isMultiple()
+                ? (is_array($value) ? array_values(array_map($reference, $value)) : [])
+                : $reference($value);
+
+            return self::isLocalizedMedia($field, $value) && is_array($value)
+                ? array_map($convert, $value)
+                : $convert($value);
+        };
+        foreach ($blocks as $index => $block) {
+            if (is_array($block)) {
+                $blocks[$index] = self::mapMedia($this->typeOf($block)?->getFields() ?? [], $block, $references);
             }
-            $blocks[$index] = $block;
         }
 
         return $blocks;
@@ -608,42 +610,94 @@ class Blocks extends Repeater
     private function withMediaIds(array $blocks): array
     {
         $resources = app(ResourceRegistry::class);
-        foreach ($blocks as $index => $block) {
-            foreach ($this->typeOf($block)?->getFields() ?? [] as $field) {
-                if (! $field instanceof Media || ! isset($block[$field->name()])) {
-                    continue;
+        $ids = function (Media $field, mixed $value) use ($resources): mixed {
+            $libraries = null;
+            $entry = function (mixed $entry) use ($field, $resources, &$libraries): mixed {
+                if (! is_array($entry) || ! array_key_exists('id', $entry) || ! (is_object($entry['id']) || $entry['id'] === null)) {
+                    return $entry;
                 }
-                $libraries = null;
-                $entry = function (mixed $entry) use ($field, $resources, &$libraries): mixed {
-                    if (! is_array($entry) || ! array_key_exists('id', $entry) || ! (is_object($entry['id']) || $entry['id'] === null)) {
-                        return $entry;
-                    }
-                    if ($entry['id'] === null) {
-                        return null;
-                    }
-                    $libraries ??= self::librariesOf($resources, $field);
-                    $library = self::libraryOfItem($libraries, $entry['id']);
-                    $value = $library !== null
-                        ? ['id' => $resources->repository($library)->id($entry['id']), 'resource' => $library->id()]
-                        : ['id' => Media::idOf(data_get($entry['id'], 'id'))];
-                    $transform = MediaTransform::normalize($entry['transform'] ?? null);
-                    if ($transform !== null) {
-                        $value['transform'] = $transform;
-                    }
+                if ($entry['id'] === null) {
+                    return null;
+                }
+                $libraries ??= self::librariesOf($resources, $field);
+                $library = self::libraryOfItem($libraries, $entry['id']);
+                $value = $library !== null
+                    ? ['id' => $resources->repository($library)->id($entry['id']), 'resource' => $library->id()]
+                    : ['id' => Media::idOf(data_get($entry['id'], 'id'))];
+                $transform = MediaTransform::normalize($entry['transform'] ?? null);
+                if ($transform !== null) {
+                    $value['transform'] = $transform;
+                }
 
-                    return $value;
-                };
-                $convert = fn (mixed $value): mixed => $field->isMultiple() && is_array($value) && array_is_list($value)
-                    ? array_map($entry, $value)
-                    : $entry($value);
-                $value = $block[$field->name()];
-                $blocks[$index][$field->name()] = self::isLocalizedMedia($field, $value) && is_array($value)
-                    ? array_map($convert, $value)
-                    : $convert($value);
-            }
+                return $value;
+            };
+            $convert = fn (mixed $value): mixed => $field->isMultiple() && is_array($value) && array_is_list($value)
+                ? array_map($entry, $value)
+                : $entry($value);
+
+            return self::isLocalizedMedia($field, $value) && is_array($value)
+                ? array_map($convert, $value)
+                : $convert($value);
+        };
+        foreach ($blocks as $index => $block) {
+            $blocks[$index] = self::mapMedia($this->typeOf($block)?->getFields() ?? [], $block, $ids);
         }
 
         return $blocks;
+    }
+
+    /**
+     * Maps the values of the media fields among the fields of a block, and of the repeaters and
+     * groups among them, at any depth (#191). A nested `Blocks` field resolves its own media.
+     *
+     * @param  list<Field>  $fields
+     * @param  array<array-key, mixed>  $values
+     * @param  Closure(Media, mixed): mixed  $map
+     * @return array<array-key, mixed>
+     */
+    private static function mapMedia(array $fields, array $values, Closure $map): array
+    {
+        foreach ($fields as $field) {
+            $name = $field->name();
+            if ($field instanceof self || ! isset($values[$name])) {
+                continue;
+            }
+            $value = $values[$name];
+            if ($field instanceof Media) {
+                $values[$name] = $map($field, $value);
+            } elseif ($field instanceof Group && is_array($value)) {
+                $values[$name] = self::mapMedia($field->getFields(), $value, $map);
+            } elseif ($field instanceof Repeater && is_array($value) && array_is_list($value)) {
+                foreach ($value as $index => $item) {
+                    if (is_array($item)) {
+                        $value[$index] = self::mapMedia(self::itemFields($field, $item), $item, $map);
+                    }
+                }
+                $values[$name] = $value;
+            }
+        }
+
+        return $values;
+    }
+
+    /**
+     * The fields of an item of a repeater: its fields, or those of the item's type.
+     *
+     * @param  array<array-key, mixed>  $item
+     * @return list<Field>
+     */
+    private static function itemFields(Repeater $field, array $item): array
+    {
+        if ($field->types === null) {
+            return $field->fields;
+        }
+        foreach ($field->types as $type) {
+            if ($type->id() === ($item['type'] ?? null)) {
+                return $type->getFields();
+            }
+        }
+
+        return [];
     }
 
     /**
