@@ -379,9 +379,10 @@ class PageFieldsApiTest extends PanneauTestCase
         $reference = $serialized[0]['partners'][0]['logo'];
         $this->assertSame(['id', 'resource', 'label', 'media'], array_keys($reference));
         $this->assertSame($image->uid, $reference['id']);
-        $this->assertSame([...$reference, 'transform' => $transform], $serialized[0]['partners'][1]['logo']);
+        // assertEquals: the keys of the media's JSON metadata may come back in another order
+        $this->assertEquals([...$reference, 'transform' => $transform], $serialized[0]['partners'][1]['logo']);
         $this->assertNull($serialized[0]['partners'][2]['logo']);
-        $this->assertSame($reference, $serialized[1]['hero']['background']);
+        $this->assertEquals($reference, $serialized[1]['hero']['background']);
     }
 
     public function test_the_images_of_repeaters_and_groups_of_blocks_are_found_together()

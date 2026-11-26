@@ -76,7 +76,7 @@ class Client implements CustomerIo
     public function findCustomerByIdentifier($identifier): ?CustomerContract
     {
         $identifiers = $this->getIdentifiersFromItem($identifier);
-        if (! isset($identifiers)) {
+        if (! is_array($identifiers) || $identifiers === []) {
             return null;
         }
 
@@ -146,7 +146,7 @@ class Client implements CustomerIo
         $cursor = null
     ): CollectionWithCursor {
         $identifiers = $this->getIdentifiersFromItem($customer);
-        if (is_null($identifiers)) {
+        if (! is_array($identifiers) || $identifiers === []) {
             return collect();
         }
         $response = $this->requestJson(
